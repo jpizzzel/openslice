@@ -1,0 +1,33 @@
+// Shared site footer. Pages append `renderFooter()` at the end of their root.
+// Purely static HTML; styles live in chrome.css under .site-footer.
+import { PEOPLE, SITE } from "../data/site";
+
+export function renderFooter(): string {
+  const people = PEOPLE.map((p) => `
+    <div class="sf-col">
+      <span class="sf-k">${p.first}</span>
+      <a class="u-link" href="${p.site}" target="_blank" rel="noopener" data-cursor="Visit">${p.siteLabel}</a>
+    </div>`).join("");
+  return `
+  <footer class="site-footer" aria-label="Site footer">
+    <div class="sf-grid">
+      <p class="sf-lede serif">Made by two roommates, one oven, and too many late nights.</p>
+      ${people}
+      <div class="sf-col">
+        <span class="sf-k">The trunk</span>
+        <a class="u-link" href="/slices">${SITE.trunk.name}</a>
+        <a class="u-link" href="${SITE.trunk.href}" target="_blank" rel="noopener">saturdayslices.com</a>
+      </div>
+      <div class="sf-col">
+        <span class="sf-k">Source</span>
+        <a class="u-link" href="${SITE.repo}" target="_blank" rel="noopener" data-cursor="GitHub">${SITE.repo.replace(/^https?:\/\/(www\.)?/, "")}</a>
+        <span class="sf-v">MIT licensed. Every slice open source.</span>
+      </div>
+    </div>
+    <div class="sf-word" aria-hidden="true"><span>OPENSLICE</span><i>©</i></div>
+    <div class="sf-base">
+      <span>Made in our kitchen, ${SITE.since} to forever.</span>
+      <a class="u-link" href="#view" data-native data-sf-top>Back to top</a>
+    </div>
+  </footer>`;
+}

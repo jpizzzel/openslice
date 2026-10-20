@@ -97,17 +97,20 @@ function template(t: Tool, i: number) {
     <div class="td-mega mega" aria-hidden="true">${pad(i + 1)}</div>
 
     <figure class="td-poster" data-cursor="${cls ? "Shh" : "Tilt"}">
+      <span class="td-poster__shadow" aria-hidden="true"></span>
       <div class="td-poster__tilt">
         <div class="td-poster__art">${poster(t, { label: `${t.name} poster` })}</div>
+        <span class="td-sheen" aria-hidden="true"><i></i></span>
         ${cls ? `<span class="td-stamp td-stamp--big" aria-hidden="true">Classified</span>` : ""}
       </div>
     </figure>
 
     <div class="td-title">
-      <h1 class="td-name" aria-label="${esc(t.name)}" style="--chars:${t.name.length}">
+      <h1 class="td-name" style="--chars:${t.name.length}">
+        <span class="sr-only">${esc(t.name)}</span>
         <span class="td-name__mask" aria-hidden="true">${chars}</span>
       </h1>
-      ${t.codename ? `<span class="td-wt" aria-label="working title">Working<br>title</span>` : ""}
+      ${t.codename ? `<span class="td-wt">Working<br>title</span>` : ""}
       ${cls ? `<span class="td-wt td-wt--cls" aria-hidden="true">Top<br>secret</span>` : ""}
     </div>
     <p class="td-blurb serif td-fade">${cls ? redact(t.blurb, 4) : esc(t.blurb)}</p>
@@ -130,18 +133,18 @@ function template(t: Tool, i: number) {
 
   <section class="td-feats" aria-labelledby="td-feats-h">
     <div class="td-side">
-      <h2 id="td-feats-h" class="label">${cls ? "What it does" : "What it does"}</h2>
+      <h2 id="td-feats-h" class="label">What it does</h2>
       <p class="td-side__n caps-red">${pad(t.features.length || 3)}<span>${cls ? "redacted" : "things"}</span></p>
     </div>
     <ol class="td-feat-list">${featuresHTML(t)}</ol>
   </section>
 
   <section class="td-credits" aria-label="Credits and links">
-    <div class="td-card td-card--credits">
+    <div class="td-toss td-toss--credits"><div class="td-card td-card--credits">
       <h2 class="td-card__h">Credits</h2>
       <dl class="td-card__grid">
         <div><dt class="label">Made by</dt><dd>${ppl
-          .map((p) => `<a class="u-link" href="${p.site}" target="_blank" rel="noopener">${esc(p.name)}</a>`)
+          .map((p) => `<a class="u-link" href="${esc(p.site)}" target="_blank" rel="noopener">${esc(p.name)}</a>`)
           .join("<br>")}</dd></div>
         <div><dt class="label">Platform</dt><dd>${esc(t.platform)}</dd></div>
         <div><dt class="label">Replaces</dt><dd>${cls ? `<span class="rd">Something paid</span>` : esc(replacesText(t))}</dd></div>
@@ -152,12 +155,12 @@ function template(t: Tool, i: number) {
         ${ppl.map((p) => `<span class="td-mascot">${mascot(p.id, POSE[p.id] ?? "stand")}</span>`).join("")}
       </div>
       ${cls ? `<span class="td-stamp td-stamp--card" aria-hidden="true">Classified</span>` : ""}
-    </div>
-    <div class="td-card td-card--links">
+    </div></div>
+    <div class="td-toss td-toss--links"><div class="td-card td-card--links">
       <h2 class="td-card__h">${t.links.length ? "Grab a slice" : "Still in the oven"}</h2>
       ${linksHTML(t)}
       <p class="td-card__foot label">Free forever. Open source, MIT.</p>
-    </div>
+    </div></div>
   </section>
 
   <a class="td-next" href="/toolbox/${next.slug}" data-cursor="Next" style="--nc:${next.color}">
@@ -229,12 +232,13 @@ const page: Page = {
 
       // credits: physical cards tossed onto the table
       const mob = window.innerWidth <= 720;
-      gsap.fromTo(".td-card--credits", { rotation: -15, yPercent: 30, xPercent: -8 }, {
-        rotation: mob ? -3 : -5, yPercent: 0, xPercent: 0, ease: "none",
+      // resting tilt lives on .td-toss (CSS rotate); gsap only animates the toss on the inner card
+      gsap.fromTo(".td-card--credits", { rotation: mob ? -7 : -10, yPercent: 30, xPercent: -8 }, {
+        rotation: 0, yPercent: 0, xPercent: 0, ease: "none",
         scrollTrigger: { trigger: ".td-credits", start: "top bottom", end: "center 60%", scrub: 0.8 },
       });
-      gsap.fromTo(".td-card--links", { rotation: 12, yPercent: 45, xPercent: 10 }, {
-        rotation: mob ? 2 : 3, yPercent: 0, xPercent: 0, ease: "none",
+      gsap.fromTo(".td-card--links", { rotation: mob ? 6 : 9, yPercent: 45, xPercent: 10 }, {
+        rotation: 0, yPercent: 0, xPercent: 0, ease: "none",
         scrollTrigger: { trigger: ".td-credits", start: "top bottom", end: "center 55%", scrub: 0.8 },
       });
       gsap.from(".td-mascot", {

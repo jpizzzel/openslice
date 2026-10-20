@@ -4,6 +4,7 @@ import { bus } from "./bus";
 import { ScrollTrigger, scrollTop } from "./motion";
 import { enter, leave } from "./transition";
 import { SITE } from "../data/site";
+import { markFirstRender } from "./ready";
 
 let cleanup: Cleanup | void;
 let busy = false;
@@ -31,7 +32,11 @@ async function render(pathname: string) {
   const t = typeof page.title === "function" ? page.title(params) : page.title;
   document.title = t ? `${t} | ${SITE.name}` : `${SITE.name}: ${SITE.tagline}`;
 
-  cleanup = await page.mount({ root: el, params, first });
+  // Pages may wait on loaderGone inside mount(), so the loader must not wait
+  // for mount to settle. Signal as soon as mount has been called.
+  const mounting = page.mount({ root: el, params, first });
+  if (first) markFirstRender();
+  cleanup = await mounting;
   bus.emit("route:after", { path: pathname, section: page.section });
   ScrollTrigger.refresh();
   if (!first) await enter(el);

@@ -7,6 +7,7 @@
 // growth over repeated nav loops. Prints a markdown report and exits non-zero on any error.
 import { chromium } from "playwright";
 import { spawn } from "node:child_process";
+import { createServer } from "node:net";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
@@ -45,7 +46,13 @@ const add = (route, vp, sev, kind, msg) => findings.push({ route, vp, sev, kind,
 const metrics = []; // per route x viewport
 
 /* ---------------------------------------------------------------- server */
-const port = 4800 + Math.floor(Math.random() * 800);
+const freePort = () => new Promise((res, rej) => {
+  const s = createServer();
+  s.unref();
+  s.on("error", rej);
+  s.listen(0, () => { const { port } = s.address(); s.close(() => res(port)); });
+});
+const port = await freePort();
 const origin = `http://localhost:${port}`;
 const srv = spawn(process.execPath, [VITE, "preview", "--outDir", dist, "--port", String(port), "--strictPort"], {
   stdio: ["ignore", "ignore", "pipe"], detached: true,

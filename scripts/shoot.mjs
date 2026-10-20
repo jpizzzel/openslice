@@ -2,6 +2,7 @@
 // Serves a built dist dir (default dist/) with `vite preview` and screenshots each route.
 import { chromium } from "playwright";
 import { spawn } from "node:child_process";
+import { createServer } from "node:net";
 import { mkdirSync } from "node:fs";
 
 const args = process.argv.slice(2);
@@ -13,7 +14,13 @@ const scroll = opt("--scroll", "").split(",").filter(Boolean).map(Number);
 const mobile = flag("--mobile");
 const dist = opt("--dist", "dist");
 const routes = args.length ? args : ["/", "/toolbox", "/toolbox/satsuma", "/lab", "/about", "/slices"];
-const port = 4300 + Math.floor(Math.random() * 500);
+const freePort = () => new Promise((res, rej) => {
+  const s = createServer();
+  s.unref();
+  s.on("error", rej);
+  s.listen(0, () => { const { port } = s.address(); s.close(() => res(port)); });
+});
+const port = await freePort();
 mkdirSync(out, { recursive: true });
 
 const srv = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "preview", "--outDir", dist, "--port", String(port), "--strictPort"], { stdio: "ignore", detached: true });

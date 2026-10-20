@@ -2,12 +2,12 @@
 // transforms; their parts use fill-box origins so they animate at any scale.
 import { TOOLS, SITE } from "../data/site";
 import { Kit, INK, TOMATO, CHEESE, CRUST, BASIL, PAPER, GRAY, F_MONO, P, L, C, E, G, at, tube, part, rng, f1, ArtOpts } from "./core";
-import { mascotBody, Who, Pose } from "./mascots";
+import { mascotBody, mascotLayers, Who, Pose } from "./mascots";
 import { glyphBody, sparkleD } from "./glyphs";
-import { pepperoni, basilLeaf, laptop } from "./props";
+import { pepperoni, basilLeaf, laptop, pizzaBox } from "./props";
 import { T } from "./posters";
 
-export type SceneId = "duo-push" | "duo-wave" | "kitchen" | "tree";
+export type SceneId = "duo-push" | "duo-wave" | "kitchen" | "tree" | "duo-laptops" | "duo-carry";
 
 /** place a mascot: x,y = top-left of its 200x300 box, s = scale */
 function placeMascot(k: Kit, who: Who, pose: Pose, x: number, y: number, s: number, extra = ""): string {
@@ -229,7 +229,87 @@ function tree(k: Kit): string {
   );
 }
 
-const DRAW: Record<SceneId, (k: Kit) => string> = { "duo-push": duoPush, "duo-wave": duoWave, kitchen, tree };
+/* ------------------------------------------------------------- duo-laptops */
+
+/** both of them on pizza box stacks, leaning back to back, laptops on their laps */
+function duoLaptops(k: Kit): string {
+  const ground = 452, s = 1.12;
+  // seat: local y 210 sits on the top box lid; feet hang in front of the stack
+  const sitter = (who: Who, cx: number, lean: number) => {
+    const x = cx - 100 * s, y = 314 - 210 * s;
+    const L0 = mascotLayers(k, who, "lap");
+    const lap = G(laptop(k, 100, 210, 92, who === "jonah" ? "win" : "mac", 3), `data-part="laptop"`);
+    return `<g transform="translate(${f1(x)} ${f1(y)}) scale(${s}) rotate(${lean} 100 210)" data-part="mascot-${who}"><g data-who="${who}" data-pose="lap">${L0.back}${lap}</g></g>`;
+  };
+  const stack = (cx: number, seed: number) => {
+    const r = rng(seed);
+    const w = 150;
+    return pizzaBox(k, cx - w / 2 + 4, 404, w - 8, 30, 14, -4, false, 3) +
+      pizzaBox(k, cx - w / 2 - 6 + r() * 8, 362, w + 4, 30, 14, 5, false, 3) +
+      pizzaBox(k, cx - w / 2 + r() * 6, 320, w, 30, 14, -3, true, 3);
+  };
+  return (
+    part("sun", null, C(400, 220, 190, PAPER) + `<circle cx="400" cy="220" r="190" fill="${k.ht(1)}"/>` + C(400, 220, 190, "none", 0, `stroke="${INK}" stroke-width="1.4" stroke-dasharray="2 6"`)) +
+    part("ground", null,
+      E(400, ground - 2, 300, 14, k.ht(2)) +
+      L(`M60 ${ground}H740`, 2.6) +
+      L(`M110 ${ground + 14}H190M560 ${ground + 18}H660M300 ${ground + 22}H340`, 1.6, INK, `opacity=".5"`)) +
+    part("seat", null, stack(278, 3) + stack(522, 9)) +
+    sitter("jonah", 290, 9) +
+    sitter("peter", 510, -9) +
+    // a shared idea between them
+    part("spark", null,
+      P(sparkleD(400, 64, 16), CHEESE, 2.6) +
+      L("M372 70l-12 -4M428 70l12 -4M400 34v-12", 2.4)) +
+    // what they are typing, drifting out to each side
+    part("code", null,
+      T(120, 170, "{ }", 30, INK, F_MONO, `font-weight="700"`) +
+      T(640, 180, "</>", 26, INK, F_MONO, `font-weight="700"`) +
+      L("M150 214h40M136 228h28M640 220h36M654 234h24", 3, INK, `opacity=".8"`) +
+      L("M196 214h10M672 234h8", 3, TOMATO)) +
+    G(placeGlyph(k, "coffee", 120, 420, 64, -4), `data-part="mug"`) +
+    G(placeGlyph(k, "box-empty", 690, 412, 84, 6), `data-part="empty-box"`) +
+    P(sparkleD(700, 110, 10), PAPER, 2.2) + P(sparkleD(96, 94, 7), INK, 1.4)
+  );
+}
+
+/* ------------------------------------------------------------- duo-carry */
+
+/** both of them carrying one big pizza box, walking right */
+function duoCarry(k: Kit): string {
+  const ground = 456, s = 1.2;
+  const y = ground - 287 * s;
+  const jx = 250 - 100 * s, px = 540 - 100 * s;
+  const J = mascotLayers(k, "jonah", "lift"), Pt = mascotLayers(k, "peter", "lift");
+  const at2 = (x: number, bob: number, extra = "") => `transform="translate(${f1(x)} ${f1(y + bob)}) scale(${s})${extra}"`;
+  const handY = y + 197 * s;
+  const bx0 = jx + 30 * s, bx1 = px + 170 * s;
+  return (
+    part("ground", null,
+      L(`M40 ${ground}H760`, 2.6) +
+      `<rect x="40" y="${ground}" width="720" height="40" fill="${k.ht(1)}"/>` +
+      L("M70 470H150M330 476H380M600 468H700", 1.6, INK, `opacity=".5"`)) +
+    // speed lines and dust behind
+    part("speed", null,
+      L("M30 230H100M14 262H80M40 296H120M20 340H72", 3) +
+      P("M86 446C74 446 70 436 80 430C80 420 94 416 100 424C108 416 122 422 118 432C126 436 122 448 112 448Z", PAPER, 2.4) +
+      C(130, 436, 4, PAPER, 2) + C(60, 440, 3, PAPER, 1.8)) +
+    `<g ${at2(jx, 0)} data-part="mascot-jonah"><g data-who="jonah" data-pose="lift">${J.back}</g></g>` +
+    `<g ${at2(px, -4)} data-part="mascot-peter"><g data-who="peter" data-pose="lift">${Pt.back}</g></g>` +
+    // the big box, steaming
+    part("box", null,
+      pizzaBox(k, bx0, handY - 6, bx1 - bx0, 40, 30, 10, true, 3.4) +
+      L(`M${f1(bx0 + 90)} ${f1(handY - 52)}c-6 -8 4 -12 -2 -22M${f1(bx0 + 170)} ${f1(handY - 56)}c-6 -8 4 -12 -2 -22M${f1(bx0 + 250)} ${f1(handY - 52)}c-6 -8 4 -12 -2 -22`, 2.2, INK, `opacity=".7"`)) +
+    `<g ${at2(jx, 0)} data-part="arms-jonah">${J.front}</g>` +
+    `<g ${at2(px, -4)} data-part="arms-peter">${Pt.front}</g>` +
+    // where they are headed
+    part("arrow", null, placeGlyph(k, "arrow", 716, 150, 90, 8)) +
+    P(sparkleD(660, 70, 12), CHEESE, 2.4) + P(sparkleD(150, 120, 8), PAPER, 2) +
+    L("M700 300l14 -4M702 322h16M700 344l14 4", 2.6)
+  );
+}
+
+const DRAW: Record<SceneId, (k: Kit) => string> = { "duo-push": duoPush, "duo-wave": duoWave, kitchen, tree, "duo-laptops": duoLaptops, "duo-carry": duoCarry };
 
 export function scene(id: SceneId, opts: ArtOpts = {}): string {
   const k = new Kit();

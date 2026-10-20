@@ -188,14 +188,38 @@ function toppings(k: Kit, who: Who, dx = 0): string {
 }
 
 /** the slice body with face, toppings and headgear, in standing front coordinates */
-function torso(k: Kit, who: Who, f: Face): string {
+/** Saturday apron: tomato bib tied at the waist, with a slice pocket */
+function apronMk(k: Kit, clip: string): string {
+  const ap = "M30 165Q100 172 170 165V240H30Z";
+  return part("apron", null,
+    G(
+      P(ap, TOMATO, 0) +
+      P("M128 160Q122 200 96 240H200V160Z", k.ht(2), 0) +
+      P("M146 160Q136 196 106 240H200V160Z", k.ht(3), 0) +
+      L("M30 171.4Q100 178.4 170 171.4", 1.3, PAPER, `stroke-dasharray="3 3" opacity=".9"`) +
+      L("M76 190C82 196 86 204 90 214M124 188C120 196 116 204 112 214", 1.4, INK, `opacity=".5"`),
+      `clip-path="${clip}"`) +
+    L("M60.8 166.2Q100 172.8 139.4 166.2", 3.2) +
+    // pocket with a tiny slice on it
+    P("M88 180Q100 182 112 180L110.4 197Q100 199 89.6 197Z", TOMATO, 2.4) +
+    L("M88.6 185Q100 187 111.4 185", 1.6) +
+    P("M94.6 188.4H105.4L100 196Z", PAPER, 1.3) + C(99.6, 190.4, 1.3, INK) +
+    // a knotted tie on the left hip
+    P("M62 167C56 160 50 160 50 164C50 168 56 168 62 167Z", TOMATO, 2) +
+    P("M62 167C58 172 56 177 53 178C56 178 60 175 63 170Z", TOMATO, 1.8) +
+    C(62, 166.8, 2.6, TOMATO, 2));
+}
+
+function torso(k: Kit, who: Who, f: Face, apron = false): string {
   const clip = k.clip("slice", `<path d="${SLICE}"/>`);
   const dx = f.dx ?? 0;
   const inside =
     // sauce rim with cheese melting over it
     P("M20 66L180 66L180 84C172 88 166 93 159 88C151 83 147 96 138 92C129 87 122 91 114 89C104 87 100 98 92 92C84 87 77 91 70 88C62 85 58 96 50 92C44 89 38 86 20 88Z", TOMATO, 2.2) +
-    // form shading on the right flank
+    // form shading on the right flank, deepening toward the edge and the tip
     P("M150 70Q140 150 94 224L200 224L200 70Z", k.ht(2), 0) +
+    P("M161 70Q150 140 104 214L200 230L200 70Z", k.ht(3), 0) +
+    P("M70 180Q100 196 130 180L130 240H70Z", k.ht(1), 0) +
     L("M155 92Q146 140 116 190", 1.6, INK, `opacity=".5"`) +
     // cheese bubbles
     E(66, 162 - 6, 3.4, 2.4, "none", 1.4) + E(130, 196 - 40, 2.6, 2, "none", 1.4) + E(102, 200, 3, 2.2, "none", 1.4) + C(76, 172, 1.4, INK) + C(126, 130 + 52, 1.2, INK) +
@@ -204,11 +228,18 @@ function torso(k: Kit, who: Who, f: Face): string {
     // cheese drips past the outline
     P(SLICE, CHEESE, 0) +
     G(inside, `clip-path="${clip}"`) +
+    (apron ? apronMk(k, clip) : "") +
     P(SLICE, "none", 4.6) +
     P("M64 96Q62 104 64 108Q66 104 64 96Z", CHEESE, 0) +
     // crust "hat brim"
-    P(CRUST_D, CRUST, 4.4) +
-    P("M30 76C60 70 140 70 170 76C170 81 165 84 158 83C128 76 72 76 42 83C35 85 30 81 30 76Z", k.ht(2), 0) +
+    P(CRUST_D, CRUST, 0) +
+    G(
+      P("M20 74C60 66 140 66 180 74V92H20Z", k.ht(2), 0) +
+      P("M150 30C162 44 172 54 182 60V92H150Z", k.ht(2), 0) +
+      P("M162 40C172 50 178 56 184 62V92H164Z", k.ht(3), 0) +
+      P("M14 54C22 48 30 46 38 46V60C30 62 24 64 14 70Z", k.ht(1), 0),
+      `clip-path="${k.clip("crust", `<path d="${CRUST_D}"/>`)}"`) +
+    P(CRUST_D, "none", 4.4) +
     L("M44 58C52 52 62 51 70 52M128 50C138 50 150 52 158 58", 2.2, PAPER, `opacity=".75"`) +
     L("M86 58l6 -2M104 55l7 1M146 64l5 3M58 66l-6 3M116 64l4 -1", 2.2, INK, `opacity=".55"`) +
     hat(k, who) +
@@ -265,7 +296,7 @@ const FACES: Record<Pose, Record<Who, Face>> = {
   },
 };
 
-function drawPose(k: Kit, who: Who, pose: Pose): string {
+function drawPose(k: Kit, who: Who, pose: Pose, apron = false): string {
   const f = FACES[pose][who];
   const accent = who === "jonah" ? TOMATO : BASIL;
   switch (pose) {
@@ -276,7 +307,7 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         leg(k, "leg-r", "M106 204C108 230 116 250 119 268", "M117.4 258L118.8 268", [107, 206], sneaker(k, 119, 270, false, 0, 1, accent)) +
         arm("arm-l", "M60 126C46 138 40 154 42 172", [58, 126], hand("fist", 43, 177, 10)) +
         arm("arm-r", "M140 126C158 130 170 146 160 160C156 166 146 168 136 166", [142, 126], hand("fist", 133, 164, -100)) +
-        torso(k, who, f)
+        torso(k, who, f, apron)
       );
     }
     case "wave": {
@@ -285,7 +316,7 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         leg(k, "leg-l", "M94 204C90 228 84 250 82 268", "M83.4 258L82.2 268", [93, 206], sneaker(k, 82, 270, true, -4, 1, accent)) +
         leg(k, "leg-r", "M106 204C110 228 116 248 120 266", "M118.4 256L120 266", [107, 206], sneaker(k, 120, 268, false, -8, 1, accent)) +
         arm("arm-l", "M60 128C48 140 44 156 46 172", [58, 128], hand("fist", 47, 177, 14)) +
-        torso(k, who, f) +
+        torso(k, who, f, apron) +
         arm("arm-r", "M145 127C164 122 176 106 177 84", [145, 127], hand("open", 177, 74, 10)) +
         L("M190 50C195 57 195 66 191 73M163 50C159 57 159 65 162 71", 2.4)
       );
@@ -301,7 +332,7 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         leg(k, "leg-l", "M66 206C52 226 38 246 26 262", "M32 254L25.4 263", [66, 206], sneaker(k, 26, 266, false, 34, 1, accent)) +
         leg(k, "leg-r", "M80 206C98 220 106 240 98 268", "M101.4 258L98.4 268", [80, 206], sneaker(k, 98, 270, false, 0, 1, accent)) +
         arm("arm-r", "M134 142C152 152 170 142 184 130", [134, 142], hand("flat", 190, 130, -6)) +
-        G(torso(k, who, f), lean) +
+        G(torso(k, who, f, apron), lean) +
         P("M30 104C24 112 26 120 32 120C38 120 39 112 30 104Z", PAPER, 2.2) + P("M44 92C40 97 41 102 45 102C49 102 49 97 44 92Z", PAPER, 2) +
         L("M186 88l4 -6M180 84l2 -6", 2)
       );
@@ -314,7 +345,7 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         arm("arm-l", "M60 126C42 130 32 146 40 160C44 166 54 168 64 166", [58, 126], hand("fist", 63, 162, 100, true)) +
         arm("arm-r", "M140 124C152 122 160 119 166 117", [140, 124], hand("point", 170, 116, -4)) +
         L("M184 98l5 -5M190 108l6 -2M180 132l5 4", 2.2) +
-        torso(k, who, f)
+        torso(k, who, f, apron)
       );
     }
     case "sit": {
@@ -329,7 +360,7 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         leg(k, "leg-r", "M106 202C112 210 118 216 120 226C122 238 126 248 132 258", "M128 250L132.4 259", [107, 204], sneaker(k, 133, 260, false, -18, 1, accent)) +
         arm("arm-l", "M60 128C44 146 38 176 42 200", [58, 128], hand("fist", 43, 204, -6)) +
         arm("arm-r", "M140 128C156 146 162 176 158 200", [142, 128], hand("fist", 157, 204, 6, true)) +
-        torso(k, who, f) +
+        torso(k, who, f, apron) +
         L("M170 18q4 -6 8 0t8 0M178 32q3 -4 6 0", 2) // a little hum
       );
     }
@@ -338,7 +369,7 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         shadow(k) +
         leg(k, "leg-l", "M94 204C88 226 78 246 70 262", "M72.6 253L69.4 263", [93, 206], sneaker(k, 70, 265, true, 12, 1, accent)) +
         leg(k, "leg-r", "M106 204C110 228 116 250 118 268", "M117 258L118 268", [107, 206], sneaker(k, 118, 270, false, 0, 1, accent)) +
-        torso(k, who, f) +
+        torso(k, who, f, apron) +
         part("box", null,
           pizzaBox(k, 40, 186, 120, 26, 26, 8, true, 3.2) +
           L("M28 170c-5 -6 3 -10 -2 -16M176 166c-5 -6 3 -10 -2 -16", 2, GRAY)) +
@@ -349,11 +380,60 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
   }
 }
 
-export function mascotBody(k: Kit, who: Who, pose: Pose): string {
-  return G(drawPose(k, who, pose), `data-who="${who}" data-pose="${pose}"`);
+export function mascotBody(k: Kit, who: Who, pose: Pose, apron = false): string {
+  return G(drawPose(k, who, pose, apron), `data-who="${who}" data-pose="${pose}"${apron ? ` data-apron=""` : ""}`);
 }
 
-export function mascot(who: Who, pose: Pose = "stand", opts: ArtOpts = {}): string {
+export interface MascotOpts extends ArtOpts {
+  /** Saturday mode: a tomato apron with a slice pocket */
+  apron?: boolean;
+}
+
+export function mascot(who: Who, pose: Pose = "stand", opts: MascotOpts = {}): string {
   const k = new Kit();
-  return k.wrap("0 0 200 300", mascotBody(k, who, pose), opts);
+  return k.wrap("0 0 200 300", mascotBody(k, who, pose, !!opts.apron), opts);
+}
+
+/* ---------------------------------------------------------------- scene-only poses */
+
+const SCENE_FACES: Record<"lap" | "lift", Record<Who, Face>> = {
+  lap: {
+    jonah: { dx: -7, eyes: "open", brows: "flat", mouth: "smile", look: [-3, 4] },
+    peter: { dx: 7, eyes: "lid", brows: "up", mouth: "cat", look: [3, 4] },
+  },
+  lift: {
+    jonah: { dx: 7, eyes: "open", brows: "up", mouth: "grin", look: [4, 0] },
+    peter: { dx: 9, eyes: "happy", brows: "up", mouth: "grin" },
+  },
+};
+
+/**
+ * Poses that only make sense with a prop the scene draws. Returns two layers in
+ * the 200 x 300 mascot space: `back` (legs, torso, and for "lap" the arms) and
+ * `front` (arms that grip a prop drawn between the layers).
+ */
+export function mascotLayers(k: Kit, who: Who, pose: "lap" | "lift", apron = false): { back: string; front: string } {
+  const f = SCENE_FACES[pose][who];
+  const accent = who === "jonah" ? TOMATO : BASIL;
+  if (pose === "lap") {
+    return {
+      back:
+        leg(k, "leg-l", "M92 210C88 226 84 244 84 264", "M84 254V264", [92, 210], sneaker(k, 84, 266, true, 0, 1, accent)) +
+        leg(k, "leg-r", "M108 210C112 226 118 240 124 258", "M120.6 249L124.4 259", [108, 210], sneaker(k, 125, 260, false, -14, 1, accent)) +
+        arm("arm-l", "M60 128C46 144 46 164 58 178", [58, 128], "") +
+        arm("arm-r", "M140 128C154 144 154 164 142 178", [142, 128], "") +
+        torso(k, who, f, apron),
+      front: "",
+    };
+  }
+  return {
+    back:
+      shadow(k) +
+      leg(k, "leg-l", "M94 204C90 228 80 246 72 260", "M74.4 251L71.4 261", [93, 206], sneaker(k, 72, 263, false, 16, 1, accent)) +
+      leg(k, "leg-r", "M106 204C114 226 126 244 134 262", "M131 253L134.6 263", [107, 206], sneaker(k, 136, 265, false, -6, 1, accent)) +
+      torso(k, who, f, apron),
+    front:
+      arm("arm-l", "M60 128C42 144 34 172 37 204", [58, 128], hand("flat", 37, 197, 0)) +
+      arm("arm-r", "M140 128C158 144 166 172 163 204", [142, 128], hand("flat", 163, 197, 0, true)),
+  };
 }

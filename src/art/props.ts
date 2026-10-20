@@ -1,5 +1,5 @@
 // Reusable drawn props shared by mascots, glyphs, posters and scenes.
-import { Kit, INK, TOMATO, TOMATO_DEEP, CHEESE, CRUST, BASIL, PAPER, P, L, C, E, G, at } from "./core";
+import { Kit, INK, TOMATO, TOMATO_DEEP, CHEESE, BASIL, PAPER, P, L, C, E, G, at, f1 } from "./core";
 
 /** a pepperoni round */
 export function pepperoni(k: Kit, x: number, y: number, r: number, w = 2.2): string {
@@ -69,50 +69,67 @@ export function sneaker(k: Kit, x: number, y: number, flip = false, rot = 0, s =
 /**
  * A pizza box in a frontal 3/4 view. (x,y) is the top-left of the front face.
  * w width, h front height, d lid depth (how far the top recedes), s lid skew.
+ * Paper stock, ink outline, halftone shading, a tomato logo.
  */
 export function pizzaBox(k: Kit, x: number, y: number, w: number, h: number, d: number, s = 0, logo = true, sw = 3): string {
   const tx = x + w / 2 + s / 2, ty = y - d / 2;
   const lr = Math.min(w * 0.17, 26);
   return G(
     // front face
-    P(`M${x} ${y}L${x + w} ${y}L${x + w} ${y + h}L${x} ${y + h}Z`, CRUST, sw) +
-    P(`M${x + w * 0.55} ${y}L${x + w} ${y}L${x + w} ${y + h}L${x + w * 0.7} ${y + h}Z`, k.ht(2), 0) +
+    P(`M${x} ${y}L${x + w} ${y}L${x + w} ${y + h}L${x} ${y + h}Z`, PAPER, sw) +
+    P(`M${x + sw / 2} ${y + h * 0.32}L${x + w - sw / 2} ${y + h * 0.32}L${x + w - sw / 2} ${y + h - sw / 2}L${x + sw / 2} ${y + h - sw / 2}Z`, k.ht(1), 0) +
+    P(`M${x + w * 0.58} ${y}L${x + w} ${y}L${x + w} ${y + h}L${x + w * 0.72} ${y + h}Z`, k.ht(2), 0) +
     L(`M${x + 3} ${y + h * 0.32}L${x + w - 3} ${y + h * 0.32}`, sw * 0.45) +
     // vents
-    [0.2, 0.4, 0.6, 0.8].map((f) => P(`M${x + w * f - 5} ${y + h * 0.62}h10`, "none", sw * 0.7)).join("") +
+    [0.2, 0.4, 0.6, 0.8].map((f) => P(`M${x + w * f - 5} ${y + h * 0.66}h10`, "none", sw * 0.75)).join("") +
     // lid
     P(`M${x} ${y}L${x + w} ${y}L${x + w + s} ${y - d}L${x + s} ${y - d}Z`, PAPER, sw) +
-    P(`M${x + w * 0.62 + s * 0.5} ${y - d}L${x + w + s} ${y - d}L${x + w} ${y}L${x + w * 0.74} ${y}Z`, k.ht(1), 0) +
+    P(`M${x + w * 0.66 + s * 0.5} ${y - d}L${x + w + s} ${y - d}L${x + w} ${y}L${x + w * 0.78} ${y}Z`, k.ht(1), 0) +
     (logo
       ? E(tx, ty, lr, Math.min(d * 0.3, lr * 0.55), TOMATO, sw * 0.6) +
-        P(`M${tx - lr * 0.5} ${ty - d * 0.1}L${tx + lr * 0.5} ${ty - d * 0.1}L${tx} ${ty + d * 0.17}Z`, CHEESE, sw * 0.4) +
+        P(`M${tx - lr * 0.5} ${ty - d * 0.1}L${tx + lr * 0.5} ${ty - d * 0.1}L${tx} ${ty + d * 0.17}Z`, PAPER, sw * 0.4) +
         L(`M${tx - lr * 0.5} ${ty - d * 0.1}L${tx + lr * 0.5} ${ty - d * 0.1}`, sw * 0.9, INK)
       : ""),
     "");
 }
 
-/** a whole pizza seen from above (radius r), with toppings and slice cuts */
+/** an ink leaf (local length ~22 * s): paper or spot fill, halftone on one half, ink midrib */
+export function inkLeaf(k: Kit, x: number, y: number, rot = 0, s = 1, fill = PAPER, w = 2): string {
+  return G(
+    P("M0 -11C7 -7 8.5 3 0 11C-8.5 3 -7 -7 0 -11Z", fill, w / s) +
+    P("M0 -11C7 -7 8.5 3 0 11Z", k.ht(2, INK, f1(4.2 / s)), 0) +
+    L("M0 -8C.7 -2 .7 3 0 9", 1.2 / s) +
+    P("M0 -11C7 -7 8.5 3 0 11C-8.5 3 -7 -7 0 -11Z", "none", w / s),
+    at(x, y, s, rot));
+}
+
+/** a whole pizza seen from above (radius r): paper cheese, halftone crust, tomato pepperoni */
 export function pizzaTop(k: Kit, cx: number, cy: number, r: number, cuts = 8, sw = 3): string {
-  const ri = r * 0.84;
+  const ri = r * 0.8;
   let cutsMk = "";
   for (let i = 0; i < cuts; i++) {
     const a = (i / cuts) * Math.PI * 2 + 0.2;
-    cutsMk += `M${cx} ${cy}L${(cx + Math.cos(a) * ri).toFixed(1)} ${(cy + Math.sin(a) * ri).toFixed(1)}`;
+    cutsMk += `M${(cx + Math.cos(a) * ri * 0.12).toFixed(1)} ${(cy + Math.sin(a) * ri * 0.12).toFixed(1)}L${(cx + Math.cos(a) * ri).toFixed(1)} ${(cy + Math.sin(a) * ri).toFixed(1)}`;
   }
   const tops: string[] = [];
   const pos = [[0.5, -0.9], [-0.55, -0.35], [0.15, 0.55], [0.62, 0.35], [-0.35, 0.62], [-0.05, -0.2], [0.42, -0.25], [-0.62, 0.15]];
   pos.forEach(([u, v], i) => {
     const px = cx + u * ri * 0.7, py = cy + v * ri * 0.7;
-    tops.push(i % 3 === 2 ? basilLeaf(px, py, i * 40, r / 60, 2) : pepperoni(k, px, py, r * 0.12, sw * 0.6));
+    tops.push(i % 3 === 2 ? inkLeaf(k, px, py, i * 40, r / 52, PAPER, 2) : pepperoni(k, px, py, r * 0.13, sw * 0.6));
   });
+  const ring = (rr: number) => `M${cx - rr} ${cy}a${rr} ${rr} 0 1 0 ${rr * 2} 0a${rr} ${rr} 0 1 0 ${-rr * 2} 0Z`;
+  const sh = (rr: number, push: number) =>
+    `M${(cx + rr * Math.cos(-0.7)).toFixed(1)} ${(cy + rr * Math.sin(-0.7)).toFixed(1)}A${rr} ${rr} 0 0 1 ${(cx + rr * Math.cos(2.27)).toFixed(1)} ${(cy + rr * Math.sin(2.27)).toFixed(1)}A${rr * push} ${rr * push} 0 0 0 ${(cx + rr * Math.cos(-0.7)).toFixed(1)} ${(cy + rr * Math.sin(-0.7)).toFixed(1)}Z`;
   return G(
-    C(cx, cy, r, CRUST, sw) +
-    C(cx, cy, r, k.ht(1), 0) +
-    C(cx, cy, ri, TOMATO, sw * 0.6) +
-    P(cheeseBlob(cx, cy, ri * 0.92, 11), CHEESE, sw * 0.5) +
+    C(cx, cy, r, PAPER, sw) +
+    `<path d="${ring(r) + ring(ri)}" fill="${k.ht(1)}" fill-rule="evenodd"/>` +
+    `<path d="${sh(r, 1.2)}" fill="${k.ht(2)}"/>` +
+    C(cx, cy, ri, PAPER, sw * 0.6) +
+    `<path d="${sh(ri, 1.35)}" fill="${k.ht(1)}"/>` +
+    L(cheeseBlob(cx, cy, ri * 0.86, 11), sw * 0.35, INK, `opacity=".5"`) +
+    L(cutsMk, sw * 0.42) +
     tops.join("") +
-    L(cutsMk, sw * 0.45, INK, `opacity=".7"`) +
-    L(`M${cx - r * 0.82} ${cy - r * 0.3}A${r * 0.9} ${r * 0.9} 0 0 1 ${cx - r * 0.25} ${cy - r * 0.86}`, sw * 0.6, PAPER, `opacity=".7"`));
+    L(`M${cx - r * 0.84} ${cy - r * 0.18}A${r * 0.9} ${r * 0.9} 0 0 1 ${cx - r * 0.36} ${cy - r * 0.8}`, sw * 0.45, INK, `opacity=".6"`));
 }
 
 /** a wobbly cheese blob path */

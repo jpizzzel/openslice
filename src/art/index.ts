@@ -8,21 +8,26 @@
 // objects), mascots.ts, glyphs.ts, posters.ts, scenes.ts.
 import type { Tool } from "../data/site";
 import { svg as wrapSvg, Kit, ArtOpts } from "./core";
-import { mascot as drawMascot, mascotBody, POSES, Who, Pose } from "./mascots";
+import { mascot as drawMascot, mascotBody, POSES, Who, Pose, MascotOpts } from "./mascots";
+import { miniTree as drawMiniTree, MiniTreeOpts } from "./tree";
 import { glyph as drawGlyph, glyphBody, GLYPH_IDS } from "./glyphs";
 import { poster as drawPoster } from "./posters";
 import { scene as drawScene, SceneId } from "./scenes";
 
-export type { Who, Pose, ArtOpts, SceneId };
+export type { Who, Pose, ArtOpts, SceneId, MascotOpts, MiniTreeOpts };
 export type GlyphId =
   | Tool["glyph"]
   | "box" | "box-open" | "slice" | "pizza" | "peel" | "oven" | "laptop" | "keyboard"
   | "wrench" | "basil" | "pepperoni" | "mushroom" | "olive" | "cheese-drip"
   | "star" | "sparkle" | "squiggle" | "arrow" | "github" | "terminal" | "cursor"
-  | "dough" | "rolling-pin" | "chef-hat" | "sneaker" | "headphones" | "coffee";
+  | "dough" | "rolling-pin" | "chef-hat" | "sneaker" | "headphones" | "coffee"
+  | "box-empty" | "ticket" | "receipt";
 
-/** The two mascots: Jonah and Peter drawn as pizza slice characters. viewBox 0 0 200 300. */
-export function mascot(who: Who, pose: Pose = "stand", opts: ArtOpts = {}): string {
+/**
+ * The two mascots: Jonah and Peter drawn as pizza slice characters. viewBox 0 0 200 300.
+ * opts.apron adds the Saturday apron (data-part="apron").
+ */
+export function mascot(who: Who, pose: Pose = "stand", opts: MascotOpts = {}): string {
   return drawMascot(who, pose, opts);
 }
 
@@ -39,6 +44,15 @@ export function poster(tool: Tool, opts: ArtOpts = {}): string {
 /** Wide illustration scenes. viewBox 0 0 800 500. */
 export function scene(id: SceneId, opts: ArtOpts = {}): string {
   return drawScene(id, opts);
+}
+
+/**
+ * A little ink tree for the footer "living trunk". viewBox 0 0 120 120.
+ * The stump beside it shows `years` growth rings; the crown carries years * 3
+ * leaves. Deterministic for the same input.
+ */
+export function miniTree(years: number, opts: MiniTreeOpts = {}): string {
+  return drawMiniTree(years, opts);
 }
 
 export function svg(viewBox: string, body: string, opts: ArtOpts = {}): string {
@@ -78,12 +92,12 @@ export function halftoneCss(color = "#141210", size = 6, r = 1.1): string {
  * Several mascots / glyphs inside one composed svg (shared defs).
  * items: [{ who, pose, x, y, s }] in a viewBox of your choosing.
  */
-export function group(viewBox: string, items: ({ who: Who; pose: Pose; x: number; y: number; s?: number } | { glyph: GlyphId; x: number; y: number; s?: number; r?: number })[], opts: ArtOpts = {}): string {
+export function group(viewBox: string, items: ({ who: Who; pose: Pose; x: number; y: number; s?: number; apron?: boolean } | { glyph: GlyphId; x: number; y: number; s?: number; r?: number })[], opts: ArtOpts = {}): string {
   const k = new Kit();
   const body = items.map((it) => {
     const s = it.s ?? 1;
     if ("who" in it)
-      return `<g transform="translate(${it.x} ${it.y}) scale(${s})" data-part="mascot-${it.who}">${mascotBody(k, it.who, it.pose)}</g>`;
+      return `<g transform="translate(${it.x} ${it.y}) scale(${s})" data-part="mascot-${it.who}">${mascotBody(k, it.who, it.pose, !!it.apron)}</g>`;
     return `<g transform="translate(${it.x} ${it.y}) rotate(${it.r ?? 0}) scale(${s})">${glyphBody(k, it.glyph)}</g>`;
   }).join("");
   return k.wrap(viewBox, body, opts);

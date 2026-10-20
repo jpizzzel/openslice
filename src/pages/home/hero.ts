@@ -1,158 +1,186 @@
-// HERO: mega "20 / 23" behind an open pizza box that bursts with tools.
-import { gsap } from "../../core/motion";
+// HERO: "the box is the logo". Our own pizza box flips its lid, steam curls up
+// and the tools fountain out. Scrolling packs them back in, shuts the lid and
+// slides the box down onto the menu board.
+import { gsap, ScrollTrigger } from "../../core/motion";
 import { bus } from "../../core/bus";
 import { glyph, type GlyphId } from "../../art";
-import { SITE, TOOLS, STATUS_LABEL } from "../../data/site";
+import { SITE } from "../../data/site";
 import { esc, type Kit } from "./kit";
+import { boxHTML, steamHTML } from "./box";
+import { ticketHTML } from "./ticket";
 
 interface Obj {
   id: GlyphId;
-  /** center, in % of the stage */
-  x: number;
-  y: number;
-  /** width, in % of the stage width */
+  /** center, relative to the box mouth, in box widths */
+  dx: number;
+  dy: number;
+  /** width, in box widths */
   s: number;
   /** resting rotation */
   r: number;
 }
 
-// A fountain: tight above the box, opening wide toward the top.
+// A fountain: tight over the pizza, opening wide around the open lid.
 const OBJECTS: Obj[] = [
-  { id: "laptop", x: 50, y: 13, s: 38, r: -7 },
-  { id: "terminal", x: 17, y: 9, s: 19, r: -10 },
-  { id: "squiggle", x: 84, y: 7, s: 15, r: 24 },
-  { id: "star", x: 3, y: 29, s: 11, r: 0 },
-  { id: "satsuma", x: 23, y: 33, s: 24, r: -12 },
-  { id: "tangerine", x: 82, y: 29, s: 22, r: 10 },
-  { id: "headphones", x: 97, y: 47, s: 20, r: 14 },
-  { id: "cursor", x: 61, y: 37, s: 11, r: -14 },
-  { id: "voice", x: 42, y: 49, s: 19, r: 8 },
-  { id: "coffee", x: 2, y: 55, s: 18, r: -8 },
-  { id: "register", x: 74, y: 59, s: 24, r: -6 },
-  { id: "keyboard", x: 19, y: 69, s: 30, r: 14 },
-  { id: "mystery", x: 50, y: 73, s: 19, r: 12 },
-  { id: "slice", x: 93, y: 77, s: 20, r: -22 },
-  { id: "basil", x: 32, y: 89, s: 14, r: -32 },
-  { id: "pepperoni", x: 67, y: 90, s: 12, r: 0 },
+  { id: "laptop", dx: 0.02, dy: -1.66, s: 0.44, r: -6 },
+  { id: "terminal", dx: -0.66, dy: -1.5, s: 0.27, r: -12 },
+  { id: "satsuma", dx: 0.7, dy: -1.46, s: 0.3, r: 10 },
+  { id: "star", dx: -0.34, dy: -2.0, s: 0.15, r: 0 },
+  { id: "github", dx: 0.42, dy: -1.98, s: 0.16, r: 10 },
+  { id: "tangerine", dx: -0.98, dy: -1.02, s: 0.27, r: -8 },
+  { id: "voice", dx: 0.98, dy: -0.98, s: 0.25, r: 10 },
+  { id: "register", dx: -0.5, dy: -0.94, s: 0.3, r: -6 },
+  { id: "headphones", dx: 0.5, dy: -0.94, s: 0.26, r: 14 },
+  { id: "slice", dx: -0.02, dy: -0.86, s: 0.26, r: -18 },
+  { id: "keyboard", dx: -0.98, dy: -0.4, s: 0.34, r: 12 },
+  { id: "mystery", dx: 0.98, dy: -0.4, s: 0.26, r: -10 },
+  { id: "basil", dx: -1.04, dy: -1.5, s: 0.15, r: -30 },
+  { id: "pepperoni", dx: 1.04, dy: -1.66, s: 0.13, r: 0 },
 ];
 
-const statement = `Making free tools for students, engineers and small businesses, out of the same house we sell pizza from.`;
+const OPEN = 118; // lid angle once open, in degrees around the hinge
+const intro = `Making free tools for students, engineers and small businesses, out of the same house we sell pizza from.`;
 
 export function heroHTML() {
   const objs = OBJECTS.map(
     (o, i) => `
-      <div class="o" style="--x:${o.x};--y:${o.y};--s:${o.s};--r:${o.r}deg" data-i="${i}">
+      <div class="o" style="--dx:${o.dx};--dy:${o.dy};--s:${o.s};--r:${o.r}deg" data-i="${i}">
         <div class="o-scroll"><div class="o-intro"><div class="o-float"><div class="o-wig">${glyph(o.id)}</div></div></div></div>
       </div>`,
   ).join("");
 
-  const oven = TOOLS.map(
-    (t) => `<li><a class="h-col__a" href="/toolbox/${t.slug}" data-cursor="Open"><span class="u-link">${esc(t.name)}</span></a> <span class="h-col__m">${STATUS_LABEL[t.status]}</span></li>`,
-  ).join("");
-
   return `
   <section class="h-hero" data-hero aria-labelledby="h-title">
-    <h1 id="h-title" class="sr-only">${SITE.name}: ${esc(SITE.tagline)} ${esc(statement)}</h1>
-
-    <div class="h-num h-num--l mega" aria-hidden="true"><span class="h-mask"><span class="h-num__in">${String(SITE.since).slice(0, 2)}</span></span></div>
-    <div class="h-num h-num--r mega" aria-hidden="true"><span class="h-mask"><span class="h-num__in">${String(SITE.since).slice(2)}</span></span></div>
-
-    <ul class="h-facts caps-red" aria-label="About us">
-      ${SITE.facts.map((f) => `<li><span class="h-line">${esc(f)}</span></li>`).join("")}
-    </ul>
-    <p class="h-and caps-red" aria-hidden="true"><span class="h-line">And</span></p>
-    <p class="h-statement caps-red" aria-hidden="true">${statement.split(" ").map((w) => `<span class="h-wm"><span class="h-w">${esc(w)}</span></span>`).join(" ")}</p>
-
-    <div class="h-stage" aria-hidden="true">
-      <svg class="h-lines" viewBox="0 0 400 300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.4">
-        <g class="h-lines__l">
-          <path d="M104 262 L58 140"/><path d="M126 250 L102 186"/>
-          <path d="M22 70 q9 -9 0 -18 q-9 -9 0 -18"/><path d="M60 40 l-10 -14"/>
-        </g>
-        <g class="h-lines__r">
-          <path d="M296 262 L342 140"/><path d="M274 250 L298 186"/>
-          <path d="M378 70 q-9 -9 0 -18 q9 -9 0 -18"/><path d="M340 40 l10 -14"/>
-        </g>
-      </svg>
-      <div class="h-objs">${objs}</div>
-      <div class="h-box"><div class="h-box__in">${glyph("box-open")}</div></div>
-    </div>
-
-    <div class="h-cols">
-      <div class="h-col h-col--oven">
-        <p class="label">In the oven</p>
-        <ul>${oven}</ul>
+    <div class="h-pin">
+      <div class="h-copy">
+        <h1 id="h-title" class="h-title">
+          <span class="sr-only">${esc(SITE.name)}: </span>
+          <span class="h-tl h-tl--serif"><span class="h-tl__in">Free tools,</span></span>
+          <span class="h-tl h-tl--caps"><span class="h-tl__in">served hot.</span></span>
+        </h1>
+        <div class="h-sub">
+          <p class="h-intro">${esc(intro)}</p>
+          <p class="h-links">
+            <a class="h-go" href="/toolbox" data-cursor="Open"><span class="h-ul">Open the toolbox</span><span class="h-go__ar" aria-hidden="true">${glyph("arrow")}</span></a>
+            <a class="h-ul h-src" href="${SITE.repo}" target="_blank" rel="noopener" data-cursor="GitHub">Read the source</a>
+          </p>
+        </div>
+        ${ticketHTML()}
       </div>
-      <div class="h-col h-col--for">
-        <p class="label">Built for</p>
-        <ul><li>Students</li><li>Engineers</li><li>Small businesses</li><li>Anyone tired of subscriptions</li></ul>
-      </div>
-      <div class="h-col h-col--stack">
-        <p class="label">Ingredients</p>
-        <ul><li>TypeScript</li><li>Swift</li><li>C# / .NET</li><li>ffmpeg</li><li>A lot of pizza</li></ul>
-        <p class="h-col__foot"><a href="${SITE.repo}" target="_blank" rel="noopener" class="u-link">Read the source</a></p>
-      </div>
-      <div class="h-col h-col--fed">
-        <p class="label">Fed by</p>
-        <ul><li><a class="u-link" href="${SITE.trunk.href}" target="_blank" rel="noopener">${esc(SITE.trunk.name)}</a> regulars</li><li>Each other</li><li>Late-night deadlines</li><li>Cold leftover slices</li></ul>
+
+      <div class="h-stage" aria-hidden="true">
+        <div class="h-bx" data-cursor="Peek">
+          <div class="bx-travel"><div class="bx-par"><div class="bx-hv"><div class="bx-in">
+            ${boxHTML()}
+            ${steamHTML()}
+          </div></div></div></div>
+        </div>
+        <div class="h-objs">${objs}</div>
       </div>
     </div>
   </section>`;
 }
 
-export function initHero(kit: Kit, intro: Promise<void>) {
+export function initHero(kit: Kit, introReady: Promise<void>) {
   const hero = kit.root.querySelector<HTMLElement>("[data-hero]")!;
-  const stage = hero.querySelector<HTMLElement>(".h-stage")!;
-  const box = hero.querySelector<HTMLElement>(".h-box__in")!;
+  const pin = hero.querySelector<HTMLElement>(".h-pin")!;
+  const anchor = hero.querySelector<HTMLElement>(".h-bx")!;
+  const mouthEl = hero.querySelector<HTMLElement>(".h-objs")!;
+  const travel = hero.querySelector<HTMLElement>(".bx-travel")!;
+  const par = hero.querySelector<HTMLElement>(".bx-par")!;
+  const hv = hero.querySelector<HTMLElement>(".bx-hv")!;
+  const boxIn = hero.querySelector<HTMLElement>(".bx-in")!;
+  const lid = hero.querySelector<HTMLElement>(".bx-lid")!;
+  const lidA = hero.querySelector<HTMLElement>(".bx-lid__a")!;
+  const lidB = hero.querySelector<HTMLElement>(".bx-lid__b")!;
+  const steam = hero.querySelector<HTMLElement>(".bx-steam")!;
+  const curls = [...steam.querySelectorAll<SVGElement>(".bx-curl")];
+  const shadow = hero.querySelector<HTMLElement>(".bx-shadow")!;
   const objs = [...hero.querySelectorAll<HTMLElement>(".o")];
-  const floats = objs.map((o) => o.querySelector<HTMLElement>(".o-float")!);
+  const scrolls = objs.map((o) => o.querySelector<HTMLElement>(".o-scroll")!);
   const intros = objs.map((o) => o.querySelector<HTMLElement>(".o-intro")!);
+  const floats = objs.map((o) => o.querySelector<HTMLElement>(".o-float")!);
   const wigs = objs.map((o) => o.querySelector<HTMLElement>(".o-wig")!);
-  const nums = [...hero.querySelectorAll<HTMLElement>(".h-num__in")];
-  const lines = [...hero.querySelectorAll<HTMLElement>(".h-facts .h-line")];
-  const and = hero.querySelector<HTMLElement>(".h-and .h-line")!;
-  const words = [...hero.querySelectorAll<HTMLElement>(".h-statement .h-w")];
-  const cols = [...hero.querySelectorAll<HTMLElement>(".h-col")];
-  const speed = hero.querySelector<SVGElement>(".h-lines")!;
+  const lines = [...hero.querySelectorAll<HTMLElement>(".h-tl__in")];
+  const sub = [...hero.querySelectorAll<HTMLElement>(".h-intro, .h-links")];
+  const ticket = hero.querySelector<HTMLElement>(".h-tk")!;
+  const drop = kit.root.querySelector<HTMLElement>(".h-mb__drop");
 
   if (kit.reduced) return;
 
-  // Hover / tap: springy wiggle + pop.
-  let lastPop = 0;
-  objs.forEach((o, i) => {
-    o.style.pointerEvents = "auto";
-    const wiggle = () => {
-      if (gsap.isTweening(wigs[i])) return;
-      const dir = i % 2 ? 1 : -1;
-      gsap.fromTo(
-        wigs[i],
-        { rotation: 22 * dir, scale: 1.18 },
-        { rotation: 0, scale: 1, duration: 1.2, ease: "elastic.out(1.1, 0.28)", overwrite: true },
-      );
-      const now = performance.now();
-      if (now - lastPop > 60) { bus.emit("sfx", { name: "pop" }); lastPop = now; }
+  // ---- geometry, read from untransformed layout boxes only
+  const rect = (el: Element) => el.getBoundingClientRect();
+  /** offset from an object's resting center to the box mouth */
+  const toMouth = (i: number) => {
+    const m = rect(mouthEl), o = rect(objs[i]);
+    return { x: m.left + m.width / 2 - (o.left + o.width / 2), y: m.top + m.height / 2 - (o.top + o.height / 2) };
+  };
+  /** where the box has to go to sit on the menu board, once the hero has scrolled on */
+  const landing = () => {
+    if (!drop) return { x: 0, y: 0, s: 1 };
+    const a = rect(anchor), d = rect(drop), h = rect(hero), p = rect(pin);
+    const inPin = a.top + a.height / 2 - p.top;
+    const pinEnd = h.top + h.height - p.height; // where the pin sits once it lets go
+    return {
+      x: d.left + d.width / 2 - (a.left + a.width / 2),
+      y: d.top + d.height / 2 - (pinEnd + inPin),
+      s: d.width / a.width,
     };
-    const ev = kit.fine ? "pointerenter" : "pointerdown";
-    o.addEventListener(ev, wiggle);
-    kit.onCleanup(() => o.removeEventListener(ev, wiggle));
+  };
+
+  // ---- initial state, hidden until the intro
+  kit.add(() => {
+    gsap.set(lines, { yPercent: 110 });
+    gsap.set(sub, { autoAlpha: 0, y: 24 });
+    gsap.set(ticket, { autoAlpha: 0, y: 90, rotation: 7 });
+    gsap.set(boxIn, { autoAlpha: 0, y: 70, scale: 0.9 });
+    gsap.set(shadow, { autoAlpha: 0, scale: 0.6 });
+    gsap.set(lidA, { rotationX: 0 });
+    gsap.set(intros, { autoAlpha: 0 });
+    gsap.set(steam, { autoAlpha: 0 });
   });
 
-  // Idle float + mouse parallax, one loop for all objects.
+  // ---- steam: a loop that only runs while the hero is on screen
+  let steamTl: gsap.core.Timeline | null = null;
+  kit.add(() => {
+    steamTl = gsap.timeline({ repeat: -1, paused: true });
+    curls.forEach((c, i) => {
+      steamTl!.fromTo(c,
+        { y: 30, scaleY: 0.7, autoAlpha: 0 },
+        { keyframes: [
+          { y: 0, scaleY: 1, autoAlpha: 0.9, duration: 0.9, ease: "sine.out" },
+          { y: -46, scaleY: 1.15, autoAlpha: 0, duration: 1.3, ease: "sine.in" },
+        ] },
+        i * 0.7);
+    });
+    ScrollTrigger.create({
+      trigger: hero, start: "top bottom", end: "bottom top",
+      onToggle: (s) => (s.isActive ? steamTl?.play() : steamTl?.pause()),
+    });
+  });
+
+  // ---- idle float + subtle mouse parallax (max 12px)
   const seeds = OBJECTS.map((o, i) => ({
-    ph: i * 1.7 + o.x * 0.05,
+    ph: i * 1.7 + o.dx * 2,
     sp: 0.7 + ((i * 37) % 10) / 18,
-    amp: 6 + ((i * 13) % 9),
-    rot: 2 + ((i * 7) % 5),
-    depth: 0.3 + o.s / 28,
+    amp: 4 + ((i * 13) % 6),
+    rot: 2 + ((i * 7) % 4),
+    depth: 0.45 + Math.min(0.55, o.s * 1.4),
   }));
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
-  // Box hop: one damped spring shared by the whole burst. A hop kicks it and every
-  // object jumps by its own depth, then settles back into its idle float.
-  const hop = { p: 0, v: 0 };
+  type Q = ReturnType<typeof gsap.quickTo>;
+  let qx: Q | null = null, qr: Q | null = null;
   if (kit.fine) {
+    kit.add(() => {
+      qx = gsap.quickTo(par, "x", { duration: 0.9, ease: "power3" });
+      qr = gsap.quickTo(par, "rotation", { duration: 1.1, ease: "power3" });
+    });
+    kit.onCleanup(() => { qx?.tween.kill(); qr?.tween.kill(); });
     const move = (e: PointerEvent) => {
       mouse.tx = (e.clientX / innerWidth) * 2 - 1;
       mouse.ty = (e.clientY / innerHeight) * 2 - 1;
+      qx?.(mouse.tx * 8);
+      qr?.(mouse.tx * 1.4);
     };
     window.addEventListener("pointermove", move, { passive: true });
     kit.onCleanup(() => window.removeEventListener("pointermove", move));
@@ -161,125 +189,136 @@ export function initHero(kit: Kit, intro: Promise<void>) {
     const k = 1 - Math.pow(0.002, dt);
     mouse.x += (mouse.tx - mouse.x) * k;
     mouse.y += (mouse.ty - mouse.y) * k;
-    if (hop.p !== 0 || hop.v !== 0) {
-      hop.v += (-140 * hop.p - 9 * hop.v) * dt;
-      hop.p += hop.v * dt;
-      if (Math.abs(hop.p) < 0.05 && Math.abs(hop.v) < 0.5) hop.p = hop.v = 0;
-    }
     for (let i = 0; i < floats.length; i++) {
       const s = seeds[i];
       const t = time * s.sp + s.ph;
-      const y = Math.sin(t) * s.amp - mouse.y * 22 * s.depth + hop.p * (0.5 + s.depth * 0.5);
-      const x = Math.cos(t * 0.6) * s.amp * 0.4 - mouse.x * 28 * s.depth;
-      const r = Math.sin(t * 0.8) * s.rot + mouse.x * 4 * s.depth;
+      const x = Math.cos(t * 0.6) * s.amp * 0.4 - mouse.x * 12 * s.depth;
+      const y = Math.sin(t) * s.amp - mouse.y * 10 * s.depth;
+      const r = Math.sin(t * 0.8) * s.rot + mouse.x * 3 * s.depth;
       floats[i].style.transform = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) rotate(${r.toFixed(2)}deg)`;
     }
   });
 
-  // Scroll: the burst spreads out, numerals part, box sinks. Rebuilt when the
-  // layout flips between wide and narrow. (Not gsap.matchMedia: it never removes
-  // its MediaQueryList listeners, so every home mount leaked two of them.)
-  const mq = window.matchMedia("(min-width: 721px)");
+  // ---- scroll: tools fly home in order, the lid shuts with a bounce, and the
+  // box rides down onto the menu board. Wide screens pin the hero (CSS sticky);
+  // narrow ones scrub while it scrolls. Rebuilt when the layout flips.
+  // (Not gsap.matchMedia: it never removes its MediaQueryList listeners.)
+  const mq = window.matchMedia("(min-width: 1024px)");
   let scrollTl: gsap.core.Timeline | null = null;
   const buildScroll = () => kit.add(() => {
+    scrollTl?.scrollTrigger?.kill();
     scrollTl?.revert();
     const wide = mq.matches;
+    const menu = kit.root.querySelector<HTMLElement>(".h-mb");
     const tl = (scrollTl = gsap.timeline({
       defaults: { ease: "none" },
       scrollTrigger: {
-        trigger: wide ? hero : stage, start: wide ? "top top" : "top 20%", end: "bottom top",
-        scrub: 0.7, invalidateOnRefresh: true,
+        trigger: wide ? hero : anchor,
+        start: wide ? "top top" : "top 55%",
+        endTrigger: menu ?? hero,
+        end: menu ? (wide ? "top 22%" : "top 30%") : "bottom top",
+        scrub: 0.6,
+        invalidateOnRefresh: true,
       },
     }));
-    objs.forEach((o, i) => {
-      const d = OBJECTS[i];
-      tl.to(o.querySelector(".o-scroll"), {
-        x: () => ((d.x - 50) / 100) * stage.offsetWidth * (wide ? 1.1 : 0.5),
-        y: () => -((100 - d.y) / 100) * stage.offsetHeight * (wide ? 0.55 : 0.3) - 40,
-        rotation: (d.x < 50 ? -1 : 1) * (20 + (i % 4) * 12),
-        scale: 1 + d.s / 60,
-      }, 0);
+    const n = scrolls.length;
+    scrolls.forEach((el, i) => {
+      tl.to(el, {
+        x: () => toMouth(i).x,
+        y: () => toMouth(i).y,
+        scale: 0.12,
+        rotation: (i % 2 ? 1 : -1) * 160,
+        autoAlpha: 0,
+        duration: 0.14,
+        ease: "power2.in",
+      }, (i / n) * 0.2);
     });
-    tl.to(speed, { scale: 1.5, opacity: 0 }, 0);
-    if (wide) {
-      tl.to(nums[0].closest(".h-num"), { xPercent: -28 }, 0)
-        .to(nums[1].closest(".h-num"), { xPercent: 28 }, 0)
-        .to(hero.querySelector(".h-box"), { y: 120, rotation: -6 }, 0)
-        .to(hero.querySelector(".h-facts"), { y: -80 }, 0)
-        .to(hero.querySelector(".h-statement"), { y: -40 }, 0);
-    }
+    tl.to(steam, { autoAlpha: 0, duration: 0.06 }, 0.02)
+      .to(lid, { rotationX: -OPEN, duration: 0.15, ease: "bounce.out" }, 0.3)
+      .to(hv, { keyframes: [
+        { scaleY: 0.92, scaleX: 1.05, duration: 0.025 },
+        { scaleY: 1, scaleX: 1, duration: 0.06, ease: "back.out(3)" },
+      ] }, 0.4)
+      .to(shadow, { autoAlpha: 0, duration: 0.1 }, 0.5)
+      .to(travel, {
+        x: () => landing().x,
+        y: () => landing().y,
+        scale: () => landing().s,
+        rotation: -7,
+        duration: 0.5,
+        ease: "power2.inOut",
+      }, 0.5);
   });
   buildScroll();
   mq.addEventListener("change", buildScroll);
   kit.onCleanup(() => mq.removeEventListener("change", buildScroll));
 
-  kit.add(() => {
-    // Intro: hidden until the preloader leaves.
-    gsap.set([...nums, ...lines, and, ...words], { yPercent: 115 });
-    gsap.set(intros, { scale: 0, autoAlpha: 0 });
-    gsap.set(box, { yPercent: 60, autoAlpha: 0 });
-    gsap.set(cols, { autoAlpha: 0, y: 24 });
-    gsap.set(speed, { autoAlpha: 0, scale: 0.6, transformOrigin: "50% 90%" });
-  });
-
-  // Hover (or tap) the box: it squashes, hops, and the whole burst jumps with it.
-  const hbox = hero.querySelector<HTMLElement>(".h-box")!;
-  let ready = false, lastHop = 0;
-  hbox.style.pointerEvents = "auto";
-  hbox.dataset.cursor = "Shake";
-  const shake = () => {
+  // ---- hover (or tap) the box: the lid peeks and everything jiggles
+  let ready = false, lastPeek = 0;
+  const peek = () => {
     const now = performance.now();
-    if (!ready || now - lastHop < 650) return;
-    lastHop = now;
+    if (!ready || now - lastPeek < 700) return;
+    lastPeek = now;
+    bus.emit("sfx", { name: "pop" });
     kit.add(() => {
       gsap.timeline({ defaults: { overwrite: "auto" } })
-        .to(box, { scaleY: 0.8, scaleX: 1.12, y: 0, duration: 0.12, ease: "power2.in", transformOrigin: "50% 100%" })
-        .add(() => { hop.v -= 520; bus.emit("sfx", { name: "pop" }); })
-        .to(box, { scaleY: 1.1, scaleX: 0.94, y: -34, rotation: 3, duration: 0.2, ease: "power2.out" })
-        .to(box, { y: 0, scaleX: 1, scaleY: 1, rotation: 0, duration: 1, ease: "elastic.out(1, 0.32)" });
+        .to(lidB, { rotationX: 16, duration: 0.22, ease: "power2.out" })
+        .to(lidB, { rotationX: 0, duration: 1.2, ease: "elastic.out(1, 0.32)" });
+      gsap.timeline({ defaults: { overwrite: "auto" } })
+        .to(hv, { scaleY: 0.94, scaleX: 1.04, duration: 0.12, ease: "power2.in" })
+        .to(hv, { scaleY: 1, scaleX: 1, duration: 0.9, ease: "elastic.out(1, 0.35)" });
+      wigs.forEach((w, i) => {
+        gsap.fromTo(w,
+          { rotation: (i % 2 ? 1 : -1) * 12, y: -10 },
+          { rotation: 0, y: 0, duration: 1, ease: "elastic.out(1.1, 0.3)", delay: i * 0.018, overwrite: true });
+      });
     });
   };
-  const hopEv = kit.fine ? "pointerenter" : "pointerdown";
-  hbox.addEventListener(hopEv, shake);
-  kit.onCleanup(() => hbox.removeEventListener(hopEv, shake));
+  const peekEv = kit.fine ? "pointerenter" : "pointerdown";
+  anchor.addEventListener(peekEv, peek);
+  kit.onCleanup(() => anchor.removeEventListener(peekEv, peek));
 
-  intro.then(() => kit.add(() => {
-    const boxR = box.getBoundingClientRect();
-    const bx = boxR.left + boxR.width / 2;
-    const by = boxR.top + boxR.height * 0.35;
-    const order = intros
-      .map((el, i) => {
-        const r = el.getBoundingClientRect();
-        return { el, i, dx: bx - (r.left + r.width / 2), dy: by - (r.top + r.height / 2) };
-      })
-      .sort((a, b) => (b.dy) - (a.dy) || a.i - b.i);
+  // ---- hover (or tap) a tool: springy wiggle
+  let lastPop = 0;
+  objs.forEach((o, i) => {
+    const wiggle = () => {
+      if (!ready || gsap.isTweening(wigs[i])) return;
+      const dir = i % 2 ? 1 : -1;
+      gsap.fromTo(wigs[i],
+        { rotation: 22 * dir, scale: 1.16 },
+        { rotation: 0, scale: 1, duration: 1.2, ease: "elastic.out(1.1, 0.28)", overwrite: true });
+      const now = performance.now();
+      if (now - lastPop > 60) { bus.emit("sfx", { name: "pop" }); lastPop = now; }
+    };
+    const ev = kit.fine ? "pointerenter" : "pointerdown";
+    o.addEventListener(ev, wiggle);
+    kit.onCleanup(() => o.removeEventListener(ev, wiggle));
+  });
 
-    const tops = words.map((w) => Math.round(w.parentElement!.offsetTop));
-    const uniq = [...new Set(tops)].sort((a, b) => a - b);
-    const lineIndex = tops.map((t) => uniq.indexOf(t));
-
+  // ---- intro
+  introReady.then(() => kit.add(() => {
     const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
-    tl.to(nums, { yPercent: 0, duration: 1.6, stagger: 0.12 }, 0)
-      .to(box, { yPercent: 0, autoAlpha: 1, duration: 1.1 }, 0.1)
-      .to(box, { scaleY: 0.86, scaleX: 1.08, duration: 0.18, ease: "power2.in", transformOrigin: "50% 100%" }, 0.55)
-      .to(box, { scaleY: 1, scaleX: 1, duration: 1.1, ease: "elastic.out(1, 0.35)" }, 0.73)
-      .to(speed, { autoAlpha: 1, scale: 1, duration: 1.2 }, 0.7);
-    order.forEach(({ el, i, dx, dy }, n) => {
-      tl.fromTo(
-        el,
-        { x: dx, y: dy, scale: 0.2, rotation: (i % 2 ? 1 : -1) * 90, autoAlpha: 0 },
-        { x: 0, y: 0, scale: 1, rotation: 0, autoAlpha: 1, duration: 1.15, ease: "back.out(1.5)" },
-        0.72 + n * 0.055,
-      );
+    tl.to(lines, { yPercent: 0, duration: 0.9, stagger: 0.06 }, 0)
+      .to(sub, { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.06 }, 0.18)
+      .to(ticket, { autoAlpha: 1, y: 0, rotation: 0, duration: 1.2, ease: "back.out(1.3)" }, 0.3)
+      .to(boxIn, { autoAlpha: 1, y: 0, scale: 1, duration: 0.8 }, 0.05)
+      .to(shadow, { autoAlpha: 1, scale: 1, duration: 0.8 }, 0.05)
+      // the lid flips open on its hinge and overshoots
+      .to(hv, { scaleY: 0.93, scaleX: 1.04, duration: 0.14, ease: "power2.in" }, 0.42)
+      .to(hv, { scaleY: 1, scaleX: 1, duration: 0.9, ease: "elastic.out(1, 0.4)" }, 0.56)
+      .to(lidA, { rotationX: OPEN, duration: 1.1, ease: "back.out(1.7)" }, 0.5)
+      .add(() => bus.emit("sfx", { name: "pop" }), 0.55)
+      .to(steam, { autoAlpha: 1, duration: 0.6, ease: "power1.out" }, 0.9)
+      .add(() => { steamTl?.play(0); }, 0.8);
+    // the tools fountain out of the mouth, nearest first
+    const order = intros.map((el, i) => ({ el, i, d: toMouth(i) }))
+      .sort((a, b) => Math.hypot(a.d.x, a.d.y) - Math.hypot(b.d.x, b.d.y));
+    order.forEach(({ el, i, d }, n) => {
+      const at = 0.66 + n * 0.035;
+      tl.fromTo(el, { x: d.x, autoAlpha: 0, scale: 0.2, rotation: (i % 2 ? 1 : -1) * 120 },
+        { x: 0, autoAlpha: 1, scale: 1, rotation: 0, duration: 0.95, ease: "back.out(1.6)" }, at)
+        .fromTo(el, { y: d.y }, { y: 0, duration: 0.95, ease: "back.out(1.6)" }, at);
     });
-    tl.to(lines, { yPercent: 0, duration: 1.1, stagger: 0.07 }, 0.4)
-      .to(and, { yPercent: 0, duration: 1.1 }, 0.95)
-      .to(words, {
-        yPercent: 0, duration: 1.1,
-        // stagger by visual line, so it reads as a masked line reveal
-        delay: (i: number) => lineIndex[i] * 0.08,
-      }, 1.05)
-      .to(cols, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.08 }, 1.2)
-      .add(() => { ready = true; }, 1.9);
+    tl.add(() => { ready = true; }, 1.5);
   }));
 }

@@ -1,4 +1,4 @@
-// LAB: "where slices get weird". A sticky mega count on the left and a
+// LAB: "where slices get weird". A sticky specimen label + lab notebook on the left and a
 // masonry of small interactive toys on the right. Each toy lives in its own
 // module under ./lab, starts only while its tile is on screen, and can be
 // expanded into a large modal view with a Flip animation.
@@ -15,6 +15,34 @@ gsap.registerPlugin(Flip);
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const ICON_EXPAND = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9 2h5v5M14 2 8.5 7.5M7 14H2V9M2 14l5.5-5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+// margin notes in the lab notebook, one per experiment (falls back to its hint)
+const NOTES: Record<string, string> = {
+  toppings: "pepperoni weather. bring a bucket.",
+  sauce: "spirals only. no squares.",
+  dough: "it has feelings. be gentle.",
+  halftone: "you, but in dots.",
+  clock: "every hour is a slice.",
+  type: "letters that flinch.",
+  printer: "receipts nobody asked for.",
+  cheese: "how far does it stretch?",
+};
+
+// a petri dish of toppings: ink line, halftone agar, a few colonies
+const DISH = `<svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+  <defs><pattern id="lab-dish-ht" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><circle cx="2.5" cy="2.5" r="0.95" fill="#141210"/></pattern></defs>
+  <ellipse cx="62" cy="64" rx="52" ry="52" fill="#141210" opacity=".12"/>
+  <circle cx="60" cy="60" r="52" fill="#f7f4ef" stroke="#141210" stroke-width="3"/>
+  <circle cx="60" cy="60" r="44" fill="#ffc93c" opacity=".35"/>
+  <path d="M60 16a44 44 0 0 1 0 88" fill="url(#lab-dish-ht)" opacity=".55"/>
+  <circle cx="60" cy="60" r="44" fill="none" stroke="#141210" stroke-width="1.6"/>
+  <circle cx="44" cy="46" r="9" fill="#ff3b2f" stroke="#141210" stroke-width="2.4"/>
+  <circle cx="41" cy="44" r="1.6" fill="#d92a1f"/><circle cx="47" cy="49" r="1.4" fill="#d92a1f"/>
+  <circle cx="74" cy="72" r="6.5" fill="#ff3b2f" stroke="#141210" stroke-width="2.2"/>
+  <circle cx="52" cy="78" r="3" fill="#141210"/><circle cx="52" cy="78" r="1.2" fill="#f7f4ef"/>
+  <path d="M70 38q10 -6 16 4q-10 6 -16 -4z" fill="#2f7d4f" stroke="#141210" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="82" cy="56" r="2" fill="#141210"/><circle cx="34" cy="66" r="1.6" fill="#141210"/><circle cx="64" cy="88" r="1.8" fill="#141210"/>
+  <path d="M22 34q6 -10 16 -14" fill="none" stroke="#f7f4ef" stroke-width="3" stroke-linecap="round"/>
+</svg>`;
 const ICON_CLOSE = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3 3 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
 interface Tile {
@@ -61,17 +89,22 @@ const page: Page = {
       <div class="p-lab__inner">
         <aside class="p-lab__side" aria-label="About the lab">
           <div class="p-lab__sticky">
-            <div class="p-lab__countwrap">
-              <p class="p-lab__count mega"><span class="sr-only">${total} experiments</span><span data-count data-n="${pad(reducedMotion ? total : 0)}" aria-hidden="true"></span></p>
-              <p class="p-lab__countlab"><span class="label">Experiments</span><span>in the oven</span></p>
+            <div class="p-lab__spec">
+              <span class="p-lab__tape" aria-hidden="true"></span>
+              <p class="p-lab__spec-top mono"><span>OpenSlice test kitchen</span><span>Dish A</span></p>
+              <div class="p-lab__spec-body">
+                <p class="p-lab__count"><span class="sr-only">${total} experiments</span><span data-count data-n="${pad(reducedMotion ? total : 0)}" aria-hidden="true"></span></p>
+                <span class="p-lab__dish" aria-hidden="true">${DISH}</span>
+              </div>
+              <p class="p-lab__spec-foot"><span class="mono">Specimens, all live</span><em class="serif">still growing. do not eat.</em></p>
             </div>
-            <nav class="p-lab__index" aria-label="Experiments">
-              <p class="label">Now playing</p>
+            <nav class="p-lab__index" aria-label="Lab notebook">
+              <p class="p-lab__book-h"><span class="mono">Lab notebook</span><span class="mono">p. ${pad(total)}</span></p>
               <ol>${EXPERIMENTS.map((e, i) => `
-                <li><button type="button" data-goto="${i}"><span class="mono">${pad(i + 1)}</span><span>${e.title}</span></button></li>`).join("")}
+                <li><button type="button" data-goto="${i}"><span class="mono">${pad(i + 1)}</span><span class="p-lab__ent">${e.title}</span><em class="serif p-lab__note">${NOTES[e.id] ?? e.hint.toLowerCase()}</em></button></li>`).join("")}
               </ol>
             </nav>
-            <p class="p-lab__about">Little toys we make when we should be doing homework. None of them are useful. All of them are fun to poke.</p>
+            <p class="p-lab__about serif">Little toys we make when we should be doing homework. None of them are useful. All of them are fun to poke.</p>
           </div>
         </aside>
         <section class="p-lab__main">
@@ -251,7 +284,7 @@ const page: Page = {
     const fit = (exp: Experiment) => {
       const vw = window.innerWidth, vh = window.innerHeight;
       const g = vw < 721 ? 16 : 40;
-      const maxW = Math.min(vw - g * 2, 1500), maxH = vh - g * 2 - (vw < 721 ? 132 : 92);
+      const maxW = Math.min(vw - g * 2, 1500), maxH = vh - g * 2 - (vw < 721 ? 160 : 112);
       const ar = exp.ar[0] / exp.ar[1];
       let w = maxW, h = w / ar;
       if (h > maxH) { h = maxH; w = h * ar; }
@@ -403,7 +436,7 @@ const page: Page = {
       // (no tilt in the single column layout: a rotated full width tile would poke past the viewport)
       tiles.forEach((t, i) => gsap.set(t.el, { opacity: 0, y: 70, rotation: cols === 1 ? 0 : i % 2 ? 2.2 : -2.2, transformOrigin: "50% 100%" }));
       const masks = pageEl.querySelectorAll(".p-lab__mask > *");
-      const meta = pageEl.querySelectorAll(".p-lab__meta > div, .p-lab__index li, .p-lab__about, .p-lab__countlab");
+      const meta = pageEl.querySelectorAll(".p-lab__meta > div, .p-lab__index li, .p-lab__book-h, .p-lab__about, .p-lab__spec");
       gsap.set(masks, { yPercent: 110 });
       gsap.set(meta, { opacity: 0, y: 14 });
       gsap.set(countEl, { yPercent: 30, opacity: 0 });
@@ -411,8 +444,9 @@ const page: Page = {
         if (!alive) return;
         const counter = { v: 0 };
         tweens.push(
-          gsap.timeline({ delay: 0.1 })
-            .to(masks, { yPercent: 0, duration: 1.1, ease: "expo.out", stagger: 0.08 }, 0)
+          // non-first visits: start as the transition cover peels away
+          gsap.timeline({ delay: first ? 0.05 : 0.2 })
+            .to(masks, { yPercent: 0, duration: 0.9, ease: "expo.out", stagger: 0.06 }, 0)
             .to(meta, { opacity: 1, y: 0, duration: 0.8, ease: "expo.out", stagger: 0.035 }, 0.2)
             .to(countEl, { yPercent: 0, opacity: 1, duration: 1.2, ease: "expo.out" }, 0)
             .to(counter, {

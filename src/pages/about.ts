@@ -26,7 +26,7 @@ const CHAPTERS: Chapter[] = [
     y: 2023,
     title: "Freshman roommates",
     caption: "Fall 2023. Two freshmen, one room, one Wi-Fi password. The first of a lot of late nights.",
-    poses: ["stand", "wave"],
+    poses: ["stand", "sit"],
     glyphs: ["laptop", "coffee"],
   },
   {
@@ -36,7 +36,7 @@ const CHAPTERS: Chapter[] = [
     y: 2024,
     title: "Roommates, on purpose",
     caption: "Year two. We picked each other again, which probably says something about both of us.",
-    poses: ["sit", "point"],
+    poses: ["point", "wave"],
     glyphs: ["keyboard", "terminal"],
   },
   {
@@ -46,7 +46,7 @@ const CHAPTERS: Chapter[] = [
     y: 2025,
     title: "Still under one roof",
     caption: "Year three, still roommates. More side projects than free time, which is a bad ratio.",
-    poses: ["carry", "push"],
+    poses: ["push", "carry"],
     glyphs: ["dough", "rolling-pin"],
   },
   {
@@ -57,7 +57,7 @@ const CHAPTERS: Chapter[] = [
     title: "Still at it",
     caption:
       "Saturday Slices runs out of our house. Peter rebuilds a paid Mac converter for himself, Jonah answers with one for Windows, and the toolbox starts to fill up.",
-    poses: ["wave", "carry"],
+    poses: ["carry", "point"],
     glyphs: [],
   },
   {
@@ -66,9 +66,18 @@ const CHAPTERS: Chapter[] = [
     year: "20XX",
     title: "The rest of our lives",
     caption: "OpenSlice is meant to outlive our lease. New branches, same trunk. Every tool stays free.",
-    poses: ["wave", "wave"],
+    poses: ["wave", "push"],
     glyphs: ["star", "sparkle"],
   },
+];
+
+/** credits, rung up as receipt line items: [qty, item, small print] */
+const RECEIPT: [string, string, string][] = [
+  ["1x", "Design &amp; build", "Jonah &amp; Peter"],
+  ["1x", "Vite", ""],
+  ["1x", "GSAP + Lenis", ""],
+  ["4x", "Fonts", "Bricolage Grotesque, Big Shoulders Display, Instrument Serif, JetBrains Mono"],
+  ["&infin;", "Late nights", ""],
 ];
 
 const PRINCIPLES: [string, string][] = [
@@ -124,7 +133,7 @@ function personHTML(p: Person, i: number) {
     </div>
     <div class="ab-person__body">
       <p class="mono ab-person__idx">${String(i + 1).padStart(2, "0")} / ${i === 0 ? "Windows side" : "Mac side"}</p>
-      <h3 class="ab-person__name" id="ab-p-${p.id}">${esc(p.first)}<span>${esc(p.name.slice(p.first.length + 1))}</span></h3>
+      <h3 class="ab-person__name" id="ab-p-${p.id}"><span class="ab-person__first">${esc(p.first)}</span> <span class="ab-person__last">${esc(p.name.slice(p.first.length + 1))}</span></h3>
       <dl class="ab-person__meta">
         <div><dt class="label">Role</dt><dd>${esc(p.role)}</dd></div>
         <div><dt class="label">Elsewhere</dt><dd><a class="u-link" href="${p.site}" target="_blank" rel="noopener" data-cursor="Visit">${esc(p.siteLabel)}</a></dd></div>
@@ -187,9 +196,11 @@ function template() {
       <h2 id="ab-duo-h"><span class="caps-red">Two people,</span> <em class="serif">one repo.</em></h2>
     </header>
     <div class="ab-duo__grid">
-      ${personHTML(j, 0)}
-      <span class="ab-duo__amp serif" aria-hidden="true">&amp;</span>
-      ${personHTML(p, 1)}
+      <div class="ab-duo__pair">
+        ${personHTML(j, 0)}
+        <span class="ab-duo__amp serif" aria-hidden="true">&amp;</span>
+        ${personHTML(p, 1)}
+      </div>
     </div>
   </section>
 
@@ -212,27 +223,36 @@ function template() {
     <div class="ab-hi__side">
       <p class="label">Contact</p>
       <p class="ab-hi__line serif">No inbox, no form. Find us on our own sites, in the repo, or behind the counter on a Saturday.</p>
-      <p class="label ab-hi__hint">${finePointer ? "Psst. The cards move. Give them a tug." : "Two cards, tossed on the table."}</p>
+      <p class="label ab-hi__hint">${finePointer ? "Psst. The ticket and the receipt move. Give them a tug." : "A ticket and a receipt, tossed on the counter."}</p>
     </div>
     <div class="ab-hi__table">
-      <article class="ab-card ab-card--credits" aria-labelledby="ab-cred-h">
-        <h2 id="ab-cred-h" class="ab-card__h">Credits</h2>
-        <dl class="ab-card__grid">
-          <div><dt>Design &amp; build</dt><dd>Jonah &amp; Peter<br><span class="ab-card__soft">(with a little help)</span></dd></div>
-          <div><dt>Built with</dt><dd>Vite<br>GSAP<br>Lenis</dd></div>
-          <div><dt>Fonts</dt><dd>Bricolage Grotesque<br>Big Shoulders Display<br>Instrument Serif<br>JetBrains Mono</dd></div>
-        </dl>
-        <span class="ab-card__mascot" aria-hidden="true">${mascot("jonah", "point")}</span>
+      <article class="ab-card ab-rcpt" aria-labelledby="ab-cred-h">
+        <div class="ab-rcpt__paper">
+          <p class="ab-rcpt__shop" aria-hidden="true">OpenSlice</p>
+          <p class="ab-rcpt__addr mono">${esc(SITE.where)} / est. ${SITE.since}</p>
+          <p class="ab-rcpt__row mono"><span>Receipt #${SITE.since}-${String(TOOLS.length).padStart(3, "0")}</span><span>Table: the internet</span></p>
+          <h2 id="ab-cred-h" class="ab-rcpt__h mono">Credits</h2>
+          <ul class="ab-rcpt__items mono">
+            ${RECEIPT.map(([q, what, note]) => `<li><span>${q}</span><span>${what}${note ? `<small>${note}</small>` : ""}</span><span>$0.00</span></li>`).join("")}
+          </ul>
+          <p class="ab-rcpt__row mono"><span>Subtotal</span><span>$0.00</span></p>
+          <p class="ab-rcpt__row mono"><span>Subscriptions</span><span>$0.00</span></p>
+          <p class="ab-rcpt__total"><span>Total</span><span>$0.00</span></p>
+          <span class="ab-rcpt__bars" aria-hidden="true"></span>
+          <p class="ab-rcpt__thanks mono">thank you, come again</p>
+        </div>
       </article>
-      <article class="ab-card ab-card--hi" aria-labelledby="ab-hi-h">
-        <h2 id="ab-hi-h" class="ab-card__h">Come say hi</h2>
-        <dl class="ab-card__grid">
+      <article class="ab-card ab-order" aria-labelledby="ab-hi-h">
+        <span class="ab-order__bulbs" aria-hidden="true"></span>
+        <p class="ab-order__no mono"><span>Ticket #001</span><span>For pickup</span></p>
+        <h2 id="ab-hi-h" class="ab-order__h"><span class="ab-order__up">Order up!</span><em class="serif">come say hi.</em></h2>
+        <dl class="ab-order__lines">
           <div><dt>Jonah, online</dt><dd><a href="${j.site}" target="_blank" rel="noopener">${j.siteLabel}</a></dd></div>
           <div><dt>Peter, online</dt><dd><a href="${p.site}" target="_blank" rel="noopener">${p.siteLabel}</a></dd></div>
           <div><dt>Read every line</dt><dd><a href="${SITE.repo}" target="_blank" rel="noopener">GitHub repo</a></dd></div>
           <div><dt>Hungry?</dt><dd><a href="${SITE.trunk.href}" target="_blank" rel="noopener">${SITE.trunk.name}</a></dd></div>
         </dl>
-        <p class="ab-card__foot mono"><span>OpenSlice</span><span>Est. ${SITE.since}</span></p>
+        <p class="ab-order__foot mono"><span>OpenSlice</span><span>Est. ${SITE.since}</span></p>
       </article>
     </div>
   </section>
@@ -287,8 +307,9 @@ const page: Page = {
 
     whenReady(first, () => alive, () =>
       ctx.add(() => {
-        const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
-        tl.to(".ab-li", { yPercent: 0, duration: 1.3, stagger: 0.1 })
+        // non-first visits: start as the transition cover peels away
+        const tl = gsap.timeline({ defaults: { ease: "expo.out" }, delay: first ? 0 : 0.2 });
+        tl.to(".ab-li", { yPercent: 0, duration: 0.9, stagger: 0.06 })
           .to(".ab-hero__num", { autoAlpha: 1, y: 0, duration: 1.6, stagger: 0.08 }, 0.1)
           .to(".ab-hero__art", { autoAlpha: 1, scale: 1, y: 0, duration: 1.6 }, 0.25)
           .to(".ab-hero__meta > div, .ab-hero__lede, .ab-hero__scroll", { autoAlpha: 1, y: 0, duration: 1, stagger: 0.05 }, 0.5);
@@ -312,8 +333,8 @@ const page: Page = {
       gsap.from(".ab-person", { y: 80, autoAlpha: 0, duration: 1.2, stagger: 0.15, ease: "expo.out", scrollTrigger: { trigger: ".ab-duo__grid", start: "top 80%", once: true } });
 
       // Cards tossed onto the table.
-      gsap.from(".ab-card--credits", { y: 160, xPercent: -20, rotation: 18, autoAlpha: 0, duration: 1.4, ease: "expo.out", scrollTrigger: { trigger: ".ab-hi__table", start: "top 80%", once: true } });
-      gsap.from(".ab-card--hi", { y: 200, xPercent: 20, rotation: -16, autoAlpha: 0, duration: 1.4, delay: 0.12, ease: "expo.out", scrollTrigger: { trigger: ".ab-hi__table", start: "top 80%", once: true } });
+      gsap.from(".ab-rcpt", { y: 160, xPercent: -20, rotation: 18, autoAlpha: 0, duration: 1.4, ease: "expo.out", scrollTrigger: { trigger: ".ab-hi__table", start: "top 80%", once: true } });
+      gsap.from(".ab-order", { y: 200, xPercent: 20, rotation: -16, autoAlpha: 0, duration: 1.4, delay: 0.12, ease: "expo.out", scrollTrigger: { trigger: ".ab-hi__table", start: "top 80%", once: true } });
     });
 
     // Timeline: a horizontal scroll on wide screens, stacked list on small ones.

@@ -5,6 +5,8 @@
   position: relative;
   overflow-x: clip;
 }
+/* clear the fixed chrome rail (logo + meta) on the left */
+@media (min-width: 721px) { .p-about { --pad-l: clamp(88px, 6vw, 96px); } }
 .p-about .kw-mask { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: 0.08em; margin-bottom: -0.08em; }
 .p-about .kw { display: inline-block; will-change: transform; }
 
@@ -85,6 +87,7 @@
 }
 .p-about .ab-hero__meta dd { margin-top: 4px; color: var(--ink); }
 .p-about .ab-hero__lede {
+  text-wrap: balance;
   grid-column: 9 / -1;
   grid-row: 3;
   align-self: end;
@@ -152,7 +155,8 @@
 .p-about .ab-ch__title { font-weight: 400; font-size: clamp(2.4rem, 1rem + 3.4vw, 4.6rem); line-height: 0.9; }
 .p-about .ab-ch__title .caps-red { display: block; font-size: 1em; }
 .p-about .ab-ch__title .serif { display: block; font-size: 0.78em; line-height: 1; margin-top: 0.1em; }
-.p-about .ab-ch__cap { font-size: clamp(1rem, 0.9rem + 0.3vw, 1.2rem); line-height: 1.35; color: var(--ink-2); max-width: 26rem; }
+.p-about .ab-ch__title .serif, .p-about .ab-how__s { text-wrap: balance; }
+.p-about .ab-ch__cap { text-wrap: pretty; font-size: clamp(1rem, 0.9rem + 0.3vw, 1.2rem); line-height: 1.35; color: var(--ink-2); max-width: 26rem; }
 .p-about .ab-ch__art { position: relative; display: flex; align-items: flex-end; justify-content: center; min-height: 0; }
 .p-about .ab-ch__year {
   position: absolute;
@@ -204,16 +208,27 @@
 .p-about .ab-time__ticks li.is-on { color: var(--tomato); }
 
 /* ---------- duo ---------- */
-.p-about .ab-duo { padding: clamp(96px, 14vw, 220px) 0 clamp(64px, 8vw, 140px); }
-.p-about .ab-duo__grid {
+.p-about .ab-duo { padding: clamp(96px, 10vw, 160px) 0; }
+.p-about .ab-duo__grid { padding: 0 var(--pad-r) 0 var(--pad-l); }
+.p-about .ab-duo__pair {
+  --gap: clamp(56px, 8vw, 150px);
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: var(--gutter);
-  padding: 0 var(--pad-r) 0 var(--pad-l);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: var(--gap);
   align-items: start;
+  container-type: inline-size;
 }
-.p-about .ab-duo__amp { font-size: clamp(5rem, 2rem + 8vw, 12rem); line-height: 1; color: var(--tomato); align-self: center; font-style: italic; }
-.p-about .ab-person { display: grid; gap: 28px; }
+/* the ampersand sits in the gap, level with the middle of the portraits
+   (each portrait is 5:4, so its middle is 0.4 of a column width down) */
+.p-about .ab-duo__amp {
+  position: absolute; left: 50%; top: calc((100cqi - var(--gap)) / 2 * 0.4);
+  translate: -50% -50%;
+  z-index: 2;
+  font-size: clamp(4.5rem, 1rem + 7vw, 10rem); line-height: 1; color: var(--tomato); font-style: italic;
+  pointer-events: none;
+}
+.p-about .ab-person { display: grid; gap: 28px; container-type: inline-size; }
 .p-about .ab-person__art {
   position: relative;
   aspect-ratio: 5 / 4;
@@ -241,13 +256,16 @@
   font-family: var(--f-display);
   text-transform: uppercase;
   font-weight: 700;
-  font-size: clamp(4rem, 2rem + 6vw, 9rem);
-  line-height: 0.82;
+  /* first and last name always on two lines, sized to the column so the
+     longest surname fits and both cards line up row for row */
+  font-size: min(9rem, 17cqi);
+  line-height: 0.84;
   letter-spacing: -0.005em;
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.2em;
+  display: grid;
   margin: 8px 0 22px;
 }
-.p-about .ab-person__name span { color: var(--tomato); font-weight: 600; }
+.p-about .ab-person__name > span { display: block; white-space: nowrap; }
+.p-about .ab-person__last { color: var(--tomato); font-weight: 600; }
 .p-about .ab-person__meta { display: grid; gap: 14px; }
 .p-about .ab-person__meta > div { display: grid; grid-template-columns: 110px 1fr; gap: var(--gutter); border-top: 1px solid var(--line); padding-top: 12px; }
 .p-about .ab-person__tools { display: grid; gap: 6px; }
@@ -257,7 +275,7 @@
 .p-about .ab-person__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); align-self: center; flex: none; }
 
 /* ---------- how ---------- */
-.p-about .ab-how { padding: clamp(64px, 8vw, 140px) 0; }
+.p-about .ab-how { padding: clamp(96px, 10vw, 160px) 0; }
 .p-about .ab-how__list { padding: 0 var(--pad-r) 0 var(--pad-l); counter-reset: none; }
 .p-about .ab-how__item {
   display: grid;
@@ -277,22 +295,20 @@
 }
 .p-about .ab-how__s .serif { font-weight: 400; font-size: 1.08em; letter-spacing: -0.02em; color: var(--tomato); }
 
-/* ---------- come say hi ---------- */
+/* ---------- come say hi: an ORDER UP ticket and a paper receipt ---------- */
 .p-about .ab-hi {
   display: grid;
   grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
   gap: var(--gutter);
-  padding: clamp(80px, 10vw, 180px) var(--pad-r) clamp(60px, 6vw, 120px) var(--pad-l);
+  padding: clamp(96px, 10vw, 160px) var(--pad-r) clamp(96px, 10vw, 160px) var(--pad-l);
   align-items: center;
 }
 .p-about .ab-hi__side { display: grid; gap: 18px; align-self: start; max-width: 24rem; }
-.p-about .ab-hi__line { font-size: clamp(1.5rem, 1rem + 1.4vw, 2.4rem); line-height: 1.05; }
+.p-about .ab-hi__line { font-size: clamp(1.5rem, 1rem + 1.4vw, 2.4rem); line-height: 1.05; text-wrap: balance; }
 .p-about .ab-hi__hint { color: var(--tomato); }
-.p-about .ab-hi__table { position: relative; min-height: clamp(640px, 52vw, 840px); perspective: 1400px; }
+.p-about .ab-hi__table { position: relative; min-height: clamp(700px, 56vw, 860px); }
 .p-about .ab-card {
   position: absolute;
-  width: min(100%, 560px);
-  padding: clamp(28px, 3vw, 44px);
   touch-action: pan-y;
   cursor: grab;
   user-select: none;
@@ -300,35 +316,93 @@
 }
 .p-about .ab-card.is-grabbed { cursor: grabbing; }
 .p-about .ab-card.is-top { z-index: 3; }
-.p-about .ab-card__h { font-family: var(--f-sans); font-weight: 500; text-transform: uppercase; font-size: clamp(2.2rem, 1.4rem + 2vw, 3.4rem); letter-spacing: -0.04em; line-height: 0.9; margin-bottom: clamp(24px, 3vw, 44px); font-variation-settings: "wdth" 75; }
-.p-about .ab-card__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px var(--gutter); }
-.p-about .ab-card__grid dt { font-size: var(--t-sm); opacity: 0.6; margin-bottom: 6px; }
-.p-about .ab-card__grid dd { font-size: 0.95rem; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
-.p-about .ab-card__soft { font-weight: 400; opacity: 0.7; }
-.p-about .ab-card--credits {
-  /* tucked under the dark card, but low enough that its own title reads */
-  left: 0; top: 52%;
+
+/* receipt: thermal paper, zigzag torn edges (mask), mono line items */
+.p-about .ab-rcpt {
+  --zz: 9px;
+  left: 2%; top: 14%;
+  width: min(100%, 360px);
   rotate: 4deg;
-  background: #dcd8d1;
-  color: var(--ink);
-  box-shadow: 0 30px 60px -30px rgb(20 18 16 / 0.35);
-  min-height: 380px;
   z-index: 1;
 }
-.p-about .ab-card--credits .ab-card__grid { max-width: 74%; }
-.p-about .ab-card__mascot { position: absolute; right: 14px; bottom: 0; width: 26%; pointer-events: none; }
-.p-about .ab-card__mascot svg { width: 100%; height: auto; }
-.p-about .ab-card--hi {
+.p-about .ab-rcpt::before,
+.p-about .ab-rcpt__paper {
+  -webkit-mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / calc(var(--zz) * 2) var(--zz) repeat-x,
+    linear-gradient(#000 0 0) center / 100% calc(100% - var(--zz) * 2) no-repeat,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--zz) * 2) var(--zz) repeat-x;
+  mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / calc(var(--zz) * 2) var(--zz) repeat-x,
+    linear-gradient(#000 0 0) center / 100% calc(100% - var(--zz) * 2) no-repeat,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--zz) * 2) var(--zz) repeat-x;
+}
+/* hard offset shadow, same torn silhouette */
+.p-about .ab-rcpt::before { content: ""; position: absolute; inset: 0; translate: 8px 10px; background: rgb(20 18 16 / 0.16); }
+.p-about .ab-rcpt__paper {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: calc(var(--zz) + 22px) 24px calc(var(--zz) + 22px);
+  background: #fbf9f4;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.35;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.p-about .ab-rcpt__shop { font-family: var(--f-display); font-weight: 800; font-size: 2.6rem; line-height: 0.9; text-align: center; letter-spacing: 0.01em; }
+.p-about .ab-rcpt__addr { text-align: center; color: var(--ink-2); margin-top: -4px; }
+.p-about .ab-rcpt__row { display: flex; justify-content: space-between; gap: 12px; }
+.p-about .ab-rcpt__h { border-block: 1px dashed var(--ink); padding: 8px 0; text-align: center; font-weight: 700; letter-spacing: 0.3em; font-size: 12px; }
+.p-about .ab-rcpt__items { display: grid; gap: 8px; padding-bottom: 10px; border-bottom: 1px dashed var(--ink); }
+.p-about .ab-rcpt__items li { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.p-about .ab-rcpt__items small { display: block; font-size: 10px; color: var(--ink-3); text-transform: none; letter-spacing: 0; line-height: 1.3; margin-top: 2px; }
+.p-about .ab-rcpt__total {
+  display: flex; justify-content: space-between;
+  font-family: var(--f-mono); font-weight: 800; font-size: 1.5rem; line-height: 1;
+  border-top: 2px solid var(--ink); padding-top: 10px; margin-top: 2px;
+}
+.p-about .ab-rcpt__bars {
+  height: 46px; margin: 8px 6% 0;
+  background: repeating-linear-gradient(90deg,
+    var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 8px,
+    var(--ink) 8px 11px, transparent 11px 12px, var(--ink) 12px 13px, transparent 13px 16px,
+    var(--ink) 16px 17px, transparent 17px 19px, var(--ink) 19px 22px, transparent 22px 25px);
+}
+.p-about .ab-rcpt__thanks { text-align: center; text-transform: lowercase; letter-spacing: 0.08em; color: var(--tomato-deep); font-weight: 700; }
+
+/* ORDER UP: a dark kitchen ticket sign with a row of bulbs */
+.p-about .ab-order {
   right: 0; top: 0;
+  width: min(100%, 520px);
   rotate: -3deg;
-  background: #1a1918;
+  padding: 46px clamp(24px, 2.6vw, 38px) 30px;
+  background: var(--ink);
   color: var(--paper);
-  box-shadow: 0 40px 80px -30px rgb(20 18 16 / 0.6);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 6px var(--ink), inset 0 0 0 7.5px rgb(247 244 239 / 0.22), 10px 12px 0 rgb(20 18 16 / 0.16);
   z-index: 2;
 }
-.p-about .ab-card--hi a { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size 0.5s var(--ease-out), color 0.3s; }
-.p-about .ab-card--hi a:hover, .p-about .ab-card--hi a:focus-visible { background-size: 100% 1px; color: var(--cheese); }
-.p-about .ab-card__foot { display: flex; justify-content: space-between; margin-top: clamp(28px, 3vw, 48px); opacity: 0.55; }
+.p-about .ab-order__bulbs {
+  position: absolute; left: 22px; right: 22px; top: 16px; height: 12px;
+  background: radial-gradient(circle at 6px 6px, var(--cheese) 0 4px, rgb(255 201 60 / 0.25) 4.5px 5.5px, transparent 6px) 0 0 / 24px 12px repeat-x;
+}
+.p-about .ab-order__no { display: flex; justify-content: space-between; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: rgb(247 244 239 / 0.6); border-bottom: 1px dashed rgb(247 244 239 / 0.3); padding-bottom: 10px; }
+.p-about .ab-order__h { display: grid; margin: 18px 0 24px; font-weight: 400; }
+.p-about .ab-order__up { font-family: var(--f-display); text-transform: uppercase; font-weight: 800; font-size: clamp(3.6rem, 2rem + 3.4vw, 6rem); line-height: 0.8; color: var(--tomato); letter-spacing: 0.005em; }
+.p-about .ab-order__h em { font-size: clamp(1.6rem, 1rem + 1vw, 2.2rem); line-height: 1; color: var(--cheese); margin-top: 4px; }
+.p-about .ab-order__lines { display: grid; gap: 0; font-family: var(--f-mono); font-size: 12px; }
+.p-about .ab-order__lines > div {
+  display: grid; grid-template-columns: auto minmax(12px, 1fr) auto; align-items: baseline; gap: 8px;
+  padding: 9px 0; border-bottom: 1px solid rgb(247 244 239 / 0.12);
+}
+/* dotted leader between the label and the link, like a menu */
+.p-about .ab-order__lines > div::after { content: ""; grid-column: 2; grid-row: 1; align-self: end; height: 1px; margin-bottom: 4px; background: radial-gradient(circle, rgb(247 244 239 / 0.4) 0.8px, transparent 1.2px) 0 0 / 5px 1px repeat-x; }
+.p-about .ab-order__lines dt { text-transform: uppercase; letter-spacing: 0.04em; color: rgb(247 244 239 / 0.62); }
+.p-about .ab-order__lines dd { grid-column: 3; font-family: var(--f-sans); font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; text-align: right; }
+.p-about .ab-order a { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size 0.5s var(--ease-out), color 0.3s; }
+.p-about .ab-order a:hover, .p-about .ab-order a:focus-visible { background-size: 100% 1px; color: var(--cheese); }
+.p-about .ab-order__foot { display: flex; justify-content: space-between; margin-top: 22px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.55; }
 
 /* ---------- reduced motion ---------- */
 .p-about.is-static .ab-ch__g { opacity: 1; transform: none; }
@@ -356,16 +430,13 @@
   .p-about .ab-hero__num { font-size: 44vw; bottom: 0; }
   .p-about .ab-hero__meta { grid-column: 1; grid-row: 4; grid-template-columns: 1fr 1fr; }
   .p-about .ab-hero__lede { grid-column: 1; grid-row: 3; }
-  .p-about .ab-duo__grid { grid-template-columns: 1fr; gap: 56px; }
+  .p-about .ab-duo__pair { grid-template-columns: 1fr; row-gap: 56px; }
   .p-about .ab-duo__amp { display: none; }
   .p-about .ab-person__meta > div { grid-template-columns: 84px 1fr; }
   .p-about .ab-how__item { grid-template-columns: 1fr; gap: 6px; }
   .p-about .ab-hi { grid-template-columns: 1fr; gap: 40px; }
-  .p-about .ab-hi__table { min-height: 0; display: grid; perspective: none; }
-  .p-about .ab-card { position: relative; inset: auto; width: 100%; }
-  .p-about .ab-card--hi { order: -1; rotate: -2.5deg; }
-  .p-about .ab-card--credits { rotate: 3deg; margin-top: 4px; min-height: 0; padding-bottom: 120px; }
-  .p-about .ab-card--credits .ab-card__grid { max-width: none; }
-  .p-about .ab-card__mascot { width: 90px; }
-  .p-about .ab-card__grid { grid-template-columns: 1fr 1fr; gap: 20px 14px; }
+  .p-about .ab-hi__table { min-height: 0; display: grid; gap: 28px; justify-items: center; }
+  .p-about .ab-card { position: relative; inset: auto; }
+  .p-about .ab-order { order: -1; rotate: -2deg; width: 100%; }
+  .p-about .ab-rcpt { rotate: 2.5deg; width: min(92%, 360px); }
 }

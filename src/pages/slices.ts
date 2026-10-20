@@ -3,7 +3,8 @@ import type { Page } from "../core/page";
 import { gsap, ScrollTrigger, reducedMotion, finePointer } from "../core/motion";
 import { bus } from "../core/bus";
 import { SITE, STATUS_LABEL, TOOLS, type Tool } from "../data/site";
-import { glyph, poster, scene, type GlyphId } from "../art";
+import { glyph, poster, type GlyphId } from "../art";
+import { ringCount, ringsSVG, treeSVG } from "./slices/tree";
 import { esc, footerHTML, responsive, whenReady } from "./about/kit";
 
 const DAYS: { d: string; long: string; what: string; g: GlyphId }[] = [
@@ -19,6 +20,7 @@ const DAYS: { d: string; long: string; what: string; g: GlyphId }[] = [
 const bySlug = new Map(TOOLS.map((t) => [t.slug, t]));
 const toolName = (t: Tool) => (t.status === "prepping" ? "Classified" : t.name);
 const sliceos = TOOLS.find((t) => t.slug === "sliceos");
+const rings = ringCount(SITE.since);
 
 function template() {
   return `<div class="p-slices">
@@ -51,7 +53,7 @@ function template() {
         <h2 id="sl-tree-h"><span class="caps-red">One trunk,</span> <em class="serif">many branches.</em></h2>
       </header>
       <div class="sl-tree__stage">
-        <div class="sl-tree__art">${scene("tree")}</div>
+        <div class="sl-tree__art">${treeSVG(TOOLS, { name: toolName })}</div>
         <p class="sl-tree__tag sl-tree__tag--branches"><span class="label">Branches</span><span>Tools</span></p>
         <p class="sl-tree__tag sl-tree__tag--trunk"><span class="label">Trunk</span><span>${SITE.trunk.name}</span></p>
         <p class="sl-tree__tag sl-tree__tag--roots"><span class="label">Roots</span><span>Two roommates</span></p>
@@ -73,6 +75,14 @@ function template() {
             </a></li>`,
           ).join("")}
         </ol>
+        <figure class="sl-rings">
+          <span class="sl-rings__art">${ringsSVG(SITE.since)}</span>
+          <figcaption>
+            <span class="label">Growth rings</span>
+            <strong>${rings.full} ring${rings.full === 1 ? "" : "s"}</strong>
+            <span class="sl-rings__cap">One per year since fall ${SITE.since}, counted from today. The red one is still growing.</span>
+          </figcaption>
+        </figure>
       </nav>
       <div class="sl-tree__progress" aria-hidden="true"><span></span></div>
     </div>
@@ -86,11 +96,13 @@ function template() {
     </header>
     <ol class="sl-week__strip">
       ${DAYS.map(
-        (d) => `<li class="sl-day${d.d === "Sat" ? " sl-day--sat" : ""}">
+        (d, i) => `<li class="sl-day${d.d === "Sat" ? " sl-day--sat" : ""}">
+          <span class="sl-day__no" aria-hidden="true"><span>Order</span><span>No. ${String(i + 1).padStart(2, "0")}</span></span>
           <span class="sl-day__d"><abbr title="${d.long}">${d.d}</abbr></span>
           <span class="sl-day__g" aria-hidden="true">${glyph(d.g)}</span>
-          <span class="sl-day__what">${d.what}</span>
+          <span class="sl-day__what"><span aria-hidden="true">1x</span> ${d.what}</span>
           <span class="sl-day__bar" aria-hidden="true"><span></span></span>
+          ${d.d === "Sat" ? `<span class="sl-day__stamp" aria-hidden="true">Pizza<br>day</span>` : ""}
         </li>`,
       ).join("")}
     </ol>
@@ -253,6 +265,9 @@ const page: Page = {
       svg.setAttribute("aria-label", "The tree: Saturday Slices is the trunk, every tool is a branch");
     }
     const leaves = svg ? [...svg.querySelectorAll<SVGGElement>('[data-part="leaf"]')] : [];
+    // growth ring strokes (pathLength=1); the live ring keeps its dashes
+    const ringEls = [...el.querySelectorAll<SVGPathElement>(".sl-ring:not([stroke-dasharray])")];
+    ringEls.forEach((r) => { r.style.strokeDasharray = "1"; });
     const swing = reducedMotion ? null : makeSwing(stage, fruits, leaves);
     if (swing) offs.push(swing);
 
@@ -355,8 +370,9 @@ const page: Page = {
     });
     whenReady(first, () => alive, () =>
       ctx.add(() => {
-        gsap.timeline({ defaults: { ease: "expo.out" } })
-          .to(".sl-li", { yPercent: 0, duration: 1.4, stagger: 0.12 })
+        // non-first visits: start as the transition cover peels away
+        gsap.timeline({ defaults: { ease: "expo.out" }, delay: first ? 0 : 0.2 })
+          .to(".sl-li", { yPercent: 0, duration: 0.9, stagger: 0.06 })
           .to(".sl-hero__box", { autoAlpha: 1, scale: 1, rotation: 8, duration: 1.4, ease: "elastic.out(1, 0.5)" }, 0.35)
           .to(".sl-hero__copy > *, .sl-hero__kicker", { autoAlpha: 1, y: 0, duration: 1, stagger: 0.06 }, 0.5);
       }),
@@ -432,6 +448,7 @@ const page: Page = {
       gsap.set(leaves, { scale: 0, transformOrigin: "50% 50%" });
       gsap.set(".sl-tree__tag", { autoAlpha: 0, y: 20 });
       gsap.set(".sl-tree__list li", { autoAlpha: 0.25 });
+      gsap.set(ringEls, { strokeDashoffset: 1 });
 
       const tl = gsap.timeline({
         defaults: { ease: "none" },
@@ -475,6 +492,8 @@ const page: Page = {
         .to(".sl-tree__tag--trunk", { autoAlpha: 1, y: 0, duration: 0.12 }, 0.12)
         .to(".sl-tree__tag--branches", { autoAlpha: 1, y: 0, duration: 0.12 }, 0.3)
         .to(".sl-tree__list li", { autoAlpha: 1, duration: 0.2, stagger: 0.1 }, 0.3)
+        // growth rings draw from the pith outwards as the tree finishes
+        .to(ringEls, { strokeDashoffset: 0, duration: 0.05, stagger: 0.04 }, 0.72)
         .fromTo(".sl-tree__art", { scale: 0.94 }, { scale: 1, duration: 1 }, 0);
     };
 

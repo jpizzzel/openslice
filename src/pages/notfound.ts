@@ -2,11 +2,81 @@ import "../styles/pages/notfound.css";
 import type { Page } from "../core/page";
 import { gsap, reducedMotion } from "../core/motion";
 import { bus } from "../core/bus";
-import { glyph } from "../art";
+import { halftone, mascot } from "../art";
 import { whenReady } from "./about/kit";
 
 const CRUMB_COLORS = ["#d9a35b", "#c98a3f", "#ffc93c", "#ff3b2f", "#e7c48a"];
 const POOL = 48;
+const INK = "#141210";
+
+/** The giant 404, with a bite taken out of the 0 (svg mask). `lit` is the
+ *  halftone copy that shows under the searching flashlight. */
+function num404(id: string, lit: boolean) {
+  const h = halftone(3, INK, 11);
+  const fill = lit ? h.fill : "currentColor";
+  return `<svg class="nf__num${lit ? " nf__num--lit" : ""}" viewBox="0 0 1000 420" aria-hidden="true" focusable="false">
+    <defs>${lit ? h.def : ""}<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="420">
+      <rect width="1000" height="420" fill="#fff"/>
+      <g fill="#000"><circle cx="652" cy="74" r="58"/><circle cx="606" cy="34" r="46"/><circle cx="690" cy="136" r="44"/><circle cx="568" cy="8" r="36"/><circle cx="700" cy="196" r="30"/></g>
+    </mask></defs>
+    <g fill="${fill}" font-size="520" font-weight="500" letter-spacing="-30" text-anchor="middle">
+      <text x="178" y="398">4</text>
+      <text x="500" y="398" mask="url(#${id})">0</text>
+      <text x="822" y="398">4</text>
+    </g>
+    ${lit ? "" : `<g class="nf__teeth" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round" opacity=".35"><path d="M598 82q8 -10 2 -22M650 134q10 -4 12 -16M676 196q8 -2 10 -12"/></g>`}
+  </svg>`;
+}
+
+/** An empty, greasy pizza box. Ink line, halftone shade, crumbs, one crust. */
+function emptyBox() {
+  const h = halftone(2, INK, 5);
+  const g = halftone(3, "#b9852f", 6);
+  return `<svg viewBox="0 0 400 320" aria-hidden="true" focusable="false">
+    <defs>${h.def}${g.def}</defs>
+    <ellipse cx="206" cy="304" rx="190" ry="12" fill="${h.fill}"/>
+    <!-- lid, hinged at the back and propped open -->
+    <path d="M40 176L352 160L364 30L58 46Z" fill="#e9b46a" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M62 160L334 146L344 50L76 62Z" fill="#f3dfb8" stroke="${INK}" stroke-width="2"/>
+    <path d="M300 60L344 50L334 146L296 150Z" fill="${h.fill}" opacity=".5"/>
+    <ellipse cx="206" cy="104" rx="84" ry="30" fill="#d9a35b" opacity=".45" transform="rotate(-3 206 104)"/>
+    <ellipse cx="206" cy="104" rx="84" ry="30" fill="${g.fill}" opacity=".7" transform="rotate(-3 206 104)"/>
+    <path d="M118 84q-10 18 4 30M290 96q8 16 -6 28" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+    <text x="206" y="122" text-anchor="middle" font-size="13" font-weight="700" letter-spacing="3" fill="${INK}" opacity=".55" transform="rotate(-3 206 122)" class="nf__boxtxt">HOT &amp; FRESH</text>
+    <!-- tray -->
+    <path d="M40 176L352 160L384 236L18 258Z" fill="#f3dfb8" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M64 186L332 172L354 226L44 244Z" fill="#ead2a2" stroke="${INK}" stroke-width="1.6" stroke-dasharray="5 6" opacity=".9"/>
+    <!-- grease ring where the pizza was, plus drips -->
+    <ellipse cx="202" cy="210" rx="118" ry="24" fill="none" stroke="#c98a3f" stroke-width="7" opacity=".55" transform="rotate(-3 202 210)"/>
+    <ellipse cx="160" cy="214" rx="34" ry="9" fill="#d9a35b" opacity=".6"/>
+    <ellipse cx="160" cy="214" rx="34" ry="9" fill="${g.fill}"/>
+    <ellipse cx="262" cy="200" rx="22" ry="6" fill="#d9a35b" opacity=".6"/>
+    <!-- the one crust nobody wanted -->
+    <path d="M226 226q34 -20 70 -10" fill="none" stroke="${INK}" stroke-width="15" stroke-linecap="round"/>
+    <path d="M226 226q34 -20 70 -10" fill="none" stroke="#e9b46a" stroke-width="9" stroke-linecap="round"/>
+    <path d="M244 216l2 4M262 211l1 4M278 210l1 4" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>
+    <!-- crumbs -->
+    <g fill="#e9b46a" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round">
+      <path d="M110 222l7 -4 5 5 -6 5z"/><path d="M134 236l5 -3 4 4 -5 3z"/><path d="M318 220l6 -2 2 6 -6 1z"/>
+      <path d="M196 238l4 -4 5 3 -4 4z"/><path d="M90 236l4 -2 3 3 -4 2z"/>
+    </g>
+    <g fill="#ff3b2f" stroke="${INK}" stroke-width="1.6"><circle cx="176" cy="196" r="3.4"/><circle cx="300" cy="234" r="2.6"/></g>
+    <!-- front wall -->
+    <path d="M18 258L384 236L384 274L18 298Z" fill="#e9b46a" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M300 241L384 236L384 274L300 279Z" fill="${h.fill}" opacity=".55"/>
+    <path d="M60 280l60 -3M150 276l40 -2" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>
+  </svg>`;
+}
+
+/** Sauce on the face and a sweat drop: drawn over mascot() (same 200x300 box). */
+const GUILT = `<svg class="nf__guilt" viewBox="0 0 200 300" aria-hidden="true" focusable="false">
+  <path d="M110 150q14 -6 22 2q6 8 -2 14q-4 10 -10 6q-8 2 -9 -6q-8 -8 -1 -16z" fill="#ff3b2f" stroke="#141210" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M124 166q2 10 -2 16q-4 4 -6 -2q0 -6 2 -12" fill="#ff3b2f" stroke="#141210" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M66 140q6 -6 13 -2" fill="none" stroke="#ff3b2f" stroke-width="4" stroke-linecap="round"/>
+  <path d="M152 74q8 12 8 18a8 8 0 0 1 -16 0q0 -6 8 -18z" fill="#f7f4ef" stroke="#141210" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M164 64l8 -6M168 78l9 -1" stroke="#141210" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M88 174l5 -3 4 4 -5 3z" fill="#e9b46a" stroke="#141210" stroke-width="1.6"/>
+</svg>`;
 
 const page: Page = {
   title: "Not found",
@@ -15,10 +85,11 @@ const page: Page = {
     const path = location.pathname.replace(/[<>&"']/g, "");
     root.innerHTML = `<div class="p-404">
       <section class="nf" aria-labelledby="nf-h">
-        <span class="nf__num" aria-hidden="true">404</span>
-        <div class="nf__torch" aria-hidden="true"><div class="nf__torch-in"><span class="nf__num nf__num--lit">404</span></div></div>
-        <div class="nf__box" aria-hidden="true">
-          <span class="nf__lid">${glyph("box-open")}</span>
+        ${num404("nf-bite", false)}
+        <div class="nf__torch" aria-hidden="true"><div class="nf__torch-in">${num404("nf-bite-lit", true)}</div></div>
+        <div class="nf__scene" aria-hidden="true">
+          <span class="nf__box">${emptyBox()}</span>
+          <span class="nf__who">${mascot("jonah", "stand")}${GUILT}</span>
         </div>
         <h1 id="nf-h" class="nf__h">
           <span class="nf__l"><span class="nf__li caps-red">This slice</span></span>
@@ -77,15 +148,19 @@ const page: Page = {
     ctx.add(() => {
       gsap.set(".nf__li", { yPercent: 110 });
       gsap.set(".nf__box", { autoAlpha: 0, y: -80, rotation: -20 });
+      gsap.set(".nf__who", { autoAlpha: 0, xPercent: -40 });
       gsap.set(".nf__p, .nf__links", { autoAlpha: 0, y: 16 });
     });
     whenReady(first, () => alive, () =>
       ctx.add(() => {
-        gsap.timeline({ defaults: { ease: "expo.out" } })
-          .to(".nf__box", { autoAlpha: 1, y: 0, rotation: -6, duration: 1.4, ease: "bounce.out" })
-          .to(".nf__li", { yPercent: 0, duration: 1.2, stagger: 0.1 }, 0.2)
-          .to(".nf__p, .nf__links", { autoAlpha: 1, y: 0, duration: 1, stagger: 0.08 }, 0.5);
-        gsap.to(".nf__box", { y: -10, rotation: -3, duration: 2.6, ease: "sine.inOut", yoyo: true, repeat: -1, delay: 1.6 });
+        // non-first visits: start as the transition cover peels away
+        gsap.timeline({ defaults: { ease: "expo.out" }, delay: first ? 0 : 0.2 })
+          .to(".nf__li", { yPercent: 0, duration: 0.9, stagger: 0.06 }, 0)
+          .to(".nf__box", { autoAlpha: 1, y: 0, rotation: -4, duration: 1.2, ease: "bounce.out" }, 0.1)
+          .to(".nf__who", { autoAlpha: 1, xPercent: 0, duration: 1.1 }, 0.5)
+          .to(".nf__p, .nf__links", { autoAlpha: 1, y: 0, duration: 1, stagger: 0.08 }, 0.35);
+        // the guilty shuffle: a small nervous sway, nothing to see here
+        gsap.to(".nf__who", { rotation: 3, duration: 0.9, ease: "sine.inOut", yoyo: true, repeat: -1, delay: 1.8, transformOrigin: "50% 100%" });
       }),
     );
 

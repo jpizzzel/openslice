@@ -13,7 +13,7 @@ export const isClassified = (t: Tool) => t.status === "prepping";
 
 /** UI fallback when a tool does not replace a paid app. */
 export const replacesText = (t: Tool) =>
-  t.replaces ?? (isClassified(t) ? "Classified" : "Nothing. It's homemade");
+  t.replaces ?? (isClassified(t) ? "Redacted" : "Nothing. It's homemade");
 
 export const STATUS_TONE: Record<Status, string> = {
   served: "var(--basil)",
@@ -26,20 +26,12 @@ export function statusPill(t: Tool, cls = "") {
   return `<span class="os-pill ${cls}" style="--tone:${STATUS_TONE[t.status]}"><i aria-hidden="true"></i>${esc(STATUS_LABEL[t.status])}</span>`;
 }
 
-/** Odometer column: digits 0..9 plus a trailing 0 so 9 can roll into 10. */
-export function odoColumn(cls = "") {
-  const digits = Array.from({ length: 11 }, (_, i) => `<span>${i % 10}</span>`).join("");
-  return `<span class="odo__col ${cls}"><span class="odo__strip">${digits}</span></span>`;
-}
+/** A redaction bar standing in for a value we are not ready to say out loud. */
+export const redactBar = (w = "7.5em") =>
+  `<span class="rd rd--bar" style="--w:${w}" aria-hidden="true"></span><span class="sr-only">Redacted</span>`;
 
-/** Positions the strips of a two digit odometer for a continuous value. */
-export function setOdometer(tens: HTMLElement, ones: HTMLElement, value: number) {
-  const v = Math.max(0, value);
-  const o = v % 10;
-  const t = Math.floor(v / 10) + Math.max(0, o - 9);
-  ones.style.transform = `translate3d(0, ${(-o / 11) * 100}%, 0)`;
-  tens.style.transform = `translate3d(0, ${(-(t % 10) / 11) * 100}%, 0)`;
-}
+/** "Replaces" value as HTML: classified tools get a redaction bar, never a word. */
+export const replacesHTML = (t: Tool) => (isClassified(t) && !t.replaces ? redactBar() : esc(replacesText(t)));
 
 /** Wraps a deterministic subset of words in redaction bars. */
 export function redact(text: string, every = 3) {

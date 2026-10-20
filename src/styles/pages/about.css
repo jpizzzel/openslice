@@ -48,7 +48,7 @@
   position: relative;
   display: grid;
   place-items: center;
-  margin-top: -4vw;
+  margin-top: -1.5vw;
   padding-bottom: 3vw;
   pointer-events: none;
 }
@@ -315,7 +315,7 @@
 .p-about.is-static .ab-ch__g { opacity: 1; transform: none; }
 
 /* ---------- small screens: stacked chapters ---------- */
-@media (max-width: 899px) {
+@media (max-width: 899px), (prefers-reduced-motion: reduce) {
   .p-about .ab-time__pin { height: auto; overflow: visible; display: block; padding-top: 72px; }
   .p-about .ab-time__track { display: grid; width: auto; padding: 0 var(--pad-r) 0 var(--pad-l); gap: 0; margin-top: 28px; }
   .p-about .ab-ch { width: auto; height: auto; padding: 0; }

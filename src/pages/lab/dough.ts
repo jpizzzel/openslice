@@ -77,10 +77,12 @@ export const dough: Experiment = {
     function step(dt: number, t: number) {
       const [cx, cy] = centroid();
       const breathe = env.reduced ? 1 : 1 + 0.018 * Math.sin(t * 2.1);
-      const kShape = 70, kHome = 10, k1 = 520, k2 = 160, kGrab = 900;
+      const kShape = 34, kAnchor = 46, kHome = 14, k1 = 240, k2 = 90, kGrab = 1100;
       for (let i = 0; i < N; i++) {
-        let fx = (cx + rx[i] * breathe - px[i]) * kShape + (homeX - cx) * kHome;
-        let fy = (cy + ry[i] * breathe - py[i]) * kShape + (homeY - cy) * kHome;
+        // shape matching around the centroid plus an absolute anchor to the
+        // rest pose, so a pulled region stretches out like taffy
+        let fx = (cx + rx[i] * breathe - px[i]) * kShape + (homeX + rx[i] * breathe - px[i]) * kAnchor * (1 - wt[i] * (grab >= 0 ? 1 : 0)) + (homeX - cx) * kHome;
+        let fy = (cy + ry[i] * breathe - py[i]) * kShape + (homeY + ry[i] * breathe - py[i]) * kAnchor * (1 - wt[i] * (grab >= 0 ? 1 : 0)) + (homeY - cy) * kHome;
         for (const [j, L, k] of [[(i + 1) % N, rest1, k1], [(i + N - 1) % N, rest1, k1], [(i + 2) % N, rest2, k2], [(i + N - 2) % N, rest2, k2]] as const) {
           const dx = px[j] - px[i], dy = py[j] - py[i];
           const d = Math.hypot(dx, dy) || 1e-3;
@@ -180,8 +182,8 @@ export const dough: Experiment = {
         grab = best; gx = p.x; gy = p.y; maxStretch = 0;
         for (let i = 0; i < N; i++) {
           let d = Math.abs(i - best); d = Math.min(d, N - d);
-          wt[i] = Math.exp(-(d * d) / 14);
-          ox[i] = (px[i] - p.x) * 0.55; oy[i] = (py[i] - p.y) * 0.55;
+          wt[i] = Math.exp(-(d * d) / 10);
+          ox[i] = (px[i] - p.x) * 0.4; oy[i] = (py[i] - p.y) * 0.4;
         }
         env.poke(); env.sfx("click"); stage.kick();
       },

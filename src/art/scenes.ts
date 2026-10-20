@@ -1,5 +1,5 @@
-// Wide illustration scenes, 800 x 500. Mascots are nested <svg> viewports so
-// their data-part transform origins keep working at any scale.
+// Wide illustration scenes, 800 x 500. Mascots are placed with group
+// transforms; their parts use fill-box origins so they animate at any scale.
 import { TOOLS, SITE } from "../data/site";
 import { Kit, INK, TOMATO, CHEESE, CRUST, BASIL, PAPER, GRAY, F_MONO, P, L, C, E, G, at, tube, part, rng, f1, ArtOpts } from "./core";
 import { mascotBody, Who, Pose } from "./mascots";
@@ -11,7 +11,7 @@ export type SceneId = "duo-push" | "duo-wave" | "kitchen" | "tree";
 
 /** place a mascot: x,y = top-left of its 200x300 box, s = scale */
 function placeMascot(k: Kit, who: Who, pose: Pose, x: number, y: number, s: number, extra = ""): string {
-  return `<svg x="${f1(x)}" y="${f1(y)}" width="${f1(200 * s)}" height="${f1(300 * s)}" viewBox="0 0 200 300" overflow="visible" data-part="mascot-${who}"${extra ? " " + extra : ""}>${mascotBody(k, who, pose)}</svg>`;
+  return `<g transform="translate(${f1(x)} ${f1(y)}) scale(${s})" data-part="mascot-${who}"${extra ? " " + extra : ""}>${mascotBody(k, who, pose)}</g>`;
 }
 
 function placeGlyph(k: Kit, id: string, cx: number, cy: number, size: number, rot = 0): string {
@@ -53,8 +53,8 @@ function duoPush(k: Kit): string {
       P("M70 448C58 448 54 438 64 432C64 422 78 418 84 426C92 418 106 424 102 434C110 438 106 450 96 450Z", PAPER, 2.4) +
       P("M36 444C28 444 26 436 32 432C34 426 42 426 44 430C50 428 56 434 52 440Z", PAPER, 2) +
       C(112, 438, 4, PAPER, 2) + C(20, 430, 3, PAPER, 1.8)) +
-    placeMascot(k, "jonah", "push", 112, 23, 1.43) +
-    placeMascot(k, "peter", "push", 348, 21, 1.45) +
+    placeMascot(k, "jonah", "push", 128, 42, 1.43) +
+    placeMascot(k, "peter", "push", 360, 36, 1.45) +
     // impact sparks on the wall
     part("impact", null,
       L("M634 120l-14 -10M630 150h-16M634 182l-14 10", 3) +
@@ -81,8 +81,8 @@ function duoWave(k: Kit): string {
     part("bunting", null, L("M0 20Q400 96 800 20", 2.4) + flags) +
     confetti(7, 46, 30, 90, 740, 260) +
     part("ground", null, E(400, 466, 300, 14, k.ht(2)) + L("M80 466H720", 2.4)) +
-    placeMascot(k, "jonah", "wave", 176, 46, 1.4) +
-    placeMascot(k, "peter", "wave", 394, 46, 1.4) +
+    placeMascot(k, "jonah", "wave", 146, 62, 1.35) +
+    placeMascot(k, "peter", "wave", 424, 62, 1.35) +
     P(sparkleD(150, 150, 16), CHEESE, 2.4) + P(sparkleD(660, 130, 12), TOMATO, 2.2) + P(sparkleD(690, 330, 8), PAPER, 2)
   );
 }
@@ -110,17 +110,16 @@ function kitchen(k: Kit): string {
       P("M548 170H772V182H548Z", PAPER, 3)) +
     // shelf with jars
     part("shelf", null,
-      P("M330 110H520V120H330Z", CRUST, 3) +
-      P("M346 76H376V110H346Z", PAPER, 2.6) + P("M344 70H378V78H344Z", TOMATO, 2.4) + L("M352 92H370", 1.6) +
-      P("M390 84H414V110H390Z", PAPER, 2.6) + P("M388 78H416V86H388Z", BASIL, 2.4) +
-      P("M428 64H460V110H428Z", PAPER, 2.6) + P("M428 84H460V110H428Z", CHEESE, 0) + P("M428 64H460V110H428Z", "none", 2.6) + P("M426 58H462V66H426Z", INK, 2) +
-      G(placeGlyph(k, "coffee", 0, 0, 52), at(492, 86))) +
+      P("M330 140H520V150H330Z", CRUST, 3) +
+      P("M346 106H376V140H346Z", PAPER, 2.6) + P("M344 100H378V108H344Z", TOMATO, 2.4) + L("M352 122H370", 1.6) +
+      P("M390 114H414V140H390Z", PAPER, 2.6) + P("M388 108H416V116H388Z", BASIL, 2.4) +
+      P("M428 94H460V140H428Z", PAPER, 2.6) + P("M428 114H460V140H428Z", CHEESE, 0) + P("M428 94H460V140H428Z", "none", 2.6) + P("M426 88H462V96H426Z", INK, 2) +
+      G(placeGlyph(k, "coffee", 0, 0, 52), at(492, 116))) +
     // hanging lamp
     part("lamp", null,
-      L("M220 0V48", 2.4) +
-      P("M188 80C188 56 252 56 252 80Z", TOMATO, 3) + P("M188 80H252", "none", 3) +
-      E(220, 84, 8, 4, CHEESE, 2) +
-      L("M196 96l-8 10M220 100v12M244 96l8 10", 2, INK, `opacity=".6"`)) +
+      L("M470 0V18", 2.4) +
+      P("M438 50C438 26 502 26 502 50Z", TOMATO, 3) + P("M438 50H502", "none", 3) +
+      E(470, 54, 8, 4, CHEESE, 2)) +
     // oven on a brick stand
     part("oven", null,
       P("M20 300H280V420H20Z", TOMATO, 3.4) +

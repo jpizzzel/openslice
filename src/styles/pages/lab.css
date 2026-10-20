@@ -283,8 +283,7 @@ html.lab-lock { overflow: hidden; }
   display: flex; justify-content: center; align-items: flex-end;
   font-family: var(--f-display);
   font-weight: 800;
-  font-size: 30cqh;
-  font-size: min(30cqh, 17.5cqw);
+  font-size: min(52cqh, 21.5cqw);
   line-height: .8;
   letter-spacing: -0.01em;
   padding: 0 5%;
@@ -300,9 +299,9 @@ html.lab-lock { overflow: hidden; }
 .ktype__ch i { font-style: normal; position: relative; z-index: 1; }
 .ktype__ch::before {
   content: attr(data-ch);
-  position: absolute; left: .045em; top: .05em; z-index: 0;
+  position: absolute; left: .06em; top: .045em; z-index: 0;
   color: transparent;
-  background: radial-gradient(circle, var(--tomato) 34%, transparent 38%) 0 0 / 5px 5px;
+  background: radial-gradient(circle, var(--tomato) 36%, transparent 40%) 0 0 / max(4px, 1.1cqw) max(4px, 1.1cqw);
   -webkit-background-clip: text; background-clip: text;
 }
 .ktype__base {

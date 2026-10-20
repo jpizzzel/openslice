@@ -83,7 +83,7 @@ export function group(viewBox: string, items: ({ who: Who; pose: Pose; x: number
   const body = items.map((it) => {
     const s = it.s ?? 1;
     if ("who" in it)
-      return `<svg x="${it.x}" y="${it.y}" width="${200 * s}" height="${300 * s}" viewBox="0 0 200 300" overflow="visible" data-part="mascot-${it.who}">${mascotBody(k, it.who, it.pose)}</svg>`;
+      return `<g transform="translate(${it.x} ${it.y}) scale(${s})" data-part="mascot-${it.who}">${mascotBody(k, it.who, it.pose)}</g>`;
     return `<g transform="translate(${it.x} ${it.y}) rotate(${it.r ?? 0}) scale(${s})">${glyphBody(k, it.glyph)}</g>`;
   }).join("");
   return k.wrap(viewBox, body, opts);

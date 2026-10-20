@@ -56,7 +56,7 @@ function hand(kind: keyof typeof HAND, x: number, y: number, rot = 0, flip = fal
 
 /* ---------------------------------------------------------------- face */
 
-function eyePair(k: Kit, who: Who, f: Face): string {
+function eyePair(who: Who, f: Face): string {
   const dx = f.dx ?? 0;
   const [lx, ly] = f.look ?? [0, 0];
   const out: string[] = [];
@@ -111,7 +111,7 @@ function brows(who: Who, f: Face): string {
   return part("brows", null, out.join(""));
 }
 
-function mouth(k: Kit, f: Face): string {
+function mouth(f: Face): string {
   const x = 100 + (f.dx ?? 0), y = 146;
   let m = "";
   switch (f.mouth) {
@@ -214,8 +214,8 @@ function torso(k: Kit, who: Who, f: Face): string {
     hat(k, who) +
     blush(k, f) +
     brows(who, f) +
-    eyePair(k, who, f) +
-    mouth(k, f) +
+    eyePair(who, f) +
+    mouth(f) +
     (f.sweat ? P(`M${150 + dx * 0.4} 96C${146 + dx * 0.4} 104 ${148 + dx * 0.4} 110 ${153 + dx * 0.4} 110C${158 + dx * 0.4} 110 ${159 + dx * 0.4} 104 ${150 + dx * 0.4} 96Z`, PAPER, 2.2) : ""));
 }
 
@@ -318,18 +318,19 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
       );
     }
     case "sit": {
-      const dy = 24;
+      // perched on a stack of pizza boxes, one foot swinging
       return (
-        shadow(k, 100, 66) +
-        part("seat", null, pizzaBox(k, 38, 246, 124, 36, 18, 0, true, 3.2)) +
-        G(
-          leg(k, "leg-l", "M94 204C90 214 82 220 80 228C78 236 78 240 78 246", "M78 236V246", [93, 206], sneaker(k, 78, 248, true, 0, 1, accent)) +
-          leg(k, "leg-r", "M106 204C112 214 120 220 122 228C124 234 125 238 126 243", "M124.4 234L126.2 244", [107, 206], sneaker(k, 127, 245, false, -14, 1, accent)) +
-          arm("arm-l", "M60 128C44 144 42 174 50 200", [58, 128], hand("fist", 51, 205, -10)) +
-          arm("arm-r", "M140 128C156 144 158 174 150 200", [142, 128], hand("fist", 149, 205, 10, true)) +
-          torso(k, who, f),
-          `transform="translate(0 ${dy})"`) +
-        L("M40 34q4 -6 8 0t8 0M150 30q4 -6 8 0t8 0", 2) // a little hum
+        shadow(k, 100, 70) +
+        part("seat", null,
+          pizzaBox(k, 40, 264, 122, 22, 12, 4, false, 3) +
+          pizzaBox(k, 46, 240, 112, 22, 12, -3, false, 3) +
+          pizzaBox(k, 36, 216, 126, 22, 12, 3, true, 3)) +
+        leg(k, "leg-l", "M94 202C88 210 82 216 80 226C78 240 79 254 80 266", "M80 256V266", [93, 204], sneaker(k, 80, 268, true, 0, 1, accent)) +
+        leg(k, "leg-r", "M106 202C112 210 118 216 120 226C122 238 126 248 132 258", "M128 250L132.4 259", [107, 204], sneaker(k, 133, 260, false, -18, 1, accent)) +
+        arm("arm-l", "M60 128C44 146 38 176 42 200", [58, 128], hand("fist", 43, 204, -6)) +
+        arm("arm-r", "M140 128C156 146 162 176 158 200", [142, 128], hand("fist", 157, 204, 6, true)) +
+        torso(k, who, f) +
+        L("M170 18q4 -6 8 0t8 0M178 32q3 -4 6 0", 2) // a little hum
       );
     }
     case "carry": {

@@ -17,28 +17,31 @@ function fontPreload(): Plugin {
     },
     transformIndexHtml: {
       order: "post",
-      handler(_html, ctx) {
+      handler(html, ctx) {
         const bundle = ctx.bundle;
-        if (!bundle) return [];
+        if (!bundle) return html;
         const files = Object.keys(bundle);
-        return PRELOAD_FONTS.flatMap((re) => {
+        const tags = PRELOAD_FONTS.flatMap((re) => {
           const file = files.find((f) => re.test(f));
           if (!file) {
-            console.warn(`[font-preload] no asset matched ${re}`);
+            console.warn(`[font-preload] no font asset matched ${re}`);
             return [];
           }
-          return [{
-            tag: "link",
-            attrs: { rel: "preload", href: base + file, as: "font", type: "font/woff2", crossorigin: "" },
-            injectTo: "head-prepend" as const,
-          }];
-        });
+          return [`<link rel="preload" href="${base}${file}" as="font" type="font/woff2" crossorigin>`];
+        }).join("\n    ");
+        if (!tags) return html;
+        // keep <meta charset> first in <head>; the preloads go right after it
+        const charset = /<meta charset="[^"]*"\s*\/?>/i;
+        return charset.test(html)
+          ? html.replace(charset, (m) => `${m}\n    ${tags}`)
+          : html.replace(/<head>/i, `<head>\n    ${tags}`);
       },
     },
   };
 }
 
 export default defineConfig({
-  build: { target: "es2022" },
+  // manifest: lets scripts/size.mjs resolve the initial route's chunk graph.
+  build: { target: "es2022", manifest: true },
   plugins: [fontPreload()],
 });

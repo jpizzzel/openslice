@@ -6,6 +6,7 @@
 import { gsap, reducedMotion } from "../core/motion";
 import { markLoaderGone } from "../core/ready";
 import { mascot } from "../art";
+import { bus } from "../core/bus";
 
 const MIN = 1200, MAX = 3000;
 
@@ -111,9 +112,12 @@ export function runPreloader() {
     gone();
   }
 
-  return {
-    async done() {
-      routeReady = true;
+  // Runs once the first route is up: done() from boot, or route:after as a backstop
+  // so a page that never lets boot finish can't trap the visitor behind the loader.
+  let finished: Promise<void> | null = null;
+  const go = () => {
+    routeReady = true;
+    return (finished ??= (async () => {
       await counted;
       if (reducedMotion) {
         await gsap.to(root, { autoAlpha: 0, duration: 0.3, ease: "power1.out" });
@@ -123,6 +127,10 @@ export function runPreloader() {
       }
       await gsap.to(root.querySelectorAll(".ld-ui"), { autoAlpha: 0, duration: 0.25 });
       await push();
-    },
+    })());
   };
+  const off = bus.on("route:after", () => { off(); setTimeout(go, 0); });
+  setTimeout(go, 8000);
+
+  return { done: go };
 }

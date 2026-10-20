@@ -1,0 +1,51 @@
+:root {
+  /* palette: flour, tomato, ink, basil, cheese, oven */
+  --flour: #efebe4;
+  --flour-2: #e4ded4;
+  --paper: #f7f4ef;
+  --tomato: #ff3b2f;
+  --tomato-deep: #d92a1f;
+  --ink: #141210;
+  --ink-2: #4a4540;
+  --ink-3: #8a837a;
+  --basil: #2f7d4f;
+  --cheese: #ffc93c;
+  --oven: #0e0d0c;
+  --line: rgb(20 18 16 / 0.14);
+
+  --bg: var(--flour);
+  --fg: var(--ink);
+  --muted: var(--ink-3);
+  --accent: var(--tomato);
+
+  --f-sans: "Bricolage Grotesque Variable", "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --f-display: "Big Shoulders Display Variable", "Big Shoulders Display", Impact, sans-serif;
+  --f-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --f-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* fluid type scale */
+  --t-xs: 0.6875rem;
+  --t-sm: 0.8125rem;
+  --t-md: 1rem;
+  --t-lg: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  --t-xl: clamp(2rem, 1.2rem + 3vw, 3.5rem);
+  --t-2xl: clamp(3rem, 1.5rem + 6vw, 7rem);
+  --t-mega: clamp(9rem, 4rem + 22vw, 30rem);
+
+  --gutter: clamp(16px, 1.4vw, 24px);
+  --col: calc((100vw - var(--gutter) * 2) / 12);
+  --header-h: 140px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --z-chrome: 50;
+  --z-cursor: 90;
+  --z-transition: 80;
+  --z-loader: 100;
+}
+
+@media (max-width: 720px) {
+  :root { --header-h: 96px; }
+}

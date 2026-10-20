@@ -16,8 +16,8 @@ interface Strand {
 export const cheese: Experiment = {
   id: "cheese",
   title: "Cheese Pull",
-  line: "The money shot. Pull the slice away and see how far the cheese goes.",
-  label: "Cheese Pull: drag a pizza slice away from the pie. Strings of melted cheese stretch between them and snap one by one when pulled too far.",
+  line: "The best part of any slice. Pull it away and see how far the cheese goes.",
+  label: "Cheese Pull: drag a pizza slice away from the pie. Strings of melted cheese stretch between them and snap one by one if you pull too far.",
   hint: "Drag the slice",
   tone: "tomato",
   ar: [1, 1],

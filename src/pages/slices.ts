@@ -31,7 +31,7 @@ function template() {
     </h1>
     <span class="sl-hero__box" aria-hidden="true">${glyph("pizza")}</span>
     <div class="sl-hero__copy">
-      <p class="sl-hero__lede">A student run pizza place out of our house. It is the reason most of these tools exist, and the business we built SliceOS to run.</p>
+      <p class="sl-hero__lede">A student run pizza place we run out of our house. We built SliceOS to keep it organized, and the rest of the toolbox grew from the same habit.</p>
       <dl class="sl-hero__meta">
         <div><dt class="label">Kitchen</dt><dd>${SITE.where}</dd></div>
         <div><dt class="label">Staff</dt><dd>Two roommates</dd></div>
@@ -109,7 +109,7 @@ function template() {
       <h2 id="sl-os-h" class="sl-os__h"><span class="caps-red">${esc(sliceos.name)}</span><em class="serif">the back of house</em></h2>
       <p class="sl-os__blurb">${esc(sliceos.blurb)}</p>
       <ul class="sl-os__feat">${sliceos.features.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
-      <p class="sl-os__note"><span class="sl-os__pill mono">${STATUS_LABEL[sliceos.status]}</span><span class="serif">Coming to the toolbox. We are cleaning it up so it can run your shop too.</span></p>
+      <p class="sl-os__note"><span class="sl-os__pill mono">${STATUS_LABEL[sliceos.status]}</span><span class="serif">Coming to the toolbox. We're cleaning it up so it can run your shop too.</span></p>
       <a class="sl-btn sl-btn--ink" href="/toolbox/${sliceos.slug}" data-cursor="Open"><span>Read about ${esc(sliceos.name)}</span><span class="sl-btn__arr" aria-hidden="true">&rarr;</span></a>
     </div>
   </section>`

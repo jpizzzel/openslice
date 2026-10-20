@@ -8,7 +8,7 @@ export const kinetic: Experiment = {
   id: "type",
   title: "Kinetic Type",
   line: "Nine letters on springs. They lean in when you get close. Click to make them jump.",
-  label: "Kinetic Type: the word OPENSLICE in tall condensed letters that lean toward the pointer, squash and stretch on springs, and jump when clicked.",
+  label: "Kinetic Type: the word OpenSlice in tall condensed letters that lean toward the pointer, squash and stretch on springs, and jump when clicked.",
   hint: "Move close / click",
   tone: "cheese",
   ar: [3, 2],

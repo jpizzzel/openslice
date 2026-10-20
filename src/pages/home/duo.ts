@@ -24,7 +24,7 @@ export function duoHTML() {
   <section class="h-duo" aria-labelledby="duo-title">
     <div class="h-duo__head">
       <p class="label">(03) The duo</p>
-      <h2 id="duo-title" class="h-duo__title caps-red"><span class="h-duo__tl"><span>Two roommates,</span></span><span class="h-duo__tl"><span>one oven</span></span></h2>
+      <h2 id="duo-title" class="h-duo__title caps-red"><span class="h-duo__tl"><span>Still roommates,</span></span><span class="h-duo__tl"><span>still cooking</span></span></h2>
     </div>
     <figure class="h-duo__art" aria-hidden="true"><div class="h-duo__art-in">${scene("duo-wave")}</div></figure>
     <div class="h-duo__body">

@@ -71,7 +71,7 @@ const page: Page = {
                 <li><button type="button" data-goto="${i}"><span class="mono">${pad(i + 1)}</span><span>${e.title}</span></button></li>`).join("")}
               </ol>
             </nav>
-            <p class="p-lab__about">A space where we try ideas without overthinking them. Some turn into real tools, others just stay here as part of the process.</p>
+            <p class="p-lab__about">Little toys we make when we should be doing homework. None of them are useful. All of them are fun to poke.</p>
           </div>
         </aside>
         <section class="p-lab__main">

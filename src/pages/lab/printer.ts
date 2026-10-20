@@ -17,7 +17,7 @@ const NOTES = ["Free forever", "Ships Saturday", "No tip, just a star", "Fork it
 export const printer: Experiment = {
   id: "printer",
   title: "Order Ticket Printer",
-  line: "The kitchen printer from the shop, tiny edition. Every order rings up at $0.00.",
+  line: "A tiny ticket printer. Every order rings up at $0.00.",
   label: "Order Ticket Printer: press print and a receipt with a random pizza order slides out of a tiny printer and lands on a growing pile.",
   hint: "Press print",
   tone: "basil",

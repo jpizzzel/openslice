@@ -70,8 +70,8 @@ function notFound(slug: string) {
   <div class="td-404__art" aria-hidden="true">${mascot("jonah", "point")}</div>
   <div class="td-404__copy">
     <p class="label">Toolbox / ${esc(slug)}</p>
-    <h1 class="td-404__h serif">This slice is not on the menu.</h1>
-    <p class="td-404__p">We looked in the oven, the fridge and under the couch. Nothing called "${esc(slug)}" yet.</p>
+    <h1 class="td-404__h serif">This slice isn't on the menu.</h1>
+    <p class="td-404__p">We checked the oven, the fridge and under the couch. Nothing called "${esc(slug)}" yet.</p>
     <a class="td-btn td-btn--ink" href="/toolbox" data-cursor="Back"><span>Back to the toolbox</span>${arrowSVG("left")}</a>
   </div>
 </article>

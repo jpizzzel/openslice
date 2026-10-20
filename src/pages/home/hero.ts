@@ -36,7 +36,7 @@ const OBJECTS: Obj[] = [
   { id: "pepperoni", x: 67, y: 90, s: 12, r: 0 },
 ];
 
-const statement = `Building free tools for students, engineers and small businesses out of our kitchen since ${SITE.since}.`;
+const statement = `Making free tools for students, engineers and small businesses, out of the same house we sell pizza from.`;
 
 export function heroHTML() {
   const objs = OBJECTS.map(
@@ -94,7 +94,7 @@ export function heroHTML() {
       </div>
       <div class="h-col h-col--fed">
         <p class="label">Fed by</p>
-        <ul><li><a class="u-link" href="${SITE.trunk.href}" target="_blank" rel="noopener">${esc(SITE.trunk.name)}</a> regulars</li><li>Our roommates</li><li>Late night deadlines</li><li>and many more</li></ul>
+        <ul><li><a class="u-link" href="${SITE.trunk.href}" target="_blank" rel="noopener">${esc(SITE.trunk.name)}</a> regulars</li><li>Each other</li><li>Late-night deadlines</li><li>Cold leftover slices</li></ul>
       </div>
     </div>
   </section>`;

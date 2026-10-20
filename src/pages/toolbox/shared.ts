@@ -13,7 +13,7 @@ export const isClassified = (t: Tool) => t.status === "prepping";
 
 /** UI fallback when a tool does not replace a paid app. */
 export const replacesText = (t: Tool) =>
-  t.replaces ?? (isClassified(t) ? "Classified" : "Nothing. Homemade");
+  t.replaces ?? (isClassified(t) ? "Classified" : "Nothing. It's homemade");
 
 export const STATUS_TONE: Record<Status, string> = {
   served: "var(--basil)",

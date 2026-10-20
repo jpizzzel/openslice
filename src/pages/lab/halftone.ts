@@ -8,7 +8,7 @@ const COLS = [C.ink2, C.paper, C.cheese, C.tomato, C.basilLight, C.crust];
 export const halftone: Experiment = {
   id: "halftone",
   title: "Halftone Mirror",
-  line: "A slice printed in dots. Move over it and the screen bends toward you.",
+  line: "A slice printed in dots. Move over it and the dots get out of your way.",
   label: "Halftone Mirror: a large pizza slice made of halftone dots that swell and part around the pointer like a magnifying lens.",
   hint: "Hover or drag",
   tone: "ink",

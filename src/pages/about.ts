@@ -24,8 +24,8 @@ const CHAPTERS: Chapter[] = [
     label: "Freshman",
     year: "2023",
     y: 2023,
-    title: "Assigned roommates",
-    caption: "Fall 2023. Two freshmen, one room. Same room. Same Wi-Fi. First late nights.",
+    title: "Freshman roommates",
+    caption: "Fall 2023. Two freshmen, one room, one Wi-Fi password. The first of a lot of late nights.",
     poses: ["stand", "wave"],
     glyphs: ["laptop", "coffee"],
   },
@@ -35,7 +35,7 @@ const CHAPTERS: Chapter[] = [
     year: "2024",
     y: 2024,
     title: "Roommates, on purpose",
-    caption: "Year two, and we chose the same roommate again. More ideas than hours in the day.",
+    caption: "Year two. We picked each other again, which probably says something about both of us.",
     poses: ["sit", "point"],
     glyphs: ["keyboard", "terminal"],
   },
@@ -45,7 +45,7 @@ const CHAPTERS: Chapter[] = [
     year: "2025",
     y: 2025,
     title: "Still under one roof",
-    caption: "Year three, same address. The kitchen keeps getting busier, and so do our laptops.",
+    caption: "Year three, still roommates. More side projects than free time, which is a bad ratio.",
     poses: ["carry", "push"],
     glyphs: ["dough", "rolling-pin"],
   },
@@ -54,7 +54,7 @@ const CHAPTERS: Chapter[] = [
     label: "Senior",
     year: "2026",
     y: 2026,
-    title: "Living together, building together",
+    title: "Still at it",
     caption:
       "Saturday Slices runs out of our house. Peter rebuilds a paid Mac converter for himself, Jonah answers with one for Windows, and the toolbox starts to fill up.",
     poses: ["wave", "carry"],
@@ -65,7 +65,7 @@ const CHAPTERS: Chapter[] = [
     label: "Forever",
     year: "20XX",
     title: "The rest of our lives",
-    caption: "OpenSlice is meant to outlive our lease. More branches, same trunk, every tool free.",
+    caption: "OpenSlice is meant to outlive our lease. New branches, same trunk. Every tool stays free.",
     poses: ["wave", "wave"],
     glyphs: ["star", "sparkle"],
   },
@@ -134,7 +134,7 @@ function personHTML(p: Person, i: number) {
               (t) => `<li><a href="/toolbox/${t.slug}" data-cursor="Open" style="--c:${t.color}"><span class="ab-person__dot"></span>${esc(t.name)}<span class="label">${STATUS_LABEL[t.status]}</span></a></li>`,
             )
             .join("")}
-          ${secrets ? `<li class="ab-person__secret label">+ ${secrets} classified, still proofing</li>` : ""}
+          ${secrets ? `<li class="ab-person__secret label">+ ${secrets} classified, still in the dough</li>` : ""}
         </ul></dd></div>
       </dl>
     </div>
@@ -211,7 +211,7 @@ function template() {
   <section class="ab-hi" aria-labelledby="ab-hi-h">
     <div class="ab-hi__side">
       <p class="label">Contact</p>
-      <p class="ab-hi__line serif">No inbox, no form. Find us on our own sites, in the repo, or in line on a Saturday.</p>
+      <p class="ab-hi__line serif">No inbox, no form. Find us on our own sites, in the repo, or behind the counter on a Saturday.</p>
       <p class="label ab-hi__hint">${finePointer ? "Psst. The cards move. Give them a tug." : "Two cards, tossed on the table."}</p>
     </div>
     <div class="ab-hi__table">

@@ -3,10 +3,10 @@
 export type Status = "served" | "proofing" | "baking" | "prepping";
 
 export const STATUS_LABEL: Record<Status, string> = {
-  served: "Out of the oven",
+  served: "Released",
   proofing: "Open beta",
-  baking: "In the oven",
-  prepping: "Still prepping",
+  baking: "In development",
+  prepping: "Not announced",
 };
 
 export interface Person {
@@ -155,7 +155,7 @@ export const TOOLS: Tool[] = [
   {
     slug: "redacted-1",
     name: "Classified",
-    kind: "Top secret",
+    kind: "Unannounced",
     platform: "TBA",
     status: "prepping",
     by: ["jonah", "peter"],
@@ -170,7 +170,7 @@ export const TOOLS: Tool[] = [
   {
     slug: "redacted-2",
     name: "Classified",
-    kind: "Top secret",
+    kind: "Unannounced",
     platform: "TBA",
     status: "prepping",
     by: ["jonah", "peter"],

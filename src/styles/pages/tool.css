@@ -41,7 +41,7 @@
 .p-tool .td-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 .p-tool .td-note { margin-top: 28px; font-size: 1rem; color: var(--ink-2); }
 
-.p-tool .td-cover { justify-self: center; width: min(78vw, 360px); perspective: 1400px; }
+.p-tool .td-cover { justify-self: start; width: min(78vw, 360px); perspective: 1400px; margin-top: 16px; }
 .p-tool .td-cover__in {
   aspect-ratio: 4 / 5; border-radius: 3px; overflow: hidden; background: var(--c);
   transform: rotateX(8deg) rotateY(-14deg) rotateZ(-2deg);

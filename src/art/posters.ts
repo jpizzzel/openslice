@@ -229,8 +229,8 @@ const classified: Layout = (k, t, idx, r) => {
         `transform="translate(${alt ? 130 : W - 120} ${alt ? 452 : 440}) rotate(${alt ? 8 : -12})" opacity=".92"`),
       `transform="rotate(${sheetRot} 200 250)"`) +
     (alt
-      ? tape(214 + r() * 20, 14 + r() * 6, "Still in the dough / do not open") + tape(330 + r() * 20, -12 - r() * 6, STATUS_LABEL[t.status])
-      : tape(196 + r() * 30, -18 + r() * 8, "Still in the dough / do not open") + tape(336 + r() * 20, 8 + r() * 6, STATUS_LABEL[t.status])) +
+      ? tape(214 + r() * 20, 14 + r() * 6, "Not announced yet") + tape(330 + r() * 20, -12 - r() * 6, STATUS_LABEL[t.status])
+      : tape(196 + r() * 30, -18 + r() * 8, "Not announced yet") + tape(336 + r() * 20, 8 + r() * 6, STATUS_LABEL[t.status])) +
     grid(INK, 0.3) +
     mono(M + 10, H - M - 8, t.platform) + mono(W - M - 10, H - M - 8, "Access denied", INK, "end")
   );

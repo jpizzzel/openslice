@@ -1,310 +1,97 @@
 /* =========================================================================
-   Persistent chrome, cursor, preloader, page transition, footer.
+   Persistent chrome: header, mobile menu, cursor, footer.
    ========================================================================= */
 
-/* The chrome floats over flour, tomato and oven dark sections alike. chrome.ts
-   samples what is painted under each group of items and sets data-tone on it:
-   none (flour) reads ink, "dark" reads paper, "red" reads ink on tomato.
-   Real colors, no blending, so contrast tooling and forced-colors see the truth.
-   The tone vars are registered so a change is a quick color fade, not a snap. */
-@property --c-fg { syntax: "<color>"; inherits: true; initial-value: #141210; }
-@property --c-mute { syntax: "<color>"; inherits: true; initial-value: rgb(20 18 16 / 0.64); }
-@property --c-accent { syntax: "<color>"; inherits: true; initial-value: #f2362a; }
+/* The header is one quiet row. Pages pad their first section by --header-h. */
+:root { --ch-row: 64px; }
+@media (max-width: 720px) {
+  :root { --ch-row: 56px; }
+}
+
 .ch {
-  position: fixed;
-  inset: 0;
+  --c-fg: var(--ink);
+  --c-bg: var(--flour);
+  position: fixed; left: 0; right: 0; top: 0;
   z-index: var(--z-chrome);
-  pointer-events: none;
-  font-size: 13px;
+  height: var(--ch-row);
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  padding: 0 clamp(16px, 2.2vw, 40px);
+  color: var(--c-fg);
+  font-size: 14px;
   line-height: 1.2;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.01em;
+  transition: transform 0.4s var(--ease-out), background-color 0.25s, box-shadow 0.25s;
 }
-.ch > * {
-  --c-fg: var(--ink);
-  /* ~5.4:1 on flour */
-  --c-mute: rgb(20 18 16 / 0.64);
-  --c-accent: var(--tomato);
-  color: var(--c-fg);
-  transition: --c-fg 0.28s var(--ease-out), --c-mute 0.28s var(--ease-out), --c-accent 0.28s var(--ease-out);
-}
-.ch > [data-tone="dark"] {
-  --c-fg: var(--paper);
-  --c-mute: rgb(247 244 239 / 0.68);
-  --c-accent: var(--tomato);
-}
-.ch > [data-tone="red"] {
-  /* ink on tomato clears 4.5:1 for the small header text; paper does not */
-  --c-fg: var(--ink);
-  --c-mute: var(--ink);
-  --c-accent: var(--paper);
-}
-.ch a, .ch button { pointer-events: auto; }
-.ch > * { position: absolute; }
-.ch-lbl { color: var(--c-mute); }
+/* a page whose first screen is dark says so with data-theme="dark" on #view */
+body[data-chrome="dark"] .ch:not(.is-solid) { --c-fg: var(--paper); }
+.ch.is-solid { background: var(--c-bg); box-shadow: 0 1px 0 var(--line); }
+.ch.is-hidden { transform: translateY(-100%); box-shadow: none; }
 
-/* --- wordmark, read bottom to top like a spine --- */
-.ch-mark { left: 16px; top: 16px; display: block; }
-.ch-word {
-  display: block;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-weight: 800;
-  font-size: 27px;
-  line-height: 0.82;
-  letter-spacing: -0.045em;
-  transition: color 0.4s var(--ease-out);
-}
-.ch-word i { font-style: normal; font-weight: 500; font-size: 0.5em; letter-spacing: 0; margin-top: 3px; }
-.ch-mark:hover .ch-word { color: var(--c-accent); }
-/* Saturday mode: the © glows tomato all day while Saturday Slices is open */
-html.is-saturday .ch-word i { color: var(--c-accent); }
-.ch-meta { left: 49px; top: 17px; display: flex; gap: 4px; align-items: flex-start; }
-.ch-meta span {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-size: 9.5px;
-  line-height: 1;
-  letter-spacing: 0;
-  color: var(--c-fg);
-}
-.ch-meta span + span { color: var(--c-mute); opacity: 1; }
-
-/* --- nav --- */
-.ch-nav { left: max(190px, 13.33vw); top: 22px; }
-/* the label's padding bridges the gap to the list so hover never drops out */
-.ch-nav-lbl { display: block; width: max-content; padding: 10px 40px 37px 10px; margin: -10px 0 0 -10px; pointer-events: auto; }
-.ch-nav-lbl i {
-  display: inline-block; position: relative; width: 7px; height: 7px; margin-left: 7px; vertical-align: 1px;
-  opacity: 0; transform: scale(0.4) rotate(-90deg);
-  transition: opacity 0.4s, transform 0.6s var(--ease-spring);
-}
-.ch-nav-lbl i::before, .ch-nav-lbl i::after { content: ""; position: absolute; background: currentColor; }
-.ch-nav-lbl i::before { left: 0; right: 0; top: 3px; height: 1px; }
-.ch-nav-lbl i::after { top: 0; bottom: 0; left: 3px; width: 1px; }
-.ch-lw { position: relative; }
-.ch-list li { transition: transform 0.5s var(--ease-out), opacity 0.35s var(--ease-out); }
-.ch-list li:nth-child(2) { transition-delay: 0.03s; }
-.ch-list li:nth-child(3) { transition-delay: 0.06s; }
-.ch-list li:nth-child(4) { transition-delay: 0.09s; }
-/* tucked: the stack folds up into "Menu". A mouse hover, keyboard focus or a tap
-   on the "Menu" button (body.nav-open, set in chrome.ts) unfolds it. */
-.ch-lw { transition: opacity 0.3s; }
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li { opacity: 0; pointer-events: none; }
-/* each row folds away in place (a small lift), so every link keeps its own spot:
-   the folded list area is a hover zone that unfolds it, and a click lands on the
-   row it was aimed at */
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li { transform: translateY(-5px); }
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(1) { transition-delay: 0.09s; }
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(2) { transition-delay: 0.06s; }
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(3) { transition-delay: 0.03s; }
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(4) { transition-delay: 0s; }
-.ch-lw { pointer-events: auto; }
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-lw { opacity: 0; transition: opacity 0.3s 0.1s; }
-/* without hover the folded area can never unfold on its own: let taps reach the page under it */
-@media (hover: none) {
-  body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-lw { pointer-events: none; }
-}
-body.nav-tucked .ch-nav-lbl { color: var(--c-fg); }
-body.nav-tucked .ch-nav-lbl i { opacity: 1; transform: none; }
-body.nav-tucked.nav-open .ch-nav-lbl i, body.nav-tucked .ch-nav:focus-within .ch-nav-lbl i { transform: rotate(45deg); }
-.ch-nav-lbl { cursor: default; text-align: left; }
-body.nav-tucked .ch-nav-lbl { cursor: pointer; }
-.ch-list a {
-  display: block;
-  width: max-content;
-  font-weight: 760;
-  font-size: clamp(19px, 1.28vw, 25px);
-  line-height: 0.86;
-  letter-spacing: -0.045em;
-  text-transform: uppercase;
-  font-variation-settings: "opsz" 12;
-}
-.ch-list a span { display: inline-block; transition: transform 0.6s var(--ease-out), color 0.3s; }
-.ch-list a:hover span { transform: translateX(5px); }
-.ch-list a.is-active span { transform: translateX(1.38em); }
-.ch-list a.is-active:hover span { transform: translateX(calc(1.38em + 3px)); }
-.ch-list a:focus-visible { outline-offset: 1px; }
-.ch-arrow {
-  position: absolute;
-  left: 0; top: 0;
-  font-size: clamp(19px, 1.28vw, 25px);
-  line-height: 0.86;
-  font-weight: 300;
-  transform-origin: 0 50%;
-  opacity: 0;
-  pointer-events: none;
+.ch-mark {
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.035em;
+  padding: 6px 0;
 }
 
-/* --- oven audio toggle: a resting squiggle that comes alive when on --- */
-.ch-audio { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; letter-spacing: -0.012em; }
-.ch-audio-d { left: 38.3vw; top: 22px; }
-.ch-audio-v { font-weight: 600; min-width: 1.6em; text-align: left; }
-/* the state word is drawn, not written: aria-pressed already carries it */
-.ch-audio-v::after { content: attr(data-v); }
-/* Saturday: the label hint turns into the oven announcing itself */
-.ch-lbl-sat { display: none; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; color: var(--c-accent, var(--tomato)); }
-html.is-saturday .ch-lbl-sat { display: inline; }
-html.is-saturday .ch-lbl-snd { display: none; }
-.ch-wave { width: 16px; height: 8px; overflow: hidden; margin-left: 1px; }
-.ch-wave g { transform: translateX(0); }
-.ch-wave path {
-  fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-  transform-box: view-box; transform-origin: 50% 50%;
-  /* a tiny sine at rest: never flat, so it never reads as a dash */
-  transform: scaleY(0.55);
-  transition: transform 0.6s var(--ease-spring);
+.ch-nav { display: flex; align-items: center; gap: clamp(20px, 2.4vw, 40px); }
+.ch-list { display: flex; gap: clamp(20px, 2.4vw, 36px); }
+.ch-list a, .ch-src {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 8px 0;
+  font-weight: 500;
+  background: linear-gradient(currentColor, currentColor) 0 calc(100% - 4px) / 0 1px no-repeat;
+  transition: background-size 0.35s var(--ease-out);
 }
-.ch-wave g { animation: ch-wave 2.8s linear infinite; animation-play-state: paused; }
-.ch-audio:hover .ch-wave g { animation-play-state: running; }
-.ch-audio.is-on .ch-wave path { transform: scaleY(1.35); stroke-width: 1.3; }
-.ch-audio.is-on .ch-wave g { animation-duration: 0.7s; animation-play-state: running; }
-.ch-audio.is-on .ch-audio-v { color: var(--c-accent, var(--tomato)); }
-.ch-audio:hover .ch-wave path { transform: scaleY(0.85); }
-.ch-audio.is-on:hover .ch-wave path { transform: scaleY(1.6); }
-@keyframes ch-wave { to { transform: translateX(-6px); } }
-@media (prefers-reduced-motion: reduce) { .ch-wave g { animation: none; } }
+.ch-list a:hover, .ch-src:hover, .ch-list a[aria-current="page"] { background-size: 100% 1px; }
+.ch-src { padding-left: clamp(20px, 2.4vw, 40px); border-left: 1px solid var(--line); background-position-x: clamp(20px, 2.4vw, 40px); }
+.ch-src:hover { background-size: calc(100% - clamp(20px, 2.4vw, 40px)) 1px; }
+body[data-chrome="dark"] .ch:not(.is-solid) .ch-src { border-left-color: rgb(247 244 239 / 0.2); }
+.ch-ext { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
 
-/* --- countdown --- */
-.cd { display: flex; flex-direction: column; gap: 1px; }
-.cd-l { font-weight: 600; }
-.cd-v { color: var(--c-mute, var(--ink-3)); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
-.cd.is-open .cd-l::before {
-  content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-  background: var(--c-accent, var(--tomato)); margin-right: 6px; vertical-align: 1px;
-  animation: ch-pulse 1.6s ease-in-out infinite;
-}
-@keyframes ch-pulse { 50% { opacity: 0.25; } }
-.ch-cd { left: max(47.7vw, calc(38.3vw + 96px)); top: 22px; }
-
-/* --- source --- */
-.ch-src { right: 18px; top: 22px; display: flex; gap: 10px; }
-.ch-src a { font-weight: 600; }
-
-/* --- bottom rail --- */
-.ch-scroll { left: 18px; bottom: 18px; overflow: hidden; transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out); }
-.ch-scroll span { display: inline-block; animation: ch-nudge 2.4s var(--ease-in-out) infinite; }
-.ch-scroll.is-gone, .ch-scroll.is-none { opacity: 0; transform: translateY(8px); }
-.ch-scroll.is-none span { animation: none; }
-.ch-scroll.is-gone span { animation-play-state: paused; }
-@keyframes ch-nudge { 0%, 60%, 100% { transform: none; } 30% { transform: translateY(3px); } }
-.ch-trunk { right: 18px; bottom: 18px; display: inline-flex; align-items: center; gap: 9px; font-weight: 600; transition: opacity 0.5s var(--ease-out); }
-.ch-trunk svg { width: 9px; height: 11px; fill: currentColor; transition: transform 0.5s var(--ease-spring); }
-.ch-trunk:hover svg { transform: translateX(4px) scale(1.15); color: var(--c-accent); }
-body.footer-in .ch-trunk, body.footer-in .ch-scroll { opacity: 0; pointer-events: none; }
-
-.ch-mbtn, .ch-bar { display: none; }
-
-/* --- veil: once the page scrolls under the header, an opaque band in the tone of
-   what is underneath (flour, oven dark or tomato) slides in behind it so the
-   header never runs through headings: solid for the first 64px, then a fade.
-   The color fades between tones (registered property); the shape never moves. --- */
-@property --veil { syntax: "<color>"; inherits: false; initial-value: #efebe4; }
-.ch-veil {
-  position: fixed; left: 0; right: 0; top: 0; height: calc(var(--header-h) + 24px);
-  z-index: calc(var(--z-chrome) - 1);
-  pointer-events: none;
-  opacity: 0;
-  --veil: var(--flour);
-  background: var(--veil);
-  -webkit-mask: linear-gradient(#000 0 64px, rgb(0 0 0 / 0.86) 50%, transparent);
-  mask: linear-gradient(#000 0 64px, rgb(0 0 0 / 0.86) 50%, transparent);
-  transition: opacity 0.3s var(--ease-out), --veil 0.28s var(--ease-out);
-}
-.ch-veil[data-tone="dark"] { --veil: var(--oven); }
-.ch-veil[data-tone="red"] { --veil: var(--tomato); }
-body.is-scrolled .ch-veil { opacity: 1; }
-body.menu-open .ch-veil, html.is-loading .ch-veil { opacity: 0; }
-
+.ch-mbtn { display: none; font-weight: 500; padding: 10px 0 10px 16px; }
 
 .skip {
-  position: fixed; left: 16px; top: 16px; z-index: 120;
+  position: fixed; left: 16px; top: 12px; z-index: 120;
   padding: 10px 16px; border-radius: 999px;
   background: var(--ink); color: var(--paper); font-weight: 600;
   transform: translateY(-200%);
-  transition: transform 0.4s var(--ease-out);
+  transition: transform 0.3s var(--ease-out);
 }
 .skip:focus { transform: none; }
 
-/* --- mobile chrome --- */
 @media (max-width: 720px) {
-  .ch-meta, .ch-nav, .ch-audio-d, .ch-cd, .ch-src, .ch-scroll, .ch-trunk { display: none; }
-  .ch-mark { top: 17px; left: 16px; }
-  /* once content scrolls under the header, slide a flour strip in behind it */
-  .ch-bar {
-    display: block; position: fixed; left: 0; right: 0; top: 0; height: 58px; z-index: var(--z-chrome);
-    background: var(--bg);
-    box-shadow: 0 1px 0 var(--line);
-    transform: translateY(-101%);
-    transition: transform 0.6s var(--ease-out), background-color 0.28s var(--ease-out);
-    pointer-events: none;
-  }
-  body.ch-dark .ch-bar { background: var(--oven); box-shadow: 0 1px 0 rgb(247 244 239 / 0.1); }
-  body.ch-red .ch-bar { background: var(--tomato); box-shadow: 0 1px 0 rgb(20 18 16 / 0.16); }
-  .ch-veil { display: none; }
-  body.is-scrolled .ch-bar { transform: none; }
-  .ch-word { writing-mode: horizontal-tb; transform: none; font-size: 21px; line-height: 1; }
-  .ch-word i { vertical-align: 0.8em; margin: 0 0 0 1px; }
-  .ch-mbtn {
-    display: inline-flex; align-items: center; gap: 10px;
-    right: 16px; top: 15px; height: 30px; padding: 0 2px 0 14px;
-    font-weight: 600; font-size: 13px;
-  }
-  .ch-mbtn i { position: relative; width: 22px; height: 8px; }
-  .ch-mbtn i::before, .ch-mbtn i::after {
-    content: ""; position: absolute; left: 0; right: 0; height: 1.6px; background: currentColor; border-radius: 2px;
-    transition: transform 0.5s var(--ease-out);
-  }
-  .ch-mbtn i::before { top: 0; }
-  .ch-mbtn i::after { bottom: 0; left: 6px; }
-  .ch-mbtn:hover i::after { transform: translateX(-6px); }
+  .ch-nav { display: none; }
+  .ch-mbtn { display: block; }
 }
 
-/* --- mobile overlay menu --- */
+/* --- mobile menu: a full screen flour sheet --- */
 .mm {
-  position: fixed; inset: 0; z-index: 79; /* under the page transition, over the chrome */
+  position: fixed; inset: 0; z-index: 79;
   display: flex; flex-direction: column;
-  padding: 15px 16px max(18px, env(safe-area-inset-bottom));
-  background: var(--tomato); color: var(--ink);
-  font-size: 13px;
-  overflow: hidden;
+  padding: 0 16px max(24px, env(safe-area-inset-bottom));
+  background: var(--flour); color: var(--ink);
+  overscroll-behavior: contain;
 }
 .mm[hidden] { display: none; }
-.mm { overscroll-behavior: contain; touch-action: none; }
 html.menu-lock { overflow: hidden; }
-.mm-top { display: flex; justify-content: space-between; align-items: center; height: 32px; }
-.mm-mark { font-weight: 800; font-size: 21px; letter-spacing: -0.045em; }
-.mm-mark i { font-style: normal; font-size: 0.5em; vertical-align: 0.8em; font-weight: 500; }
-.mm-close { font-weight: 600; padding: 6px 2px 6px 14px; }
-/* centered between the top bar and the foot, so neither half of the sheet sits empty */
-.mm-list { margin: auto 0; padding: 4vh 0; position: relative; z-index: 1; }
-.mm-list li { overflow: hidden; border-top: 1px solid rgb(20 18 16 / 0.18); }
-.mm-list li:last-child { border-bottom: 1px solid rgb(20 18 16 / 0.18); }
-.mm-list a { display: flex; align-items: baseline; gap: 12px; padding: 1.2vh 0 0.2vh; }
-.mm-n, .mm-t { display: inline-block; }
-.mm-n { font-family: var(--f-mono); font-size: 11px; width: 22px; align-self: flex-start; padding-top: 2.4vh; }
-.mm-t {
-  font-family: var(--f-display); font-weight: 800; text-transform: uppercase;
-  font-size: min(19vw, 11vh); line-height: 0.84; letter-spacing: -0.005em;
-  color: var(--paper);
-  transition: color 0.3s;
+.mm-top { display: flex; justify-content: space-between; align-items: center; height: var(--ch-row); flex: none; }
+.mm-mark { font-weight: 700; font-size: 19px; letter-spacing: -0.035em; padding: 6px 0; }
+.mm-close { font-weight: 500; font-size: 14px; padding: 10px 0 10px 16px; }
+.mm-list { margin-top: 6vh; }
+.mm-list li { border-top: 1px solid var(--line); }
+.mm-list li:last-child { border-bottom: 1px solid var(--line); }
+.mm-list a {
+  display: block; padding: 14px 0 12px;
+  font-weight: 600; font-size: clamp(34px, 10vw, 48px); line-height: 1; letter-spacing: -0.035em;
 }
-.mm-list a[aria-current="page"] .mm-t { color: var(--ink); }
-.mm-list a[aria-current="page"] .mm-t::before { content: "\2192\00a0"; font-weight: 400; }
-.mm-slice { position: absolute; right: 16px; top: calc(56px + 2vh); width: 38vw; pointer-events: none; transform: rotate(-12deg); }
-.mm-slice svg { width: 100%; height: auto; }
-.mm-foot {
-  display: grid; grid-template-columns: 1fr auto; gap: 14px 10px; align-items: end;
-  --c-mute: rgb(20 18 16 / 0.86); /* ink on tomato: mute is still >= 4.5:1 */
-}
-.mm-foot > a { grid-column: 1 / -1; font-weight: 600; justify-self: start; }
-.mm-audio { justify-self: end; }
-.mm :focus-visible { outline-color: var(--ink); }
+.mm-list a[aria-current="page"] { color: var(--tomato-deep); }
+.mm-foot { margin-top: auto; padding-top: 24px; font-size: 14px; }
+.mm-foot a { display: inline-flex; align-items: center; gap: 4px; padding: 8px 0; font-weight: 500; }
 
 /* =========================================================================
-   Custom cursor (fine pointers only). Two layers moving as one: the dot is
-   difference-blended so it reads on any ground; the labelled pill is a plain
-   ink pill with paper type, so it stays legible over color and illustration.
+   Custom cursor (fine pointers only). The dot is difference-blended so it reads
+   on any ground; the labelled pill is a plain ink pill with paper type.
    ========================================================================= */
 html.has-cursor, html.has-cursor * { cursor: none !important; }
 html.has-cursor :is(input, textarea, select, [contenteditable]) { cursor: text !important; }
@@ -313,261 +100,38 @@ html.has-cursor :is(input, textarea, select, [contenteditable]) { cursor: text !
   pointer-events: none;
   mix-blend-mode: difference;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.25s;
   will-change: transform;
 }
 .cursor--pill { mix-blend-mode: normal; z-index: calc(var(--z-cursor) + 1); }
 .cursor.is-on { opacity: 1; }
 .cursor[data-state="hide"] { opacity: 0; }
 .cursor-d {
-  position: absolute; left: -22px; top: -22px; width: 44px; height: 44px;
+  position: absolute; left: -17px; top: -17px; width: 34px; height: 34px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: inset 0 0 0 1.5px #fff;
-  transform: scale(0.2);
-  transition: transform 0.45s var(--ease-out), background-color 0.25s;
+  box-shadow: inset 0 0 0 1px #fff;
+  transform: scale(0.22);
+  transition: transform 0.35s var(--ease-out), background-color 0.2s;
 }
 .cursor[data-state="ring"] .cursor-d { transform: scale(1); background-color: transparent; }
-.cursor.is-down .cursor-d { transform: scale(0.14); }
-.cursor.is-down[data-state="ring"] .cursor-d { transform: scale(0.82); }
+.cursor.is-down .cursor-d { transform: scale(0.16); }
+.cursor.is-down[data-state="ring"] .cursor-d { transform: scale(0.85); }
 .cursor-p {
   position: absolute; left: 0; top: 0;
-  padding: 9px 15px 10px;
+  padding: 7px 12px 8px;
   border-radius: 999px;
   background: var(--ink); color: var(--paper);
-  /* a hairline of paper keeps the pill's edge on oven dark sections */
-  box-shadow: 0 0 0 1px rgb(247 244 239 / 0.28), 0 6px 18px -6px rgb(20 18 16 / 0.45);
-  font-size: 12px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap;
-  /* sits just off the pointer's lower right so it never hides what you're reading */
-  transform: translate(14px, 14px) scale(0.2);
+  box-shadow: 0 0 0 1px rgb(247 244 239 / 0.22);
+  font-size: 12px; font-weight: 500; letter-spacing: -0.005em; white-space: nowrap;
+  /* just off the pointer's lower right so it never hides what you are reading */
+  transform: translate(14px, 14px) scale(0.9);
   transform-origin: 0 0;
   opacity: 0;
-  transition: transform 0.5s var(--ease-spring), opacity 0.2s;
+  transition: transform 0.3s var(--ease-out), opacity 0.2s;
 }
 .cursor[data-state="pill"] .cursor-p { transform: translate(14px, 14px) scale(1); opacity: 1; }
-.cursor.is-down[data-state="pill"] .cursor-p { transform: translate(14px, 14px) scale(0.92); }
-.cursor[data-state="pill"] .cursor-d { transform: scale(0.16); }
-
-/* =========================================================================
-   Preloader
-   ========================================================================= */
-#loader {
-  position: fixed; inset: 0; z-index: var(--z-loader);
-  overflow: hidden;
-  pointer-events: auto;
-  /* failsafe: if the app never boots (script blocked, failed or threw before the
-     preloader took over), the loader gets out of the way by itself */
-  animation: ld-failsafe 0.5s ease 8s both;
-}
-/* once preloader.ts owns the screen it has its own backstop */
-html.is-loading #loader { animation: none; }
-@keyframes ld-failsafe { to { opacity: 0; visibility: hidden; pointer-events: none; } }
-html.is-loading { overflow: hidden; }
-/* the small rows wait for the webfont; the wordmark paints at once (it is the LCP)
-   with a metric-matched fallback, so a late swap barely moves it */
-#loader:not(.is-type) :is(.ld-row, .ld-art text, .ld-wall span) { visibility: hidden; }
-.ld-clip, .ld-paper { position: absolute; inset: 0; will-change: transform; }
-.ld-clip { overflow: hidden; }
-.ld-paper {
-  display: flex; flex-direction: column; justify-content: space-between; align-items: center;
-  padding: 18px;
-  background: var(--flour);
-  color: var(--ink);
-  font-size: 13px;
-}
-.ld-row { align-self: stretch; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
-.ld-top span:nth-child(2) { color: var(--ink-3); }
-@font-face {
-  /* Arial-metric bold scaled so OPEN / SLICE set the same width as Big Shoulders 800 */
-  font-family: "Big Shoulders Fallback";
-  src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold"), local("Helvetica Bold");
-  font-weight: 100 900;
-  size-adjust: 64%;
-  ascent-override: 128%;
-  descent-override: 32%;
-  line-gap-override: 0%;
-}
-/* The lid: the same printed lid as the home hero's box (src/chrome/lid.ts, put in
-   by preloader.ts). The box is fixed (never sized by its text, so a font swap moves
-   nothing) and drawn in CSS as well, so the very first frame already reads as the
-   board. The wordmark is real text set over the art where the lid prints it:
-   centered, baseline at 70%, 79.5% wide, tomato with an ink copy a hair out of
-   register. */
-.ld-lid {
-  --L: min(68vw, 64vh);
-  position: relative;
-  width: var(--L); height: var(--L);
-  margin: auto;
-  border-radius: 1.75%;
-  background: #fbf8f2;
-  box-shadow:
-    inset 0 0 0 calc(var(--L) * 0.01) var(--ink),
-    inset 0 0 0 calc(var(--L) * 0.07) #fbf8f2,
-    inset 0 0 0 calc(var(--L) * 0.078) var(--tomato),
-    0 calc(var(--L) * 0.06) calc(var(--L) * 0.1) calc(var(--L) * -0.05) rgb(20 18 16 / 0.35);
-  rotate: -3deg;
-}
-.ld-art, .ld-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.ld-word {
-  position: absolute; left: 0; right: 0; bottom: 30%;
-  display: flex; justify-content: center; align-items: flex-end;
-  font-family: "Big Shoulders Display Variable", "Big Shoulders Fallback", Impact, sans-serif;
-  font-weight: 800;
-  color: var(--tomato);
-  text-transform: uppercase;
-  font-size: calc(var(--L) * 0.226);
-  line-height: 0.8;
-  letter-spacing: -0.012em;
-  text-shadow: 0.032em 0.032em 0 var(--ink);
-  white-space: nowrap;
-  transform: scaleY(1.1);
-  transform-origin: 50% 100%;
-}
-.ld-ln { display: block; padding: 0.04em 0 0; }
-.ld-ln > span { display: inline-block; }
-.ld-bot { font-variant-numeric: tabular-nums; }
-.ld-temp { display: inline-flex; align-items: center; gap: 10px; }
-.ld-dial { position: relative; width: 26px; height: 26px; flex: none; }
-.ld-dial svg { width: 100%; height: 100%; fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
-.ld-needle {
-  position: absolute; left: 50%; top: 4px; bottom: 50%; width: 2px; margin-left: -1px;
-  background: var(--tomato); border-radius: 2px;
-  transform-origin: 50% 100%;
-  transform: rotate(-135deg);
-}
-.ld-needle::after { content: ""; position: absolute; left: -2px; bottom: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
-.ld-k { color: var(--ink-3); }
-.ld-count { font-weight: 600; min-width: 5ch; }
-/* a thermometer: bulb, tube, tick marks, mercury */
-.ld-bar {
-  flex: 1; max-width: 36vw; height: 5px; position: relative;
-  border: 1px solid var(--ink); border-radius: 0 3px 3px 0; border-left: 0;
-  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgb(20 18 16 / 0.35) calc(10% - 1px) 10%);
-}
-.ld-bar::before { content: ""; position: absolute; left: -9px; top: 50%; width: 11px; height: 11px; margin-top: -5.5px; border-radius: 50%; background: var(--tomato); box-shadow: 0 0 0 1px var(--ink); }
-.ld-bar i { position: absolute; inset: 1px 1px 1px 0; background: var(--tomato); transform-origin: 0 50%; transform: scaleX(0); }
-.ld-bot > span:last-child { color: var(--ink-3); }
-.ld-wall {
-  position: absolute; top: 0; left: 0; bottom: 0;
-  width: 64vw;
-  display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3vh;
-  background: var(--ink);
-  transform: translate3d(-101vw, 0, 0);
-  will-change: transform;
-}
-/* printed on the wall, so its moment on screen is the box's back panel, not a void */
-.ld-wall-w {
-  font-family: var(--f-display); font-weight: 800; text-transform: uppercase;
-  font-size: min(11vw, 22vh); line-height: 0.8; letter-spacing: -0.01em;
-  color: var(--tomato);
-}
-.ld-wall-w sup { font-size: 0.16em; vertical-align: top; margin-left: 0.2em; color: var(--paper); }
-.ld-wall-r {
-  width: 78%; height: 2px;
-  background: repeating-linear-gradient(90deg, rgb(247 244 239 / 0.5) 0 8px, transparent 8px 14px);
-}
-.ld-wall span {
-  position: absolute; left: 22px; bottom: 18px;
-  writing-mode: vertical-rl; transform: rotate(180deg);
-  font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgb(247 244 239 / 0.5);
-}
-.ld-crew {
-  position: absolute; left: 0; top: 0; bottom: 0;
-  width: clamp(200px, 26vw, 420px);
-  transform: translate3d(-101vw, 0, 0);
-  will-change: transform;
-}
-.ld-m { position: absolute; bottom: 14vh; width: 58%; transform-origin: 50% 100%; }
-.ld-m svg { width: 100%; height: auto; }
-.ld-m2 { right: -7%; z-index: 1; }
-.ld-m1 { right: 44%; bottom: 17vh; }
-@media (max-width: 720px) {
-  .ld-lid { --L: min(100vw - 40px, 62vh); }
-  .ld-bar { display: none; }
-  .ld-top span:last-child, .ld-bot > span:last-child { display: none; }
-  .ld-wall { width: 80vw; }
-  .ld-crew { width: 55vw; }
-}
-
-/* =========================================================================
-   Page transition
-   ========================================================================= */
-.pt { position: fixed; inset: 0; z-index: var(--z-transition); pointer-events: none; visibility: hidden; }
-.pt.is-on { visibility: visible; pointer-events: auto; }
-.pt-ink, .pt-red { position: absolute; inset: 0; will-change: transform; } /* gsap owns their transform */
-.pt-ink { background: var(--ink); }
-.pt-red { background: var(--tomato); color: var(--paper); }
-/* the tomato sheet is a torn-off ticket: serrated top and bottom edges, so the ink
-   sheet chasing it reads as the next sheet in the pad, not a stray black band */
-.pt-red::before, .pt-red::after {
-  content: ""; position: absolute; left: 0; right: 0; height: 12px;
-  background: var(--tomato);
-  pointer-events: none;
-}
-.pt-red::before {
-  bottom: calc(100% - 1px);
-  -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 24px 100%;
-  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 24px 100%;
-}
-.pt-red::after {
-  top: calc(100% - 1px);
-  -webkit-mask: conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% / 24px 100%;
-  mask: conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% / 24px 100%;
-}
-.pt-in { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.pt-meta {
-  position: absolute; left: 18px; right: 18px; bottom: 18px;
-  display: flex; justify-content: space-between; gap: 16px;
-  font-size: 13px; font-weight: 600; color: var(--ink);
-}
-.pt-k { font-variant-numeric: tabular-nums; }
-/* the peel: a long handle running in from off screen left, a tapered neck and a
-   flour-dusted wooden blade with the order printed on it */
-.pt-load {
-  --pt-line: 3px;
-  position: relative;
-  display: flex; align-items: center;
-  max-width: calc(100vw - 32px);
-  will-change: transform;
-}
-.pt-handle {
-  position: absolute; top: 50%;
-  width: 120vw; height: clamp(16px, 2.2vw, 30px);
-  transform: translateY(-50%);
-  background: var(--paper);
-  border: var(--pt-line) solid var(--ink); border-right: 0;
-  border-radius: 999px 0 0 999px;
-}
-.pt-handle i { position: absolute; left: 10%; top: 50%; width: 30%; height: 1px; background: rgb(20 18 16 / 0.25); box-shadow: 30vw 4px 0 rgb(20 18 16 / 0.18); }
-.pt-neck { position: absolute; right: calc(100% - 3px); top: 0; height: 100%; width: clamp(36px, 5vw, 80px); overflow: visible; }
-.pt-neck path { fill: var(--paper); stroke: var(--ink); stroke-width: var(--pt-line); vector-effect: non-scaling-stroke; stroke-linejoin: round; }
-.pt-handle { right: calc(100% + clamp(36px, 5vw, 80px) - 6px); }
-.pt-blade {
-  position: relative;
-  padding: 0.16em 0.42em 0.12em 0.34em;
-  font-size: clamp(54px, 8.6vw, 168px);
-  background:
-    repeating-linear-gradient(176deg, transparent 0 0.19em, rgb(20 18 16 / 0.06) 0.19em calc(0.19em + 1px)),
-    var(--paper);
-  border: var(--pt-line) solid var(--ink);
-  border-radius: 0.14em 0.6em 0.6em 0.14em / 0.14em 50% 50% 0.14em;
-  box-shadow: 0.06em 0.07em 0 rgb(20 18 16 / 0.9);
-  color: var(--ink);
-}
-.pt-mask { overflow: hidden; padding: 0 0.02em; }
-.pt-t {
-  display: block;
-  font-family: var(--f-display); font-weight: 800; text-transform: uppercase;
-  font-size: 1em;
-  line-height: 0.88; letter-spacing: -0.005em;
-  white-space: nowrap;
-}
-@media (max-width: 720px) {
-  .pt-load { --pt-line: 2.5px; margin-left: 10vw; }
-  .pt-blade { font-size: 16vw; }
-  .pt-meta span:last-child { display: none; }
-}
+.cursor[data-state="pill"] .cursor-d { transform: scale(0); }
 
 /* =========================================================================
    Shared footer: renderFooter() from src/chrome/footer.ts
@@ -575,48 +139,51 @@ html.is-loading { overflow: hidden; }
 .site-footer {
   --sf-mute: var(--ink-3);
   --sf-line: var(--line);
+  /* tone on tone: big and present, without shouting over the page above */
+  --sf-word: color-mix(in srgb, var(--ink) 12%, var(--flour));
   container-type: inline-size;
   position: relative;
-  /* pages end on their own generous section padding; the footer just follows on */
-  margin-top: clamp(8px, 1.6vw, 32px);
-  padding: 0 var(--gutter);
-  font-size: 13px;
-  line-height: 1.35;
+  margin-top: clamp(48px, 6vw, 96px);
+  padding: 0 clamp(16px, 2.2vw, 40px);
+  font-size: 14px;
+  line-height: 1.4;
   overflow: hidden;
 }
-[data-theme="dark"] .site-footer { --sf-mute: rgb(247 244 239 / 0.52); --sf-line: rgb(247 244 239 / 0.14); }
-.sf-grid {
-  display: grid; grid-template-columns: repeat(12, 1fr); gap: 32px var(--gutter);
+[data-theme="dark"] .site-footer { --sf-mute: rgb(247 244 239 / 0.62); --sf-line: rgb(247 244 239 / 0.14); --sf-word: rgb(247 244 239 / 0.14); }
+.sf-top {
+  display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px var(--gutter);
   padding-top: 28px;
   border-top: 1px solid var(--sf-line);
 }
-.sf-lede { grid-column: 1 / span 4; font-style: italic; font-size: clamp(26px, 2.3vw, 40px); line-height: 1.02; max-width: 15em; }
-.sf-col { grid-column: span 2; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
-.sf-lede + .sf-col { grid-column: 5 / span 2; }
-.sf-k { color: var(--sf-mute); margin-bottom: 6px; }
-.sf-col a { font-weight: 600; }
-.sf-v { color: var(--sf-mute); margin-top: 6px; max-width: 16em; }
+.sf-note { grid-column: 1 / span 4; font-weight: 500; }
+.sf-links { grid-column: 5 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px var(--gutter); }
+.sf-links li { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.sf-k { color: var(--sf-mute); }
+.sf-links a, .sf-base a {
+  font-weight: 500; overflow-wrap: anywhere;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat;
+  transition: background-size 0.35s var(--ease-out);
+}
+.sf-links a:hover, .sf-base a:hover { background-size: 0 1px; background-position: 100% 100%; }
+
 .sf-word {
   position: relative; isolation: isolate;
   display: flex; align-items: flex-start;
-  margin: clamp(80px, 11vw, 200px) 0 0;
+  margin: clamp(96px, 12vw, 200px) 0 0;
   font-weight: 800;
-  /* chrome.ts measures the real wordmark and sets --sf-fit so it spans the
-     footer exactly; the cqi value is the close-enough first paint */
-  font-size: var(--sf-fit, 18.2cqi);
+  /* footer.ts measures the real wordmark and sets --sf-fit so it spans the
+     footer exactly; the cqi value is the close enough first paint */
+  font-size: var(--sf-fit, 21cqi);
   line-height: 0.74;
   letter-spacing: -0.06em;
-  color: var(--tomato);
+  color: var(--sf-word);
   white-space: nowrap;
   user-select: none;
 }
-.sf-wm { position: relative; z-index: 1; display: block; }
-.sf-wm sup {
-  display: inline-block;
-  font-size: 0.13em; font-weight: 600; line-height: 1; letter-spacing: 0;
-  vertical-align: top;
-  margin: 0.06em 0 0 0.5em;
-}
+/* the trailing pad covers the last letter's negative tracking, so the fit is exact */
+.sf-wm { position: relative; z-index: 1; display: block; padding-right: 0.06em; }
+/* drawn as generated content: it is a decorative tone on tone mark, not text to read */
+.sf-wm::before { content: attr(data-wm); }
 /* Jonah and Peter, behind the letters. The peek box's bottom edge sits on the
    cap line, so whatever rises inside it reads as coming from behind the type. */
 .sf-peek {
@@ -631,10 +198,10 @@ html.is-loading { overflow: hidden; }
 }
 .sf-m svg { width: 100%; height: auto; }
 /* each one stands over a flat topped E, so the gloves have an edge to hook */
-.sf-m1 { left: 25.2%; }
-.sf-m2 { left: 86.4%; transform: translate3d(0, 104%, 0) scaleX(-1); }
-.site-footer.is-peek .sf-m1 { transform: translate3d(0, 50%, 0) rotate(-2deg); transition: transform 0.9s var(--ease-spring) 0.1s; }
-.site-footer.is-peek .sf-m2 { transform: translate3d(0, 52%, 0) rotate(1.5deg) scaleX(-1); transition: transform 0.9s var(--ease-spring) 0.28s; }
+.sf-m1 { left: 24.6%; }
+.sf-m2 { left: 87.4%; transform: translate3d(0, 104%, 0) scaleX(-1); }
+.site-footer.is-peek .sf-m1 { transform: translate3d(0, 50%, 0) rotate(-2deg); transition: transform 0.9s var(--ease-out) 0.1s; }
+.site-footer.is-peek .sf-m2 { transform: translate3d(0, 52%, 0) rotate(1.5deg) scaleX(-1); transition: transform 0.9s var(--ease-out) 0.25s; }
 /* ...and their gloves, in front of the letters, hooked over the cap line */
 .sf-grip { position: absolute; left: 0; right: 0; top: 0.035em; height: 0; z-index: 2; pointer-events: none; }
 .sf-g {
@@ -645,62 +212,35 @@ html.is-loading { overflow: hidden; }
 }
 .sf-g svg { width: 100%; height: auto; overflow: visible; }
 .sf-g path { fill: var(--paper); stroke: var(--ink); stroke-width: 2.4; stroke-linejoin: round; }
-.sf-g .g-back { fill: var(--paper); }
 .sf-g .g-crease { fill: none; stroke-width: 1.6; stroke-linecap: round; }
-.sf-g1 { left: 28.4%; }
-.sf-g2 { left: 89.4%; }
-.sf-g3 { left: 94.3%; }
-.site-footer.is-peek .sf-g { opacity: 1; transform: translate3d(0, -38%, 0); transition: transform 0.7s var(--ease-spring), opacity 0.15s; }
-.site-footer.is-peek .sf-g1 { transition-delay: 0.42s; }
-.site-footer.is-peek .sf-g2 { transition-delay: 0.58s; }
+.sf-g1 { left: 27.8%; }
+.sf-g2 { left: 90.6%; }
+.sf-g3 { left: 95.5%; }
+.site-footer.is-peek .sf-g { opacity: 1; transform: translate3d(0, -38%, 0); transition: transform 0.6s var(--ease-out), opacity 0.15s; }
+.site-footer.is-peek .sf-g1 { transition-delay: 0.45s; }
+.site-footer.is-peek .sf-g2 { transition-delay: 0.6s; }
 .site-footer.is-peek .sf-g3 { transition-delay: 0.66s; }
-@media (hover: hover) {
-  .site-footer.is-peek .sf-word:hover .sf-m1 { transform: translate3d(0, 44%, 0) rotate(-5deg); transition-delay: 0s; }
-  .site-footer.is-peek .sf-word:hover .sf-m2 { transform: translate3d(0, 46%, 0) rotate(4deg) scaleX(-1); transition-delay: 0.06s; }
-}
-/* Saturday heat shimmer: stacked copies of the wordmark, each clipped to a band
-   and drifting on its own sine. Transform only; built and run by chrome.ts. */
-.sf-wm.is-heat { color: transparent; }
-.sf-heat { position: absolute; inset: 0; color: var(--tomato); pointer-events: none; }
-.sf-heat > span { position: absolute; left: 0; top: 0; display: block; white-space: nowrap; will-change: transform; }
-/* Saturday: they stand up a little taller so the aprons show over the letters */
-html.is-saturday .site-footer.is-peek .sf-m1 { transform: translate3d(0, 33%, 0) rotate(-2deg); }
-html.is-saturday .site-footer.is-peek .sf-m2 { transform: translate3d(0, 34%, 0) rotate(1.5deg) scaleX(-1); }
+
 .sf-base {
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px;
-  padding: 14px 0 18px;
-  margin-top: 2.2cqi;
-  border-top: 1px solid var(--sf-line);
+  display: flex; justify-content: space-between; gap: 16px;
+  padding: 16px 0 20px;
+  margin-top: 2.4cqi;
   color: var(--sf-mute);
 }
-.sf-base > :last-child { justify-self: end; }
 .sf-base a { color: inherit; }
-.sf-ring { display: inline-flex; align-items: center; gap: 10px; }
-.sf-tree { width: 52px; flex: none; margin: -14px 0 -4px -4px; }
-.sf-tree svg { width: 100%; height: auto; }
-.sf-where b { font-weight: 600; color: var(--fg, var(--ink)); }
-[data-theme="dark"] .sf-where b { color: var(--paper); }
-/* keep the footer's text on the same rail as page content; the wordmark stays full bleed */
-@media (min-width: 721px) {
-  .sf-grid, .sf-base { margin-left: 64px; }
-}
-.sf-col a { overflow-wrap: break-word; }
+
 @media (min-width: 721px) and (max-width: 1100px) {
-  .sf-grid { grid-template-columns: repeat(4, 1fr); }
-  .sf-lede { grid-column: 1 / -1; max-width: 18em; }
-  .sf-col, .sf-lede + .sf-col { grid-column: span 1; }
+  .sf-note { grid-column: 1 / -1; }
+  .sf-links { grid-column: 1 / -1; }
 }
 @media (max-width: 720px) {
-  .site-footer { margin-top: 8px; }
-  .sf-grid { grid-template-columns: 1fr 1fr; gap: 28px 16px; }
-  .sf-lede { grid-column: 1 / -1; font-size: 30px; }
-  .sf-col, .sf-lede + .sf-col { grid-column: span 1; }
-  .sf-word { margin-top: 30vw; }
+  .sf-top { grid-template-columns: 1fr; gap: 24px; }
+  .sf-note, .sf-links { grid-column: 1 / -1; }
+  .sf-links { grid-template-columns: 1fr 1fr; gap: 20px 16px; }
+  .sf-word { margin-top: 32vw; }
   .sf-m { width: 0.78em; }
-  .sf-m1 { left: calc(25.2% - 0.09em); }
-  .sf-m2 { left: calc(86.4% - 0.14em); }
+  .sf-m1 { left: calc(24.6% - 0.09em); }
+  .sf-m2 { left: calc(87.4% - 0.14em); }
   .sf-g { width: 0.15em; margin-left: -0.075em; }
   .sf-peek { height: 1.2em; }
-  .sf-base { grid-template-columns: 1fr; justify-items: start; gap: 8px; }
-  .sf-base > :last-child { justify-self: start; }
 }

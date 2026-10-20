@@ -1,11 +1,13 @@
 import { defineConfig, type Plugin } from "vite";
 
-// Fonts that render above the fold on every route. Their hashed latin woff2 files are
-// preloaded from the built index.html so text does not wait on the CSS to be parsed.
+// Fonts that render above the fold. Their hashed latin woff2 files are preloaded from
+// the built index.html so text does not wait on the CSS to be parsed.
 const PRELOAD_FONTS = [
+  // all UI and body type
   /bricolage-grotesque-latin-wght-normal-[\w-]+\.woff2$/,
+  // the tool covers in the home hero set their titles and subtitles in these two
+  // (src/art/posters.ts); src/art/flatten.ts fetches the very same files
   /big-shoulders-display-latin-wght-normal-[\w-]+\.woff2$/,
-  // the italic serif carries the hero headlines on most pages
   /instrument-serif-latin-400-italic-[\w-]+\.woff2$/,
 ];
 

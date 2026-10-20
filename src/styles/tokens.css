@@ -34,7 +34,7 @@
 
   --gutter: clamp(16px, 1.4vw, 24px);
   --col: calc((100vw - var(--gutter) * 2) / 12);
-  --header-h: 140px;
+  --header-h: 76px;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
@@ -49,5 +49,5 @@
 }
 
 @media (max-width: 720px) {
-  :root { --header-h: 96px; }
+  :root { --header-h: 64px; }
 }

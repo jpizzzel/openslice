@@ -1,8 +1,8 @@
-// Tiny typed event bus for cross-module signals (route changes, audio, etc).
+// Tiny typed event bus for cross-module signals (route changes).
 type Events = {
   "route:before": { to: string };
   "route:after": { path: string; section: string };
-  "audio:toggle": { on: boolean };
+  // Sound is gone. Pages may still emit this; nothing listens, so it is a no-op.
   "sfx": { name: "tick" | "pop" | "whoosh" | "click" };
 };
 

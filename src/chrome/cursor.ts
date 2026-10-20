@@ -1,4 +1,4 @@
-// Custom cursor: ink dot -> ring over links/buttons -> labelled pill over [data-cursor].
+// Custom cursor: a small dot, a ring over links and buttons, a quiet ink pill label over [data-cursor].
 // Fine pointers only. One rAF loop, transform only, sleeps when settled.
 import { finePointer, reducedMotion } from "../core/motion";
 
@@ -23,7 +23,7 @@ export function initCursor() {
 
   let mx = -100, my = -100, x = -100, y = -100, raf = 0, shown = false;
   let state = "";
-  const k = reducedMotion ? 1 : 0.22;
+  const k = reducedMotion ? 1 : 0.3;
 
   const loop = () => {
     x += (mx - x) * k;

@@ -5,19 +5,17 @@ import "./styles/chrome.css";
 
 import { initScroll } from "./core/motion";
 import { initRouter } from "./core/router";
-import { firstRender } from "./core/ready";
 import { initChrome } from "./chrome/chrome";
-import { runPreloader } from "./chrome/preloader";
 
 async function boot() {
   initScroll();
   initChrome();
-  const loader = runPreloader();
-  await document.fonts.ready.catch(() => {});
-  const routed = initRouter();
-  await Promise.race([routed, firstRender]);
-  await loader.done();
-  await routed;
+  // give the preloaded fonts a short moment so the first paint is in the real type
+  await Promise.race([
+    document.fonts.ready.catch(() => {}),
+    new Promise((r) => setTimeout(r, 600)),
+  ]);
+  await initRouter();
 }
 
 boot();

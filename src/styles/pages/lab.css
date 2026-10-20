@@ -380,11 +380,17 @@ html.lab-lock { overflow: hidden; }
 /* =========================================================================
    Responsive
    ========================================================================= */
+/* tablet: the sticky side column would squeeze two tile columns into ~210px
+   each, so the side becomes a header band and the tiles get the full width */
 @media (max-width: 1099px) {
-  .p-lab__side { grid-column: 1 / span 4; }
-  .p-lab__main { grid-column: 5 / -1; }
-  .p-lab__head { grid-template-columns: 1fr; }
-  .p-lab__count { font-size: clamp(8rem, 22vw, 16rem); }
+  .p-lab__inner { display: block; }
+  .p-lab__side { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: 12px 40px; margin-bottom: 40px; }
+  .p-lab__sticky { display: contents; }
+  .p-lab__countwrap { grid-column: 1; grid-row: 1 / span 2; }
+  .p-lab__count { font-size: clamp(8rem, 24vw, 16rem); }
+  .p-lab__index { display: none; }
+  .p-lab__about { grid-column: 2; margin: 0 0 6px; max-width: 26em; }
+  .p-lab__head { grid-template-columns: minmax(0, 1fr) auto; }
 }
 
 @media (max-width: 720px) {

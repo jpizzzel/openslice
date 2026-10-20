@@ -285,6 +285,8 @@ const page: Page = {
       const size = fit(t.exp);
       frame.style.width = `${size.w}px`;
       frame.style.height = `${size.h}px`;
+      // the caption bar wraps to the frame width instead of widening the box
+      (modal.querySelector(".p-lab-modal__box") as HTMLElement).style.width = `${size.w}px`;
 
       loop.solo = t.exp.id;
       loop.focus = t.exp.id;
@@ -362,6 +364,7 @@ const page: Page = {
       const s = fit(expanded.exp);
       frame.style.width = `${s.w}px`;
       frame.style.height = `${s.h}px`;
+      (modal.querySelector(".p-lab-modal__box") as HTMLElement).style.width = `${s.w}px`;
     };
     document.addEventListener("click", onModalClick);
     document.addEventListener("keydown", onKey);

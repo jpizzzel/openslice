@@ -74,7 +74,7 @@
 
 .p-toolbox .tb-item__a { display: block; color: var(--ink); }
 .p-toolbox .tb-item__kind { display: block; }
-.p-toolbox .tb-item__wt { color: var(--muted); opacity: .8; }
+.p-toolbox .tb-item__wt { color: var(--muted); }
 .p-toolbox .tb-item__name {
   display: block; font-family: var(--f-display); font-weight: 600; text-transform: uppercase;
   line-height: .95; letter-spacing: .005em;
@@ -89,7 +89,7 @@
   transition: transform .5s var(--ease-spring), box-shadow .4s var(--ease-out), opacity .4s;
   opacity: .55;
 }
-.p-toolbox .tb-swatch:hover { transform: scale(1.25); opacity: 1; }
+@media (hover: hover) { .p-toolbox .tb-swatch:hover { transform: scale(1.25); opacity: 1; } }
 .p-toolbox .tb-swatch.is-active { opacity: 1; transform: scale(1.3); box-shadow: 0 0 0 2px var(--flour), 0 0 0 3px var(--ink); }
 
 .p-toolbox .tb-ctrl { display: flex; align-items: center; gap: 8px; }
@@ -99,7 +99,7 @@
   transition: background-color .35s var(--ease-out), color .35s, transform .5s var(--ease-spring);
 }
 .p-toolbox .tb-arrow svg { width: 15px; height: 15px; }
-.p-toolbox .tb-arrow:hover { background: var(--ink); color: var(--paper); transform: scale(1.08); }
+@media (hover: hover) { .p-toolbox .tb-arrow:hover { background: var(--ink); color: var(--paper); transform: scale(1.08); } }
 .p-toolbox .tb-arrow:active { transform: scale(.94); }
 .p-toolbox .tb-cta {
   display: inline-flex; align-items: center; gap: 10px; margin-left: 14px; font-size: var(--t-sm);
@@ -152,6 +152,14 @@
   display: grid; grid-template-columns: repeat(2, minmax(0, 215px)); gap: 40px 22px;
 }
 .p-toolbox.is-pinned .tb-meta__pair[data-k="replaces"] { grid-column: span 2; }
+@media (max-width: 1439px) {
+  /* stop the meta before the front poster's left edge; labels stack above values */
+  .p-toolbox.is-pinned .tb-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 20px;
+    width: min(452px, calc(47vw - var(--cw) * .62 - var(--left) - 24px));
+  }
+  .p-toolbox.is-pinned .tb-meta__pair { grid-template-columns: 1fr; gap: 4px; }
+}
 
 .p-toolbox.is-pinned .tb-count {
   position: absolute; left: var(--left); bottom: 2.4vh; z-index: 220; pointer-events: none;
@@ -197,13 +205,14 @@
 
 /* ================= FLAT RAIL (mobile + reduced motion) ================= */
 .p-toolbox.is-flat { --cw: min(70vw, 360px); }
-.p-toolbox.is-flat .tb-stage { display: flex; flex-direction: column; padding: calc(var(--header-h) + 8px) 0 14vh; }
+.p-toolbox.is-flat .tb-stage { display: flex; flex-direction: column; padding: calc(var(--header-h) + 8px) 0 4vh; }
 .p-toolbox.is-flat .tb-head { order: 0; padding: 0 16px; }
 .p-toolbox.is-flat .tb-tag { font-size: 2.2rem; }
 .p-toolbox.is-flat .tb-cards {
   order: 1; display: flex; gap: 5vw; overflow-x: auto; overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory; scrollbar-width: none;
-  padding: 6vh calc(50vw - var(--cw) / 2) 7vh;
+  /* tall bottom padding so the card shadows fade out instead of being cut by the scroller */
+  padding: 6vh calc(50vw - var(--cw) / 2) calc(7vh + 48px); margin-bottom: -48px;
 }
 .p-toolbox.is-flat .tb-cards::-webkit-scrollbar { display: none; }
 .p-toolbox.is-flat .tb-card { flex: 0 0 var(--cw); scroll-snap-align: center; position: relative; }
@@ -235,11 +244,11 @@
 }
 .p-toolbox.is-flat .tb-item { border-top: 1px solid var(--line); }
 .p-toolbox.is-flat .tb-item:last-child { border-bottom: 1px solid var(--line); }
-.p-toolbox.is-flat .tb-item__a { padding: 22px 0 24px; display: grid; grid-template-columns: 1fr; gap: 6px; opacity: .5; transition: opacity .4s; }
-.p-toolbox.is-flat .tb-item.is-active .tb-item__a { opacity: 1; }
+.p-toolbox.is-flat .tb-item__a { padding: 22px 0 24px; display: grid; grid-template-columns: 1fr; gap: 6px; }
+.p-toolbox.is-flat .tb-item__name { color: var(--ink-2); transition: color .4s; }
 .p-toolbox.is-flat .tb-item__name { font-size: 2.6rem; }
 .p-toolbox.is-flat .tb-item__dash { display: none; }
-.p-toolbox.is-flat .tb-item.is-active .tb-item__name { color: var(--tomato); }
+.p-toolbox.is-flat .tb-item.is-active .tb-item__name { color: var(--tomato-deep); }
 
 @media (min-width: 721px) {
   .p-toolbox.is-flat { --cw: min(30vw, 380px); }

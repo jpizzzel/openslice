@@ -4,6 +4,9 @@
   --right: max(var(--gutter), 5vw);
   --tc: var(--tomato);
   --card-gray: #dcd7cf;
+  /* tomato tuned for text on flour: large type passes 3:1, the small mono numbers 4.5:1 */
+  --red-text: var(--tomato-deep);
+  --red-small: #b8241a;
   position: relative; color: var(--ink); overflow-x: clip;
   padding: 0 var(--right) 0 var(--left);
 }
@@ -41,7 +44,7 @@
 /* ---- hero ---- */
 .p-tool .td-hero {
   position: relative; min-height: 100vh; min-height: 100svh;
-  padding: calc(var(--header-h) + 1vh) 0 6vh;
+  padding: calc(var(--header-h) + 2.4vh) 0 6vh;
   display: flex; flex-direction: column;
 }
 .p-tool .td-top { position: relative; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; font-size: var(--t-sm); }
@@ -96,7 +99,7 @@
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; line-height: 1.15;
   color: var(--ink); background: var(--cheese);
 }
-.p-tool .td-wt--cls { background: var(--tomato); color: var(--paper); border-color: var(--tomato); }
+.p-tool .td-wt--cls { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .p-tool .td-blurb {
   position: relative; z-index: 2; margin-top: 3.4vh; max-width: 24ch;
   font-style: italic; font-size: clamp(1.6rem, 1rem + 1.4vw, 2.6rem); line-height: 1.02;
@@ -122,12 +125,12 @@
   font-size: clamp(2.1rem, 1rem + 2.9vw, 4.6rem); line-height: 1.02; letter-spacing: -0.015em; max-width: 19em;
   text-wrap: pretty;
 }
-.p-tool .td-lead { font-style: italic; color: var(--tomato); }
+.p-tool .td-lead { font-style: italic; color: var(--red-text); }
 .p-tool .td-story__text .td-sl { padding-bottom: .04em; }
 
 /* ---- features ---- */
 .p-tool .td-feats { padding: 6vh 0 22vh; }
-.p-tool .td-side__n { font-size: clamp(5rem, 3rem + 5vw, 9rem); margin-top: 18px; display: flex; align-items: flex-start; gap: 8px; }
+.p-tool .td-side__n { color: var(--red-text); font-size: clamp(5rem, 3rem + 5vw, 9rem); margin-top: 18px; display: flex; align-items: flex-start; gap: 8px; }
 .p-tool .td-side__n span { font-family: var(--f-sans); font-size: var(--t-sm); color: var(--muted); text-transform: none; font-weight: 400; margin-top: .8em; }
 .p-tool .td-feat-list { counter-reset: none; }
 .p-tool .td-feat {
@@ -140,7 +143,7 @@
 .p-tool .td-feat__line {
   position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--ink); transform-origin: 0 50%;
 }
-.p-tool .td-feat__num { color: var(--tomato); font-size: 12px; overflow: hidden; display: block; }
+.p-tool .td-feat__num { color: var(--red-small); font-size: 12px; overflow: hidden; display: block; }
 .p-tool .td-feat__txt {
   display: block; overflow: hidden; padding-bottom: .1em;
   font-size: clamp(1.35rem, .9rem + 1.3vw, 2.3rem); line-height: 1.12; letter-spacing: -0.02em; max-width: 30ch;
@@ -242,6 +245,24 @@
 .p-tool .td-404__p { font-size: 1.05rem; max-width: 40ch; margin-bottom: 34px; color: var(--ink-2); }
 .p-tool.td-404 .td-btn { display: inline-flex; }
 .p-tool.td-404 .td-btn:hover { background: var(--tomato); border-color: var(--tomato); }
+
+/* ---- tablet: stack the hero, cards and next slice; no side by side squeeze ---- */
+@media (min-width: 721px) and (max-width: 1100px) {
+  .p-tool { --left: calc(64px + 4vw); --right: 6vw; }
+  .p-tool .td-mega { font-size: 44vw; top: calc(var(--header-h) + 4vh); right: -2vw; }
+  .p-tool .td-poster { position: relative; right: auto; top: auto; width: min(46vw, 40vh); margin: 6vh 4vw 0 auto; }
+  .p-tool .td-title { padding-top: 5vh; margin-top: 0; }
+  .p-tool .td-name { font-size: min(20vw, calc(84vw / (var(--chars) * 0.5))); }
+  .p-tool .td-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: none; }
+  .p-tool .td-story { padding: 16vh 0 12vh; }
+  .p-tool .td-credits { grid-template-columns: 1fr; padding: 4vh 0 18vh; }
+  .p-tool .td-toss--credits { margin: 0 8vw 0 0; }
+  .p-tool .td-toss--links { margin: -40px 0 0 22vw; }
+  .p-tool .td-card__grid { max-width: 62%; }
+  .p-tool .td-next__name { font-size: min(18vw, calc(80vw / (var(--chars) * 0.5))); }
+  .p-tool .td-next__poster { position: relative; right: auto; top: auto; display: block; width: 36vw; margin: 4vh 4vw 0 auto; }
+  .p-tool .td-next__tilt { transform: perspective(900px) rotateY(-10deg) rotateZ(6deg); opacity: 1; }
+}
 
 /* ---- mobile ---- */
 @media (max-width: 720px) {

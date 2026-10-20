@@ -20,6 +20,10 @@ export function initScroll() {
 export function scrollTop() {
   if (lenis) lenis.scrollTo(0, { immediate: true, force: true });
   else window.scrollTo(0, 0);
+  // ScrollTrigger caches the old page's scroll position and restores it on
+  // refresh(); forget it so the next page starts at the top.
+  ScrollTrigger.clearScrollMemory();
+  ScrollTrigger.update();
 }
 
 export { gsap, ScrollTrigger };

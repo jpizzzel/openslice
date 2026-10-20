@@ -273,9 +273,15 @@ const page: Page = {
       tip.hidden = false;
       const flip = x > sr.width * 0.66;
       tip.classList.toggle("is-flip", flip);
+      // no room above the fruit (top of the stage or under the fixed header): hang it below
+      const below = fr.top - tip.offsetHeight - 16 < Math.max(0, sr.top) + 8 || fr.top - tip.offsetHeight - 16 < 72;
+      tip.classList.toggle("is-below", below);
+      // keep the card inside the stage horizontally (small screens)
+      const tw = tip.offsetWidth, anchor = flip ? 0.9 : 0.5;
+      const left = Math.min(Math.max(x - tw * anchor, 0), Math.max(0, sr.width - tw));
       gsap.killTweensOf(tip);
-      gsap.set(tip, { x, y });
-      gsap.fromTo(tip, { autoAlpha: 0, scale: 0.85, yPercent: -90 }, { autoAlpha: 1, scale: 1, yPercent: -110, duration: 0.45, ease: "back.out(2)" });
+      gsap.set(tip, { x: left + tw * anchor, y: below ? y + fr.height : y });
+      gsap.fromTo(tip, { autoAlpha: 0, scale: 0.85, yPercent: below ? 0 : -90 }, { autoAlpha: 1, scale: 1, yPercent: below ? 12 : -110, duration: 0.45, ease: "back.out(2)" });
       links.get(t.slug)?.classList.add("is-hot");
       if (!reducedMotion && f.dataset.shown !== "0") gsap.to(f, { scale: 1.18, duration: 0.5, ease: "back.out(3)", overwrite: "auto" });
       bus.emit("sfx", { name: "tick" });

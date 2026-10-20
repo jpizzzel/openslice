@@ -472,9 +472,10 @@ const page: Page = {
       };
     }
 
+    // Pinned stack needs room for meta | poster | list side by side; tablets and phones get the rail.
     // Own media query switch instead of gsap.matchMedia: gsap never detaches its MediaQueryList
     // listeners, so every visit would leak two. Each mode runs inside its own gsap.context.
-    const mq = window.matchMedia("(min-width: 721px) and (prefers-reduced-motion: no-preference)");
+    const mq = window.matchMedia("(min-width: 1025px) and (prefers-reduced-motion: no-preference)");
     let modeCtx: gsap.Context | null = null;
     let modeOff: Off | null = null;
     const applyMode = () => {

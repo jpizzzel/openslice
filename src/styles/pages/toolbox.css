@@ -219,7 +219,10 @@
 
 @media (min-width: 721px) {
   .p-toolbox.is-flat { --cw: min(30vw, 380px); }
-  .p-toolbox.is-flat .tb-stage { padding-left: var(--left); }
+  .p-toolbox.is-flat .tb-stage { padding-top: calc(var(--header-h) + 4vh); }
+  .p-toolbox.is-flat .tb-head, .p-toolbox.is-flat .tb-count, .p-toolbox.is-flat .tb-ctrl { padding-left: var(--left); padding-right: 6vw; }
+  .p-toolbox.is-flat .tb-meta { margin-left: var(--left); margin-right: 6vw; grid-template-columns: repeat(5, 1fr); }
+  .p-toolbox.is-flat .tb-list { padding-left: var(--left); }
   .p-toolbox.is-flat .tb-list { columns: 2; column-gap: 48px; padding-right: 6vw; }
   .p-toolbox.is-flat .tb-item { break-inside: avoid; }
 }

@@ -16,8 +16,8 @@ const repoLabel = () => {
 };
 
 const audioBtn = (cls: string) => `
-  <button class="ch-audio ${cls}" type="button" aria-pressed="false" aria-label="Oven ambient sound">
-    <span class="ch-lbl" aria-hidden="true">Oven</span> <b class="ch-audio-v" aria-hidden="true">Off</b>
+  <button class="ch-audio ${cls}" type="button" aria-pressed="false" aria-label="Background sound">
+    <span class="ch-lbl" aria-hidden="true">Sound</span> <b class="ch-audio-v" aria-hidden="true" data-v="Off"></b>
     <svg class="ch-wave" viewBox="0 0 16 8" aria-hidden="true"><g><path d="M0 4 Q3 0.5 6 4 T12 4 T18 4 T24 4 T30 4 T36 4 T42 4 T48 4"/></g></svg>
   </button>`;
 
@@ -30,7 +30,7 @@ function markup() {
     <a class="ch-mark" href="/" aria-label="${SITE.name}, home">
       <span class="ch-word" aria-hidden="true">OPENSLICE<i>©</i></span>
     </a>
-    <div class="ch-meta" aria-hidden="true"><span>est. ${SITE.since}</span><span>two roommates</span><span>one oven</span></div>
+    <div class="ch-meta" aria-hidden="true"><span>est. ${SITE.since}</span><span>Saturday Slices</span><span>free forever</span></div>
     <nav class="ch-nav" aria-label="Primary">
       <button class="ch-lbl ch-nav-lbl" type="button" aria-expanded="true" aria-controls="ch-list">Menu<i aria-hidden="true"></i></button>
       <div class="ch-lw"><ul class="ch-list" id="ch-list">${links}</ul><span class="ch-arrow" aria-hidden="true">&rarr;</span></div>
@@ -75,7 +75,7 @@ export function initChrome() {
   audio.subscribe((on) => audioBtns.forEach((b) => {
     b.setAttribute("aria-pressed", String(on));
     b.classList.toggle("is-on", on);
-    b.querySelector(".ch-audio-v")!.textContent = on ? "On" : "Off";
+    (b.querySelector(".ch-audio-v") as HTMLElement).dataset.v = on ? "On" : "Off";
   }));
 
   /* ---------- nav arrow (FLIP between items) ---------- */

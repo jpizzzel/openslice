@@ -13,7 +13,7 @@ export function renderFooter(): string {
   return `
   <footer class="site-footer" aria-label="Site footer">
     <div class="sf-grid">
-      <p class="sf-lede serif">Made by two roommates, one oven, and too many late nights.</p>
+      <p class="sf-lede serif">Made by two roommates and one very tired oven.</p>
       ${people}
       <div class="sf-col">
         <span class="sf-k">The trunk</span>

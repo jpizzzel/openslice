@@ -3,23 +3,37 @@
    ========================================================================= */
 
 /* The chrome floats over flour, tomato and ink sections alike. Rather than
-   guessing what is underneath, it is drawn in white and difference-blended:
-   ink on flour, paper on ink, always legible. Accent colors are written as
-   their inverse (#00c4d0) so they land as tomato on light grounds. */
+   guessing what is underneath, it is difference-blended so it inverts whatever
+   it sits on: ink on flour, paper on ink, always legible.
+   The colors written here are the colors it actually reads as on the page
+   ground (ink and tomato on flour), so contrast tooling and forced-colors see
+   the truth. On light pages filter: invert(1) turns them into white and cyan
+   before the blend, which is what produces the inversion. Dark pages need no
+   filter: paper difference-blended over ink already reads as paper. */
 .ch {
-  --c-fg: #fff;
-  /* 0.64 lands ~4.8:1 on flour and ~7:1 on oven once difference-blended */
-  --c-mute: rgb(255 255 255 / 0.64);
-  --c-accent: #00c4d0;
+  --c-fg: var(--ink);
+  /* ~5.4:1 on flour; blended, it lands the same over ink sections */
+  --c-mute: rgb(20 18 16 / 0.64);
+  --c-accent: var(--tomato);
   position: fixed;
   inset: 0;
   z-index: var(--z-chrome);
   pointer-events: none;
   color: var(--c-fg);
+  filter: invert(1);
   mix-blend-mode: difference;
   font-size: 13px;
   line-height: 1.2;
   letter-spacing: -0.012em;
+}
+body[data-chrome="dark"] .ch {
+  --c-fg: var(--paper);
+  --c-mute: rgb(247 244 239 / 0.64);
+  --c-accent: var(--tomato);
+  filter: none;
+}
+@media (forced-colors: active) {
+  .ch { filter: none; mix-blend-mode: normal; }
 }
 .ch a, .ch button { pointer-events: auto; }
 .ch > * { position: absolute; }
@@ -113,6 +127,9 @@ body.nav-tucked .ch-nav-lbl { cursor: pointer; }
 .ch-audio { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; letter-spacing: -0.012em; }
 .ch-audio-d { left: 38.3vw; top: 22px; }
 .ch-audio-v { font-weight: 600; min-width: 1.6em; text-align: left; }
+/* the state word is drawn, not written: aria-pressed already carries it, and the
+   button's name stays exactly its visible label ("Sound") for voice control */
+.ch-audio-v::after { content: attr(data-v); }
 .ch-wave { width: 14px; height: 8px; overflow: hidden; margin-left: -2px; }
 .ch-wave g { transform: translateX(0); }
 .ch-wave path {
@@ -288,9 +305,17 @@ html.has-cursor :is(input, textarea, select, [contenteditable]) { cursor: text !
   position: fixed; inset: 0; z-index: var(--z-loader);
   overflow: hidden;
   pointer-events: auto;
+  /* failsafe: if the app never boots (script blocked, failed or threw before the
+     preloader took over), the loader gets out of the way by itself */
+  animation: ld-failsafe 0.5s ease 8s both;
 }
+/* once preloader.ts owns the screen it has its own backstop */
+html.is-loading #loader { animation: none; }
+@keyframes ld-failsafe { to { opacity: 0; visibility: hidden; pointer-events: none; } }
 html.is-loading { overflow: hidden; }
-#loader:not(.is-type) :is(.ld-word, .ld-row) { visibility: hidden; }
+/* the small rows wait for the webfont; the wordmark paints at once (it is the LCP)
+   with a metric-matched fallback, so a late swap barely moves it */
+#loader:not(.is-type) .ld-row { visibility: hidden; }
 .ld-clip, .ld-paper { position: absolute; inset: 0; will-change: transform; }
 .ld-clip { overflow: hidden; }
 .ld-paper {
@@ -302,17 +327,26 @@ html.is-loading { overflow: hidden; }
 }
 .ld-row { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .ld-top span:nth-child(2) { color: var(--ink-3); }
+@font-face {
+  /* Times-metric serif scaled to Instrument Serif's caps width and vertical metrics */
+  font-family: "Instrument Serif Fallback";
+  src: local("Times New Roman"), local("Times"), local("Liberation Serif"), local("Tinos");
+  size-adjust: 73.9%;
+  ascent-override: 134%;
+  descent-override: 42%;
+  line-gap-override: 0%;
+}
 .ld-word {
-  display: flex; flex-direction: column; align-items: center;
-  font-family: var(--f-serif);
+  display: flex; flex-direction: column; align-items: stretch; text-align: center;
+  font-family: "Instrument Serif", "Instrument Serif Fallback", var(--f-serif);
   color: var(--tomato);
   text-transform: uppercase;
   font-size: min(25vw, 36vh);
   line-height: 0.8;
   letter-spacing: -0.02em;
 }
-.ld-word > span { display: block; overflow: hidden; padding: 0.04em 0.02em 0; }
-.ld-word > span > span { display: inline-block; }
+.ld-ln { display: block; padding: 0.04em 0.02em 0; }
+.ld-ln > span { display: inline-block; }
 .ld-bot { font-variant-numeric: tabular-nums; }
 .ld-count { font-weight: 600; min-width: 4ch; }
 .ld-bar { flex: 1; height: 1px; background: rgb(20 18 16 / 0.14); position: relative; max-width: 36vw; }

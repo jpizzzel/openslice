@@ -13,7 +13,10 @@ const MIN = 1200, MAX = 3000;
 export function runPreloader() {
   const root = document.getElementById("loader");
   const t0 = performance.now();
-  if (!root) {
+  // No loader, or the script arrived so late that the CSS failsafe has already
+  // cleared it (see #loader in chrome.css): go straight to the site.
+  if (!root || t0 > 7600) {
+    root?.remove();
     return { async done() { markLoaderGone(); } };
   }
   document.documentElement.classList.add("is-loading");
@@ -50,18 +53,28 @@ export function runPreloader() {
   };
   raf = requestAnimationFrame(step);
 
-  // Loader type stays hidden until the webfonts are in, so the fallback-to-webfont
+  // The small rows stay hidden until the webfonts are in, so the fallback-to-webfont
   // swap never registers as a layout shift. A slow font still shows after 1.2s.
   const typeIn = () => root.classList.add("is-type");
   document.fonts?.ready.then(typeIn);
   setTimeout(typeIn, 1200);
 
-  // reveal the wordmark letters as soon as fonts are usable
-  const letters = root.querySelectorAll(".ld-word span span");
+  // The wordmark is real text from index.html, painted on the first frame (it is the
+  // page's LCP). Once the webfont is in, split it into letters and give it a toss.
+  const lines = root.querySelectorAll<HTMLElement>(".ld-ln");
   if (!reducedMotion) {
-    gsap.set(letters, { yPercent: 105 });
     document.fonts?.ready.then(() => {
-      gsap.to(letters, { yPercent: 0, duration: 1, ease: "expo.out", stagger: 0.035 });
+      if (!root.isConnected) return;
+      lines.forEach((ln) => {
+        ln.innerHTML = [...(ln.textContent || "")].map((c) => `<span>${c}</span>`).join("");
+      });
+      gsap.fromTo(root.querySelectorAll(".ld-ln > span"), { yPercent: 0 }, {
+        keyframes: [
+          { yPercent: -9, rotate: "random(-4, 4)", duration: 0.32, ease: "power2.out" },
+          { yPercent: 0, rotate: 0, duration: 0.6, ease: "elastic.out(1, 0.45)" },
+        ],
+        stagger: 0.035,
+      });
     });
   }
 

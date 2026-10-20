@@ -3,19 +3,60 @@ import type { Page } from "../core/page";
 import { gsap, ScrollTrigger, reducedMotion, finePointer } from "../core/motion";
 import { bus } from "../core/bus";
 import { SITE, STATUS_LABEL, TOOLS, rings as ringsNow, type Tool } from "../data/site";
-import { glyph, poster, type GlyphId } from "../art";
+import { glyph, halftone, poster, type GlyphId } from "../art";
+import { countdownHTML } from "../chrome/countdown";
 import { ringsSVG, treeSVG } from "./slices/tree";
 import { esc, footerHTML, responsive, whenReady } from "./about/kit";
 
-const DAYS: { d: string; long: string; what: string; g: GlyphId }[] = [
+const T = SITE.trunk;
+
+const DAYS: { d: string; long: string; what: string; when?: string; g: GlyphId }[] = [
   { d: "Mon", long: "Monday", what: "Building", g: "laptop" },
   { d: "Tue", long: "Tuesday", what: "Building", g: "keyboard" },
   { d: "Wed", long: "Wednesday", what: "Building", g: "terminal" },
   { d: "Thu", long: "Thursday", what: "Building", g: "wrench" },
   { d: "Fri", long: "Friday", what: "Building", g: "dough" },
-  { d: "Sat", long: "Saturday", what: "Slices", g: "pizza" },
+  { d: "Sat", long: "Saturday", what: "Slices", when: "7pm til sellout", g: "pizza" },
   { d: "Sun", long: "Sunday", what: "Building", g: "coffee" },
 ];
+
+/** The spec strip: every number comes from SITE.trunk. `max` sets the dial's full sweep. */
+const STATS: { k: string; n: number; approx?: boolean; unit: string; sr: string; sub: string; max: number }[] = [
+  { k: "Crew", n: T.crew, unit: "students", sr: `${T.crew} students`, sub: "One kitchen", max: 16 },
+  { k: "Ferment", n: T.ferment, unit: "hours", sr: `${T.ferment} hour ferment`, sub: "Three days of dough", max: 96 },
+  { k: "Ooni", n: T.oven.ooni, unit: "°F", sr: `${T.oven.ooni} degrees Fahrenheit in the Ooni`, sub: "Neapolitan style", max: 1000 },
+  { k: "Steel", n: T.oven.steel, unit: "°F", sr: `${T.oven.steel} degrees Fahrenheit on the steels`, sub: "New York style", max: 1000 },
+  { k: "Per night", n: T.perNight, approx: true, unit: "pizzas", sr: `About ${T.perNight} pizzas a night`, sub: "About a dozen pies a night", max: 16 },
+  { k: "Sellout", n: T.selloutHours, approx: true, unit: T.selloutHours === 1 ? "hour" : "hours", sr: `Sold out in ${T.sellout}`, sub: `Sold out, usually in ${T.sellout}`, max: 4 },
+];
+const MENU_GLYPH: GlyphId[] = ["cheese-drip", "basil", "slice"];
+const SWEEP = 270;
+/** needle angle for a value on a dial that sweeps -135..135 degrees */
+const needle = (n: number, max: number) => -SWEEP / 2 + SWEEP * Math.min(1, n / max);
+
+/** a little oven knob: ink ring, halftone shade, ticks, tomato needle */
+function dialSVG(n: number, max: number) {
+  const ht = halftone(1, "#141210", 3.6);
+  let ticks = "";
+  for (let i = 0; i <= 10; i++) {
+    const a = ((-SWEEP / 2 + (SWEEP * i) / 10 - 90) * Math.PI) / 180;
+    const r0 = i % 5 ? 33 : 30, r1 = 38;
+    ticks += `M${(50 + Math.cos(a) * r0).toFixed(1)} ${(50 + Math.sin(a) * r0).toFixed(1)}L${(50 + Math.cos(a) * r1).toFixed(1)} ${(50 + Math.sin(a) * r1).toFixed(1)}`;
+  }
+  return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><defs>${ht.def}</defs>
+    <circle cx="52" cy="52" r="44" fill="#141210"/>
+    <circle cx="50" cy="50" r="44" fill="#f7f4ef" stroke="#141210" stroke-width="3"/>
+    <path d="M50 6A44 44 0 0 1 50 94Z" fill="${ht.fill}" opacity=".45"/>
+    <path d="${ticks}" stroke="#141210" stroke-width="2.4" stroke-linecap="round"/>
+    <g class="sl-dial__needle" transform="rotate(${needle(n, max).toFixed(1)} 50 50)">
+      <path d="M50 50L50 17" stroke="#d92a1f" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <circle cx="50" cy="50" r="8" fill="#141210"/><circle cx="48" cy="48" r="2.4" fill="#f7f4ef"/>
+  </svg>`;
+}
+
+/** a number that can count up without nudging the layout: the final value holds the width */
+const num = (n: number) => `<b class="sl-num"><span class="sl-num__g">${n}</span><span class="sl-num__v" data-to="${n}">${n}</span></b>`;
 
 const bySlug = new Map(TOOLS.map((t) => [t.slug, t]));
 const toolName = (t: Tool) => (t.status === "prepping" ? "Classified" : t.name);
@@ -29,41 +70,149 @@ const ord = (n: number) => {
 const ringsLine = rings.full
   ? `<strong>${rings.full} ring${rings.full === 1 ? "" : "s"},</strong><span class="sl-rings__next">a ${ord(rings.growing)} on the way.</span>`
   : `<strong>Ring one</strong><span class="sl-rings__next">is on the way.</span>`;
+const ext = `target="_blank" rel="noopener"`;
+const arr = `<span class="sl-btn__arr" aria-hidden="true">&#8599;</span>`;
+/** the origin line, with a footnote mark on Tufts for the disclaimer */
+const origin = esc(T.origin).replace("Tufts", `Tufts<sup class="sl-fn" aria-hidden="true">*</sup>`);
+const [heartA, heartB] = T.heart.split(", ");
 
 function template() {
   return `<div class="p-slices">
   <section class="sl-hero" aria-labelledby="sl-title">
-    <p class="sl-hero__kicker mono" aria-hidden="true"><span>Fig. 01</span><span>Where everything grows from</span></p>
+    <p class="sl-hero__kicker mono" aria-hidden="true"><span>Fig. 01</span><span>Where everything grows from</span><span>Est. ${T.est}</span></p>
     <h1 class="sl-hero__title" id="sl-title">
       <span class="sl-l"><span class="sl-li caps-red">The</span></span>
       <span class="sl-l"><span class="sl-li caps-red">Trunk</span></span>
-      <span class="sl-hero__name serif"><span class="sl-l"><span class="sl-li"><em>Saturday Slices</em></span></span></span>
+      <span class="sl-hero__name">
+        <span class="sl-hero__from mono"><span class="sl-l"><span class="sl-li">from ${esc(T.pizzeria)}, ${esc(T.where)}</span></span></span>
+        <span class="serif"><span class="sl-l"><span class="sl-li"><em>${esc(T.name)}</em></span></span></span>
+      </span>
     </h1>
     <span class="sl-hero__box" aria-hidden="true">${glyph("pizza")}</span>
     <div class="sl-hero__copy">
-      <p class="sl-hero__lede">A student run pizza place we run out of our house. We built SliceOS to keep it organized, and the rest of the toolbox grew from the same habit.</p>
+      <p class="sl-hero__lede"><em>${esc(T.tagline)}</em> ${esc(T.pitch)}</p>
       <dl class="sl-hero__meta">
-        <div><dt class="label">Kitchen</dt><dd>${SITE.where}</dd></div>
-        <div><dt class="label">Staff</dt><dd>Two roommates</dd></div>
-        <div><dt class="label">Open</dt><dd>Saturdays</dd></div>
+        <div><dt class="label">Pizzeria</dt><dd>${esc(T.pizzeria)}</dd></div>
+        <div><dt class="label">Where</dt><dd>${esc(T.where)}</dd></div>
+        <div><dt class="label">Hours</dt><dd>${esc(T.hours)}</dd></div>
         <div><dt class="label">Runs on</dt><dd>${sliceos ? `<a class="u-link" href="/toolbox/${sliceos.slug}">${sliceos.name}</a>` : "SliceOS"}</dd></div>
       </dl>
-      <a class="sl-btn" href="${SITE.trunk.href}" target="_blank" rel="noopener" data-cursor="Order">
-        <span>Visit ${SITE.trunk.name}</span><span class="sl-btn__arr" aria-hidden="true">&#8599;</span>
-      </a>
+      <div class="sl-hero__ctas">
+        <a class="sl-btn" href="${T.href}" ${ext} data-cursor="Order"><span>Visit ${T.site}</span>${arr}</a>
+        <a class="sl-btn sl-btn--line" href="${T.instagram.href}" ${ext} data-cursor="Follow"><span><span class="sr-only">Instagram: </span>${esc(T.instagram.handle)}</span>${arr}</a>
+      </div>
     </div>
+  </section>
+
+  <section class="sl-stats" aria-labelledby="sl-stats-h">
+    <header class="sl-sec__head">
+      <p class="label">Fig. 02</p>
+      <h2 id="sl-stats-h"><span class="caps-red">By the</span> <em class="serif">numbers.</em></h2>
+      <p class="sl-sec__sub serif">Small kitchen, big numbers. Read straight off the dials.</p>
+    </header>
+    <ol class="sl-stats__row">
+      ${STATS.map((s, i) => `<li class="sl-stat">
+        <p class="sl-stat__top mono" aria-hidden="true"><span>Stub ${String(i + 1).padStart(2, "0")}</span><span>${s.k}</span></p>
+        <span class="sl-stat__dial" data-a="${needle(s.n, s.max).toFixed(1)}">${dialSVG(s.n, s.max)}</span>
+        <p class="sl-stat__n"><span aria-hidden="true">${s.approx ? `<i class="sl-stat__approx">~</i>` : ""}${num(s.n)}<span class="sl-stat__u">${s.unit}</span></span><span class="sr-only">${esc(s.sr)}.</span></p>
+        <p class="sl-stat__sub serif">${esc(s.sub)}</p>
+      </li>`).join("")}
+    </ol>
+  </section>
+
+  <section class="sl-story" aria-labelledby="sl-story-h">
+    <header class="sl-story__head">
+      <p class="label">Fig. 03 / How it started</p>
+      <h2 id="sl-story-h"><span class="caps-red">Three</span> <em class="serif">in the morning.</em></h2>
+    </header>
+    <div class="sl-story__clock" aria-hidden="true">
+      <span class="sl-story__time">3:00</span><span class="sl-story__am serif">am</span>
+      <span class="sl-story__cup">${glyph("coffee")}</span>
+    </div>
+    <div class="sl-story__copy">
+      <p class="sl-story__when mono"><span>${esc(T.started)}</span><span>Est. ${T.est}</span><span>${esc(T.where)}</span></p>
+      <blockquote class="sl-story__q">
+        <p class="serif">&ldquo;${origin}&rdquo;</p>
+        <footer class="label">From the ${esc(T.pizzeria)} story, on ${T.site}</footer>
+      </blockquote>
+      <p class="sl-story__fn"><span aria-hidden="true">* </span>${esc(T.tufts)}</p>
+    </div>
+    <p class="sl-story__heart serif"><span class="sl-l"><span class="sl-rv">${esc(heartA)},</span></span> <span class="sl-l"><span class="sl-rv"><em>${esc(heartB)}</em></span></span></p>
+  </section>
+
+  <section class="sl-ovens" aria-labelledby="sl-ovens-h">
+    <header class="sl-sec__head">
+      <p class="label">Fig. 04</p>
+      <h2 id="sl-ovens-h"><span class="caps-red">Two styles,</span> <em class="serif">one kitchen.</em></h2>
+      <p class="sl-sec__sub serif">The dough ferments for ${T.ferment} hours. Then it picks an oven.</p>
+    </header>
+    <div class="sl-ovens__duel">
+      ${T.methods.map((m, i) => `<article class="sl-oven sl-oven--${i ? "b" : "a"}" aria-labelledby="sl-oven-${i}">
+        <p class="sl-oven__top mono"><span>Spec sheet</span><span>Style ${i ? "B" : "A"}</span></p>
+        <span class="sl-oven__g" aria-hidden="true">${glyph(i ? "slice" : "oven")}</span>
+        <h3 class="sl-oven__name" id="sl-oven-${i}">${esc(m.style)}</h3>
+        <p class="sl-oven__how serif">${esc(m.oven)}</p>
+        <p class="sl-oven__t"><span aria-hidden="true">${num(m.temp)}<span class="sl-oven__deg">°F</span></span><span class="sr-only">${m.temp} degrees Fahrenheit</span></p>
+        <div class="sl-oven__therm" aria-hidden="true"><span class="sl-oven__fill" style="--k:${(m.temp / 1000).toFixed(3)}"></span><span class="sl-oven__scale"><i>0</i><i>500</i><i>1000°F</i></span></div>
+      </article>`).join(`<span class="sl-ovens__vs" aria-hidden="true">vs</span>`)}
+    </div>
+  </section>
+
+  <section class="sl-menu" aria-labelledby="sl-menu-h">
+    <div class="sl-menu__board">
+      <header class="sl-menu__head">
+        <p class="sl-menu__src mono">Fig. 05 / From the menu at ${T.site}</p>
+        <h2 id="sl-menu-h"><span class="caps-red">Specials</span> <em class="serif">coming soon.</em></h2>
+        <p class="sl-menu__sub serif">Three new pies on the ${esc(T.name)} menu, prices and all. They're marked coming soon over there, so they're marked coming soon here.</p>
+      </header>
+      <ol class="sl-menu__list">
+        ${T.menu.map((m, i) => `<li class="sl-tkt">
+          <p class="sl-tkt__top mono" aria-hidden="true"><span>Special</span><span>No. ${String(i + 1).padStart(2, "0")}</span></p>
+          <span class="sl-tkt__g" aria-hidden="true">${glyph(MENU_GLYPH[i % MENU_GLYPH.length])}</span>
+          <h3 class="sl-tkt__name">${esc(m.name)}</h3>
+          <ul class="sl-tkt__tops" aria-label="Toppings">${m.toppings.map((t) => `<li><span aria-hidden="true">1x</span> ${esc(t)}</li>`).join("")}</ul>
+          <p class="sl-tkt__price"><span class="mono">Price</span><span class="sl-tkt__dots" aria-hidden="true"></span><b>$${m.price}</b></p>
+          <p class="sl-tkt__note">${esc(m.note)}</p>
+        </li>`).join("")}
+      </ol>
+      <p class="sl-menu__foot"><span class="mono">Full menu</span><a class="u-link" href="${T.href}" ${ext}>${T.site}</a></p>
+    </div>
+  </section>
+
+  <section class="sl-week" aria-labelledby="sl-week-h">
+    <header class="sl-week__head">
+      <p class="label">Fig. 06</p>
+      <h2 id="sl-week-h"><span class="caps-red">Saturday</span> <em class="serif">rhythm.</em></h2>
+      <p class="sl-week__sub">Six days of building. Then ${esc(T.hours.replace("Saturdays", "Saturday"))}. Repeat until graduation, then keep going.</p>
+    </header>
+    <ol class="sl-week__strip">
+      ${DAYS.map(
+        (d, i) => `<li class="sl-day${d.d === "Sat" ? " sl-day--sat" : ""}">
+          <span class="sl-day__no" aria-hidden="true"><span>Order</span><span>No. ${String(i + 1).padStart(2, "0")}</span></span>
+          <span class="sl-day__d"><abbr title="${d.long}">${d.d}</abbr></span>
+          <span class="sl-day__g" aria-hidden="true">${glyph(d.g)}</span>
+          <span class="sl-day__what"><span aria-hidden="true">1x</span> ${d.what}${d.when ? `<span class="sl-day__when">${d.when}</span>` : ""}</span>
+          <span class="sl-day__bar" aria-hidden="true"><span></span></span>
+          ${d.d === "Sat" ? `<span class="sl-day__stamp" aria-hidden="true"></span>` : ""}
+        </li>`,
+      ).join("")}
+    </ol>
+    <div class="sl-week__ticker" aria-hidden="true"><div class="sl-week__tape">${[0, 1]
+      // two runs for a seamless loop; render each glyph separately so svg ids stay unique
+      .map(() => DAYS.map((d) => `<span${d.d === "Sat" ? ' class="is-sat"' : ""}>${d.d === "Sat" ? "Pizza day" : "Build day"}</span><i>${glyph("slice")}</i>`).join(""))
+      .join("")}</div></div>
   </section>
 
   <section class="sl-tree" aria-labelledby="sl-tree-h">
     <div class="sl-tree__pin">
       <header class="sl-tree__head">
-        <p class="label">Fig. 02</p>
+        <p class="label">Fig. 07</p>
         <h2 id="sl-tree-h"><span class="caps-red">One trunk,</span> <em class="serif">many branches.</em></h2>
       </header>
       <div class="sl-tree__stage">
         <div class="sl-tree__art">${treeSVG(TOOLS, { name: toolName })}</div>
         <p class="sl-tree__tag sl-tree__tag--branches"><span class="label">Branches</span><span>Tools</span></p>
-        <p class="sl-tree__tag sl-tree__tag--trunk"><span class="label">Trunk</span><span>${SITE.trunk.name}</span></p>
+        <p class="sl-tree__tag sl-tree__tag--trunk"><span class="label">Trunk / ${esc(T.pizzeria)}</span><span>${esc(T.name)}</span></p>
         <p class="sl-tree__tag sl-tree__tag--roots"><span class="label">Roots</span><span>Two roommates</span></p>
         <div class="sl-tip" role="status" aria-live="polite" hidden>
           <span class="sl-tip__art" aria-hidden="true"></span>
@@ -96,45 +245,52 @@ function template() {
     </div>
   </section>
 
-  <section class="sl-week" aria-labelledby="sl-week-h">
-    <header class="sl-week__head">
-      <p class="label">Fig. 03</p>
-      <h2 id="sl-week-h"><span class="caps-red">Saturday</span> <em class="serif">rhythm.</em></h2>
-      <p class="sl-week__sub">Six days of building. One day of dough. Repeat until graduation, then keep going.</p>
-    </header>
-    <ol class="sl-week__strip">
-      ${DAYS.map(
-        (d, i) => `<li class="sl-day${d.d === "Sat" ? " sl-day--sat" : ""}">
-          <span class="sl-day__no" aria-hidden="true"><span>Order</span><span>No. ${String(i + 1).padStart(2, "0")}</span></span>
-          <span class="sl-day__d"><abbr title="${d.long}">${d.d}</abbr></span>
-          <span class="sl-day__g" aria-hidden="true">${glyph(d.g)}</span>
-          <span class="sl-day__what"><span aria-hidden="true">1x</span> ${d.what}</span>
-          <span class="sl-day__bar" aria-hidden="true"><span></span></span>
-          ${d.d === "Sat" ? `<span class="sl-day__stamp" aria-hidden="true"></span>` : ""}
-        </li>`,
-      ).join("")}
-    </ol>
-    <div class="sl-week__ticker" aria-hidden="true"><div class="sl-week__tape">${[0, 1]
-      // two runs for a seamless loop; render each glyph separately so svg ids stay unique
-      .map(() => DAYS.map((d) => `<span${d.d === "Sat" ? ' class="is-sat"' : ""}>${d.d === "Sat" ? "Pizza day" : "Build day"}</span><i>${glyph("slice")}</i>`).join(""))
-      .join("")}</div></div>
-  </section>
-
   ${
     sliceos
       ? `<section class="sl-os" aria-labelledby="sl-os-h">
     <a class="sl-os__poster" href="/toolbox/${sliceos.slug}" data-cursor="Peek" aria-hidden="true" tabindex="-1">${poster(sliceos)}</a>
     <div class="sl-os__copy">
-      <p class="label">Fig. 04 / ${esc(sliceos.kind)}</p>
+      <p class="label">Fig. 08 / ${esc(sliceos.kind)}</p>
       <h2 id="sl-os-h" class="sl-os__h"><span class="caps-red">${esc(sliceos.name)}</span><em class="serif">the back of house</em></h2>
       <p class="sl-os__blurb">${esc(sliceos.blurb)}</p>
       <ul class="sl-os__feat">${sliceos.features.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
-      <p class="sl-os__note"><span class="sl-os__pill mono">${STATUS_LABEL[sliceos.status]}</span><span class="serif">Coming to the toolbox. We're cleaning it up so it can run your shop too.</span></p>
+      <p class="sl-os__note"><span class="sl-os__pill mono">${STATUS_LABEL[sliceos.status]}</span><span class="serif">It runs ${esc(T.pizzeria)}'s ${esc(T.name)}. We're cleaning it up for the toolbox so it can run your shop too.</span></p>
       <a class="sl-btn sl-btn--ink" href="/toolbox/${sliceos.slug}" data-cursor="Open"><span>Read about ${esc(sliceos.name)}</span><span class="sl-btn__arr" aria-hidden="true">&rarr;</span></a>
     </div>
   </section>`
       : ""
   }
+
+  <section class="sl-end" aria-labelledby="sl-end-h">
+    <p class="label sl-end__k">Fig. 09 / See you Saturday</p>
+    <h2 id="sl-end-h" class="sl-end__h">
+      <span class="sl-l"><span class="sl-rv caps-red">${esc(T.motto[0])}</span></span>
+      <span class="sl-l"><span class="sl-rv serif"><em>${esc(T.motto[1])}</em></span></span>
+    </h2>
+    <div class="sl-end__aside">
+      <p class="sl-end__sub serif">${esc(T.night)} ${esc(T.hours)}.</p>
+      ${countdownHTML("sl-end__cd")}
+    </div>
+    <ul class="sl-end__links">
+      <li><a class="sl-stub" href="${T.href}" ${ext} data-cursor="Visit">
+        <span class="sl-stub__k mono">The site</span>
+        <strong class="sl-stub__v">${T.site}</strong>
+        <span class="sl-stub__d">${esc(T.pages.filter((p) => p !== "Slice Status").join(", ").replace(/, ([^,]*)$/, " and $1"))}</span>${arr}
+      </a></li>
+      <li><a class="sl-stub sl-stub--hot" href="${T.href}" ${ext} data-cursor="Check">
+        <span class="sl-stub__k mono">Before you go</span>
+        <strong class="sl-stub__v">Slice Status</strong>
+        <span class="sl-stub__d">Check it on ${T.site}. They sell out fast.</span>${arr}
+      </a></li>
+      <li><a class="sl-stub" href="${T.instagram.href}" ${ext} data-cursor="Follow">
+        <span class="sl-stub__k mono">Location / Instagram</span>
+        <strong class="sl-stub__v">${esc(T.instagram.handle)}</strong>
+        <span class="sl-stub__d">The location is shared there.</span>${arr}
+      </a></li>
+    </ul>
+    <p class="sl-end__blog"><span class="mono">On the blog</span><span class="serif"><em>${esc(T.blog.title)}</em>, by ${esc(T.blog.by)}</span></p>
+    <p class="sl-end__fn mono" aria-hidden="true"><span>${esc(T.pizzeria)}</span><span>${esc(T.name)}</span><span>${esc(T.where)}</span><span>Est. ${T.est}</span></p>
+  </section>
   ${footerHTML()}
 </div>`;
 }
@@ -270,7 +426,7 @@ const page: Page = {
       svg.removeAttribute("aria-hidden");
       svg.removeAttribute("focusable");
       svg.setAttribute("role", "group");
-      svg.setAttribute("aria-label", "The tree: Saturday Slices is the trunk, every tool is a branch");
+      svg.setAttribute("aria-label", `The tree: ${T.name} from ${T.pizzeria} is the trunk, every tool is a branch`);
     }
     const leaves = svg ? [...svg.querySelectorAll<SVGGElement>('[data-part="leaf"]')] : [];
     // growth ring strokes (pathLength=1); the live ring keeps its dashes
@@ -389,6 +545,52 @@ const page: Page = {
 
     ctx.add(() => {
       gsap.to(".sl-hero__box", { yPercent: 60, rotation: 40, ease: "none", scrollTrigger: { trigger: ".sl-hero", start: "top top", end: "bottom top", scrub: true } });
+
+      // Count a number up from zero once its trigger enters. The final value is
+      // already in the markup (and in sr-only text), so this is decoration only.
+      const countUp = (els: HTMLElement[], trigger: Element, delay = 0) => {
+        els.forEach((v, i) => {
+          const to = Number(v.dataset.to) || 0;
+          const o = { n: 0 };
+          v.textContent = "0";
+          gsap.to(o, {
+            n: to, duration: 1.8, ease: "expo.out", delay: delay + i * 0.08,
+            onUpdate: () => { v.textContent = String(Math.round(o.n)); },
+            scrollTrigger: { trigger, start: "top 85%", once: true },
+          });
+        });
+      };
+
+      // By the numbers: stubs drop in, dials swing to their value, digits roll.
+      const stats = gsap.utils.toArray<HTMLElement>(".sl-stat");
+      gsap.from(stats, { y: 70, rotation: (i: number) => (i % 2 ? 3 : -3), autoAlpha: 0, duration: 1.1, ease: "expo.out", stagger: 0.07, scrollTrigger: { trigger: ".sl-stats__row", start: "top 85%", once: true } });
+      stats.forEach((s, i) => {
+        const nd = s.querySelector(".sl-dial__needle");
+        const a = Number(s.querySelector<HTMLElement>(".sl-stat__dial")?.dataset.a) || 0;
+        if (nd) gsap.fromTo(nd, { rotation: -SWEEP / 2, svgOrigin: "50 50" }, { rotation: a, svgOrigin: "50 50", duration: 1.6, ease: "elastic.out(1, 0.55)", delay: 0.25 + i * 0.08, scrollTrigger: { trigger: ".sl-stats__row", start: "top 85%", once: true } });
+      });
+      countUp(gsap.utils.toArray<HTMLElement>(".sl-stat .sl-num__v"), el.querySelector(".sl-stats__row")!, 0.25);
+
+      // The story: the clock ticks in, the quote rises, the heart line slides up.
+      gsap.from(".sl-story__time, .sl-story__am", { yPercent: 40, autoAlpha: 0, duration: 1.2, ease: "expo.out", stagger: 0.1, scrollTrigger: { trigger: ".sl-story__clock", start: "top 85%", once: true } });
+      gsap.from(".sl-story__cup", { rotation: -40, scale: 0.4, autoAlpha: 0, duration: 1.4, ease: "elastic.out(1, 0.5)", delay: 0.3, scrollTrigger: { trigger: ".sl-story__clock", start: "top 85%", once: true } });
+      gsap.from(".sl-story__copy > *", { y: 30, autoAlpha: 0, duration: 1, ease: "expo.out", stagger: 0.08, scrollTrigger: { trigger: ".sl-story__copy", start: "top 85%", once: true } });
+      gsap.fromTo(".sl-story__heart .sl-rv", { yPercent: 110 }, { yPercent: 0, duration: 1.1, ease: "expo.out", stagger: 0.12, scrollTrigger: { trigger: ".sl-story__heart", start: "top 95%", once: true } });
+
+      // Two styles: the spec sheets slide in from opposite sides, thermometers fill.
+      gsap.from(".sl-oven--a", { xPercent: -14, rotation: -4, autoAlpha: 0, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: ".sl-ovens__duel", start: "top 85%", once: true } });
+      gsap.from(".sl-oven--b", { xPercent: 14, rotation: 4, autoAlpha: 0, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: ".sl-ovens__duel", start: "top 85%", once: true } });
+      gsap.from(".sl-ovens__vs", { scale: 0, rotation: -90, duration: 1.2, ease: "elastic.out(1, 0.5)", delay: 0.4, scrollTrigger: { trigger: ".sl-ovens__duel", start: "top 85%", once: true } });
+      gsap.fromTo(".sl-oven__fill", { scaleX: 0 }, { scaleX: (_i: number, t: HTMLElement) => Number(t.style.getPropertyValue("--k")) || 1, duration: 1.8, ease: "expo.out", delay: 0.35, stagger: 0.12, scrollTrigger: { trigger: ".sl-ovens__duel", start: "top 85%", once: true } });
+      countUp(gsap.utils.toArray<HTMLElement>(".sl-oven .sl-num__v"), el.querySelector(".sl-ovens__duel")!, 0.35);
+
+      // The menu board: tickets get tossed onto the board, stamps thunk down.
+      gsap.from(".sl-tkt", { y: 120, rotation: (i: number) => [-10, 6, -7][i % 3], autoAlpha: 0, duration: 1.2, ease: "expo.out", stagger: 0.1, scrollTrigger: { trigger: ".sl-menu__list", start: "top 85%", once: true } });
+      gsap.from(".sl-tkt__note", { scale: 1.8, autoAlpha: 0, duration: 0.5, ease: "back.out(2.4)", stagger: 0.1, delay: 0.7, scrollTrigger: { trigger: ".sl-menu__list", start: "top 85%", once: true } });
+
+      // Closing: the motto rises line by line, the stubs follow.
+      gsap.fromTo(".sl-end__h .sl-rv", { yPercent: 110 }, { yPercent: 0, duration: 1.2, ease: "expo.out", stagger: 0.12, scrollTrigger: { trigger: ".sl-end__h", start: "top 95%", once: true } });
+      gsap.from(".sl-end__links > li", { y: 50, autoAlpha: 0, duration: 1, ease: "expo.out", stagger: 0.08, scrollTrigger: { trigger: ".sl-end__links", start: "top 90%", once: true } });
 
       // Saturday rhythm: days drop in, Saturday lands last with a bounce.
       const days = gsap.utils.toArray<HTMLElement>(".sl-day");

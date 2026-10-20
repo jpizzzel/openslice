@@ -6,7 +6,7 @@
 
 Free tools, served hot.
 
-Hi. We're Jonah Pflaster and Peter Morganelli. We moved in together as freshman roommates in fall 2023, we're seniors now, and we still share a kitchen. We use that kitchen to run [Saturday Slices](https://saturdayslices.com/), a student run pizza place out of our house.
+Hi. We're Jonah Pflaster and Peter Morganelli. We moved in together as freshman roommates in fall 2023, we're seniors now, and we still share a kitchen. Junior year, a few friends stayed up until three in the morning and started Peter's Pizzeria, a student run pizzeria in Somerville, MA. Its night is [Saturday Slices](https://saturdayslices.com/): Saturdays, 7pm til sellout.
 
 We also have a habit. We find an app we'd happily pay for, rebuild it for ourselves, and give it away. OpenSlice is where those rebuilds live. This repo is the website, and the site is the menu.
 
@@ -17,7 +17,7 @@ We also have a habit. We find an app we'd happily pay for, rebuild it for oursel
 | Satsuma | Drag a file, hold Shift, drop it on a format. A file converter for Windows 10 and 11, our take on Tangerine. Jonah's. | Open beta: [tangerineforwindows-site.vercel.app](https://tangerineforwindows-site.vercel.app/) |
 | Mandarin | The same drag and hold converter, rebuilt for the Mac. Peter's, and the one that started all this. | In the oven |
 | Murmur | Hold a key, talk, let go. Dictation in the spirit of Wispr Flow. | In the oven |
-| SliceOS | The system we built to run Saturday Slices: orders, prep, customers, money. | In the oven |
+| SliceOS | The system we built to run Saturday Slices at Peter's Pizzeria: orders, prep, customers, money. | In the oven |
 
 Mandarin, Murmur and SliceOS are working titles, so the names might change before they ship. There are also two classified slices on the list that we're not talking about yet.
 
@@ -28,9 +28,9 @@ Mandarin, Murmur and SliceOS are working titles, so the names might change befor
 - Tool pages (`/toolbox/:slug`). The story, the features, a receipt with a barcode made from the slug (subtotal $0.00, subscription: none), and an "Order up!" sign once there's a link to grab. If there isn't one yet, the sign says "Still in the oven".
 - Lab (`/lab`). The test kitchen. Eight toys that don't do anything useful: Topping Rain, Sauce Spiral, Dough Stretch, Halftone Mirror, Slice Clock, Kinetic Type, Order Ticket Printer and Cheese Pull.
 - About (`/about`). Our timeline, freshman through senior and then "Forever". Each tool shows up in the year it shipped.
-- The Trunk (`/slices`). Saturday Slices is the trunk and every tool is a branch. The tree is drawn from data, so it grows a branch per tool and a ring per year (a new ring closes every September 1).
+- The Trunk (`/slices`). Saturday Slices, from Peter's Pizzeria in Somerville, is the trunk and every tool is a branch. The page has the shop's numbers, its story, the specials board and the Saturday rhythm. The tree is drawn from data, so it grows a branch per tool and a ring per year (a new ring closes every September 1).
 - 404. A giant 404 with a bite out of the 0, an empty greasy box and a flashlight. The page you wanted got eaten.
-- Saturday mode. The shop is open on Saturdays, and the site knows it. The countdown flips to "Oven's hot", the marquee changes its tune, the footer wordmark shimmers and the two of us show up in aprons.
+- Saturday mode. The shop opens Saturdays at 7pm, and the site knows it. The countdown runs to seven and then flips to "Oven's hot", the marquee changes its tune, the footer wordmark shimmers and the two of us show up in aprons.
 - Footer. A small ink tree next to a stump that counts our rings. It gets a little fuller every year.
 
 ## Running the site

@@ -1,12 +1,14 @@
-// Preloader. Paper screen with a giant tomato wordmark and a percentage
-// counter, then Jonah and Peter shove an ink wall across the screen left to
-// right: paper ahead of the wall, ink under it, the live site behind them.
+// Preloader. A pizza box lid printed with the wordmark and a little oven dial
+// that preheats with real load progress, then Jonah and Peter shove an ink wall
+// across the screen left to right: flour ahead of the wall, ink under it, the
+// live site behind them.
 // API: runPreloader() -> { done(): Promise<void> }; markLoaderGone() fires once
 // the wall has dragged the reveal a third of the way across.
 import { gsap, reducedMotion } from "../core/motion";
 import { markLoaderGone } from "../core/ready";
 import { mascot } from "../art";
 import { bus } from "../core/bus";
+import { isSaturday } from "./countdown";
 
 const MIN = 1200, MAX = 3000;
 
@@ -28,6 +30,10 @@ export function runPreloader() {
   let target = 8, shown = 0, raf = 0;
   const num = root.querySelector<HTMLElement>(".ld-num");
   const bar = root.querySelector<HTMLElement>(".ld-bar i");
+  const needle = root.querySelector<HTMLElement>(".ld-needle");
+  const label = root.querySelector<HTMLElement>(".ld-k");
+  // the dial reads oven temperature: room temp to pizza hot
+  const T0 = 72, T1 = 550;
   const bump = (v: number) => { target = Math.max(target, v); };
   document.fonts?.ready.then(() => bump(55));
   if (document.readyState === "complete") bump(80);
@@ -46,9 +52,14 @@ export function runPreloader() {
     shown += (goal - shown) * (goal === 100 ? 0.22 : 0.08);
     if (goal === 100 && 100 - shown < 0.6) shown = 100;
     const v = Math.floor(shown);
-    if (num) num.textContent = String(v).padStart(3, "0");
+    if (num) num.textContent = String(Math.round(T0 + ((T1 - T0) * v) / 100)).padStart(3, "0");
     if (bar) bar.style.transform = `scaleX(${shown / 100})`;
-    if (shown >= 100) { finish(); return; }
+    if (needle) needle.style.transform = `rotate(${-135 + 2.7 * shown}deg)`;
+    if (shown >= 100) {
+      if (label) label.textContent = "Oven's ready";
+      finish();
+      return;
+    }
     raf = requestAnimationFrame(step);
   };
   raf = requestAnimationFrame(step);
@@ -80,7 +91,9 @@ export function runPreloader() {
 
   const crew = root.querySelector<HTMLElement>(".ld-crew");
   if (crew && !reducedMotion) {
-    crew.innerHTML = `<div class="ld-m ld-m1">${mascot("jonah", "push")}</div><div class="ld-m ld-m2">${mascot("peter", "push")}</div>`;
+    // Saturday Slices is open: the crew shows up in their aprons
+    const apron = isSaturday();
+    crew.innerHTML = `<div class="ld-m ld-m1">${mascot("jonah", "push", { apron })}</div><div class="ld-m ld-m2">${mascot("peter", "push", { apron })}</div>`;
   }
 
   const gone = () => {

@@ -125,28 +125,35 @@ body.nav-tucked .ch-nav-lbl { cursor: pointer; }
   pointer-events: none;
 }
 
-/* --- oven audio toggle: the dash becomes a heat shimmer when on --- */
+/* --- oven audio toggle: a resting squiggle that comes alive when on --- */
 .ch-audio { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; letter-spacing: -0.012em; }
 .ch-audio-d { left: 38.3vw; top: 22px; }
 .ch-audio-v { font-weight: 600; min-width: 1.6em; text-align: left; }
-/* the state word is drawn, not written: aria-pressed already carries it, and the
-   button's name stays exactly its visible label ("Sound") for voice control */
+/* the state word is drawn, not written: aria-pressed already carries it */
 .ch-audio-v::after { content: attr(data-v); }
-.ch-wave { width: 14px; height: 8px; overflow: hidden; margin-left: -2px; }
+/* Saturday: the label hint turns into the oven announcing itself */
+.ch-lbl-sat { display: none; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; color: var(--c-accent, var(--tomato)); }
+html.is-saturday .ch-lbl-sat { display: inline; }
+html.is-saturday .ch-lbl-snd { display: none; }
+.ch-wave { width: 16px; height: 8px; overflow: hidden; margin-left: 1px; }
 .ch-wave g { transform: translateX(0); }
 .ch-wave path {
-  fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round;
+  fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round;
   vector-effect: non-scaling-stroke;
-  transform-box: fill-box; transform-origin: 50% 50%;
-  transform: scaleY(0.04);
+  transform-box: view-box; transform-origin: 50% 50%;
+  /* a tiny sine at rest: never flat, so it never reads as a dash */
+  transform: scaleY(0.55);
   transition: transform 0.6s var(--ease-spring);
 }
-.ch-audio.is-on .ch-wave path { transform: scaleY(1); }
-.ch-audio.is-on .ch-wave g { animation: ch-wave 0.9s linear infinite; }
+.ch-wave g { animation: ch-wave 2.8s linear infinite; animation-play-state: paused; }
+.ch-audio:hover .ch-wave g { animation-play-state: running; }
+.ch-audio.is-on .ch-wave path { transform: scaleY(1.35); stroke-width: 1.3; }
+.ch-audio.is-on .ch-wave g { animation-duration: 0.7s; animation-play-state: running; }
 .ch-audio.is-on .ch-audio-v { color: var(--c-accent, var(--tomato)); }
-.ch-audio:hover .ch-wave path { transform: scaleY(0.45); }
-.ch-audio.is-on:hover .ch-wave path { transform: scaleY(1.2); }
-@keyframes ch-wave { to { transform: translateX(-12px); } }
+.ch-audio:hover .ch-wave path { transform: scaleY(0.85); }
+.ch-audio.is-on:hover .ch-wave path { transform: scaleY(1.6); }
+@keyframes ch-wave { to { transform: translateX(-6px); } }
+@media (prefers-reduced-motion: reduce) { .ch-wave g { animation: none; } }
 
 /* --- countdown --- */
 .cd { display: flex; flex-direction: column; gap: 1px; }
@@ -317,43 +324,98 @@ html.is-loading #loader { animation: none; }
 html.is-loading { overflow: hidden; }
 /* the small rows wait for the webfont; the wordmark paints at once (it is the LCP)
    with a metric-matched fallback, so a late swap barely moves it */
-#loader:not(.is-type) .ld-row { visibility: hidden; }
+#loader:not(.is-type) :is(.ld-row, .ld-pr) { visibility: hidden; }
 .ld-clip, .ld-paper { position: absolute; inset: 0; will-change: transform; }
 .ld-clip { overflow: hidden; }
 .ld-paper {
-  display: flex; flex-direction: column; justify-content: space-between;
+  display: flex; flex-direction: column; justify-content: space-between; align-items: center;
   padding: 18px;
-  background: var(--paper);
+  background: var(--flour);
   color: var(--ink);
   font-size: 13px;
 }
-.ld-row { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.ld-row { align-self: stretch; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .ld-top span:nth-child(2) { color: var(--ink-3); }
 @font-face {
-  /* Times-metric serif scaled to Instrument Serif's caps width and vertical metrics */
-  font-family: "Instrument Serif Fallback";
-  src: local("Times New Roman"), local("Times"), local("Liberation Serif"), local("Tinos");
-  size-adjust: 73.9%;
-  ascent-override: 134%;
-  descent-override: 42%;
+  /* Arial-metric bold scaled so OPEN / SLICE set the same width as Big Shoulders 800 */
+  font-family: "Big Shoulders Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold"), local("Helvetica Bold");
+  font-weight: 100 900;
+  size-adjust: 64%;
+  ascent-override: 128%;
+  descent-override: 32%;
   line-gap-override: 0%;
 }
+/* The lid: a fixed box (never sized by its text, so a font swap moves nothing),
+   double ruled like a printed pizza box, with tiny box print riding the rule. */
+.ld-lid {
+  position: relative;
+  display: grid; place-items: center;
+  width: min(68vw, 66vh); height: min(68vw, 66vh);
+  margin: auto;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+}
+.ld-lid::before {
+  content: ""; position: absolute; inset: 7px;
+  border: 1px solid var(--ink); border-radius: 3px;
+  pointer-events: none;
+}
+.ld-pr {
+  position: absolute; z-index: 1;
+  padding: 0 10px;
+  background: var(--flour);
+  font-family: var(--f-mono); font-size: 10px; line-height: 1; letter-spacing: 0.16em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.ld-pr-t { top: -5px; left: 50%; transform: translateX(-50%); }
+.ld-pr-b { bottom: -5px; left: 50%; transform: translateX(-50%); }
+.ld-pr-l { left: -5px; top: 50%; writing-mode: vertical-rl; transform: translateY(-50%) rotate(180deg); padding: 10px 0; }
+.ld-pr-r { right: -5px; top: 50%; writing-mode: vertical-rl; transform: translateY(-50%); padding: 10px 0; }
+.ld-stamp {
+  position: absolute; right: -4.5%; top: -5.5%;
+  width: 19%; height: auto; padding: 0;
+  background: none;
+  transform: rotate(-14deg);
+  fill: none; stroke: var(--tomato); stroke-width: 2;
+}
+.ld-stamp text { fill: var(--tomato); stroke: none; font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.06em; font-weight: 700; }
+.ld-stamp .ld-stamp-c { font-family: var(--f-display); font-size: 24px; font-weight: 800; letter-spacing: 0.02em; }
 .ld-word {
   display: flex; flex-direction: column; align-items: stretch; text-align: center;
-  font-family: "Instrument Serif", "Instrument Serif Fallback", var(--f-serif);
-  color: var(--tomato);
+  font-family: "Big Shoulders Display Variable", "Big Shoulders Fallback", Impact, sans-serif;
+  font-weight: 800;
+  color: var(--ink);
   text-transform: uppercase;
-  font-size: min(25vw, 36vh);
-  line-height: 0.8;
-  letter-spacing: -0.02em;
+  font-size: min(25.5vw, 24.5vh);
+  line-height: 0.84;
+  letter-spacing: -0.012em;
 }
 .ld-ln { display: block; padding: 0.04em 0.02em 0; }
+.ld-ln + .ld-ln { color: var(--tomato); }
 .ld-ln > span { display: inline-block; }
 .ld-bot { font-variant-numeric: tabular-nums; }
-.ld-count { font-weight: 600; min-width: 4ch; }
-.ld-bar { flex: 1; height: 1px; background: rgb(20 18 16 / 0.14); position: relative; max-width: 36vw; }
-.ld-bar i { position: absolute; inset: 0; background: var(--tomato); transform-origin: 0 50%; transform: scaleX(0); }
-.ld-bot span:last-child { color: var(--ink-3); }
+.ld-temp { display: inline-flex; align-items: center; gap: 10px; }
+.ld-dial { position: relative; width: 26px; height: 26px; flex: none; }
+.ld-dial svg { width: 100%; height: 100%; fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
+.ld-needle {
+  position: absolute; left: 50%; top: 4px; bottom: 50%; width: 2px; margin-left: -1px;
+  background: var(--tomato); border-radius: 2px;
+  transform-origin: 50% 100%;
+  transform: rotate(-135deg);
+}
+.ld-needle::after { content: ""; position: absolute; left: -2px; bottom: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
+.ld-k { color: var(--ink-3); }
+.ld-count { font-weight: 600; min-width: 5ch; }
+/* a thermometer: bulb, tube, tick marks, mercury */
+.ld-bar {
+  flex: 1; max-width: 36vw; height: 5px; position: relative;
+  border: 1px solid var(--ink); border-radius: 0 3px 3px 0; border-left: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgb(20 18 16 / 0.35) calc(10% - 1px) 10%);
+}
+.ld-bar::before { content: ""; position: absolute; left: -9px; top: 50%; width: 11px; height: 11px; margin-top: -5.5px; border-radius: 50%; background: var(--tomato); box-shadow: 0 0 0 1px var(--ink); }
+.ld-bar i { position: absolute; inset: 1px 1px 1px 0; background: var(--tomato); transform-origin: 0 50%; transform: scaleX(0); }
+.ld-bot > span:last-child { color: var(--ink-3); }
 .ld-wall {
   position: absolute; top: 0; left: 0; bottom: 0;
   width: 64vw;
@@ -378,11 +440,14 @@ html.is-loading { overflow: hidden; }
 .ld-m2 { right: -7%; z-index: 1; }
 .ld-m1 { right: 44%; bottom: 17vh; }
 @media (max-width: 720px) {
-  .ld-word { font-size: 31vw; }
+  .ld-lid { width: calc(100vw - 32px); height: auto; aspect-ratio: auto; padding: 9vw 0 10vw; }
+  .ld-word { font-size: 34vw; }
+  .ld-stamp { width: 24%; right: -2%; top: -4%; }
+  .ld-pr-l, .ld-pr-r { display: none; }
   .ld-bar { display: none; }
-  .ld-top span:last-child { display: none; }
+  .ld-top span:last-child, .ld-bot > span:last-child { display: none; }
   .ld-wall { width: 80vw; }
-  .ld-crew { width: 62vw; }
+  .ld-crew { width: 55vw; }
 }
 
 /* =========================================================================

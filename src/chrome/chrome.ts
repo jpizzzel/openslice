@@ -15,10 +15,12 @@ const repoLabel = () => {
   return `github / ${m ? m[1] : "repo"}`;
 };
 
+// one period every 6 units, drawn long so it can scroll under the 16 wide window
+const WAVE = "M0 4 Q1.5 1.8 3 4 T6 4 T9 4 T12 4 T15 4 T18 4 T21 4 T24 4 T27 4 T30 4";
 const audioBtn = (cls: string) => `
   <button class="ch-audio ${cls}" type="button" aria-pressed="false" aria-label="Background sound">
-    <span class="ch-lbl" aria-hidden="true">Sound</span> <b class="ch-audio-v" aria-hidden="true" data-v="Off"></b>
-    <svg class="ch-wave" viewBox="0 0 16 8" aria-hidden="true"><g><path d="M0 4 Q3 0.5 6 4 T12 4 T18 4 T24 4 T30 4 T36 4 T42 4 T48 4"/></g></svg>
+    <span class="ch-lbl ch-lbl-snd" aria-hidden="true">Sound</span><span class="ch-lbl-sat" aria-hidden="true">Oven on</span> <b class="ch-audio-v" aria-hidden="true" data-v="Off"></b>
+    <svg class="ch-wave" viewBox="0 0 16 8" aria-hidden="true"><g><path d="${WAVE}"/></g></svg>
   </button>`;
 
 function markup() {

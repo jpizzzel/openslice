@@ -4,7 +4,7 @@
 
 /* The chrome floats over flour, tomato and oven dark sections alike. chrome.ts
    samples what is painted under each group of items and sets data-tone on it:
-   none (flour) reads ink, "dark" reads paper, "red" reads paper on tomato.
+   none (flour) reads ink, "dark" reads paper, "red" reads ink on tomato.
    Real colors, no blending, so contrast tooling and forced-colors see the truth.
    The tone vars are registered so a change is a quick color fade, not a snap. */
 @property --c-fg { syntax: "<color>"; inherits: true; initial-value: #141210; }
@@ -33,9 +33,10 @@
   --c-accent: var(--tomato);
 }
 .ch > [data-tone="red"] {
-  --c-fg: var(--paper);
-  --c-mute: rgb(247 244 239 / 0.86);
-  --c-accent: var(--ink);
+  /* ink on tomato clears 4.5:1 for the small header text; paper does not */
+  --c-fg: var(--ink);
+  --c-mute: var(--ink);
+  --c-accent: var(--paper);
 }
 .ch a, .ch button { pointer-events: auto; }
 .ch > * { position: absolute; }

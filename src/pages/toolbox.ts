@@ -6,7 +6,7 @@ import { bus } from "../core/bus";
 import { SITE, TOOLS, type Tool } from "../data/site";
 import { poster } from "../art/index";
 import {
-  arrowSVG, esc, isClassified, makers, odoColumn, pad, replacesText, setOdometer, statusPill,
+  arrowSVG, esc, makers, odoColumn, pad, replacesText, setOdometer, statusPill,
 } from "./toolbox/shared";
 
 const N = TOOLS.length;
@@ -50,7 +50,6 @@ function template() {
         <span class="tb-card__in">
           <span class="tb-card__art">${poster(t)}</span>
           <span class="tb-card__shade" aria-hidden="true"></span>
-          ${isClassified(t) ? `<span class="tb-card__stamp" aria-hidden="true">Classified</span>` : ""}
           <span class="tb-card__cap" aria-hidden="true"><b>${pad(i + 1)}</b>${esc(t.name)}</span>
         </span>
       </a>`).join("")}

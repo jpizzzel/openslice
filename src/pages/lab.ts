@@ -37,7 +37,7 @@ function tileHTML(exp: Experiment, i: number) {
     <div class="lab-tile__frame">
       <div class="lab-stage lab-tone--${exp.tone}" role="group" aria-label="${exp.label}">
         <span class="lab-tile__num mono" aria-hidden="true">${n}</span>
-        <span class="lab-chip lab-tile__hint" aria-hidden="true">${finePointer ? exp.hint : `Tap to play / ${exp.hint.toLowerCase()}`}</span>
+        <span class="lab-chip lab-tile__hint" aria-hidden="true">${finePointer ? exp.hint : "Tap to play"}</span>
       </div>
     </div>
     <div class="lab-tile__cap">
@@ -178,13 +178,11 @@ const page: Page = {
     kills.push(() => io.disconnect());
 
     // "now playing": whichever tile crosses the middle of the viewport
-    const nowName = pageEl.querySelector(".p-lab__index .label") as HTMLElement;
     let nowI = -1;
     function setNow(i: number) {
       if (i === nowI) return;
       nowI = i;
       indexBtns.forEach((b, k) => b.classList.toggle("is-now", k === i));
-      nowName.textContent = "Now playing";
     }
     const mid = new IntersectionObserver((entries) => {
       for (const e of entries) {

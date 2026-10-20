@@ -26,14 +26,14 @@ function markup() {
   const links = NAV.map((n, i) => `<li><a href="${n.href}" data-i="${i}"><span>${n.label}</span></a></li>`).join("");
   const bigLinks = NAV.map((n, i) => `<li><a href="${n.href}"><span class="mm-n">0${i + 1}</span><span class="mm-t">${n.label}</span></a></li>`).join("");
   return `
+  <div class="ch-bar" aria-hidden="true"></div>
   <header class="ch" data-chrome-root>
-    <div class="ch-bar" aria-hidden="true"></div>
     <a class="ch-mark" href="/" aria-label="${SITE.name}, home">
       <span class="ch-word" aria-hidden="true">OPENSLICE<i>©</i></span>
     </a>
     <div class="ch-meta" aria-hidden="true"><span>est. ${SITE.since}</span><span>two roommates</span><span>one oven</span></div>
     <nav class="ch-nav" aria-label="Primary">
-      <span class="ch-lbl">Menu</span>
+      <span class="ch-lbl ch-nav-lbl">Menu<i aria-hidden="true"></i></span>
       <div class="ch-lw"><ul class="ch-list">${links}</ul><span class="ch-arrow" aria-hidden="true">&rarr;</span></div>
     </nav>
     ${audioBtn("ch-audio-d")}
@@ -118,10 +118,13 @@ export function initChrome() {
 
   /* ---------- scroll hint + footer awareness ---------- */
   const scrollHint = $(".ch-scroll");
-  let scrolled = false;
+  let scrolled = false, tucked = false;
   const onScroll = () => {
     const s = window.scrollY > 40;
     if (s !== scrolled) { scrolled = s; scrollHint.classList.toggle("is-gone", s); body.classList.toggle("is-scrolled", s); }
+    // past the first screenful of type, fold the stacked nav up into "Menu"
+    const t = window.scrollY > 120;
+    if (t !== tucked) { tucked = t; body.classList.toggle("nav-tucked", t); }
   };
   addEventListener("scroll", onScroll, { passive: true });
   let footIO: IntersectionObserver | null = null;
@@ -229,7 +232,8 @@ export function initChrome() {
     });
     scrolled = false;
     scrollHint.classList.remove("is-gone");
-    body.classList.remove("is-scrolled");
+    body.classList.remove("is-scrolled", "nav-tucked");
+    tucked = false;
     syncTheme();
     watchFooter();
     cursor?.recheck();

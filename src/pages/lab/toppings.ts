@@ -1,5 +1,5 @@
-// Exp. 01 Topping Rain: toppings fall with simple circle physics and pile
-// onto a side view pizza. Click to drop a handful, drag to stir.
+// Topping Rain: toppings fall with simple circle physics and pile up on a
+// plain shelf. Click to drop a handful, drag to stir. Nothing falls on its own.
 import { C, Stage, TAU, clamp, drag, leaf, pepperoni, dots, rng, type Experiment } from "./kit";
 
 type Kind = 0 | 1 | 2 | 3; // pepperoni, basil, olive, mushroom
@@ -10,16 +10,14 @@ const MAX = 120;
 export const toppings: Experiment = {
   id: "toppings",
   title: "Topping Rain",
-  line: "Pepperoni weather. Click to drop a handful, drag to stir the pile.",
-  label: "Topping Rain: pepperoni, basil, olives and mushrooms fall and pile up on a pizza. Click to drop more, drag to stir.",
-  hint: "Click to drop / drag to stir",
-  tone: "paper",
-  ar: [4, 5],
+  line: "Click to drop toppings, drag to stir the pile.",
+  label: "Topping Rain: pepperoni, basil, olives and mushrooms pile up on a shelf. Click to drop more, drag to stir.",
+  ar: [4, 3],
   heavy: true,
   create(host, env) {
     const bodies: Body[] = [];
     const R = rng(7);
-    let sc = 1, floor = 0, x0 = 0, x1 = 0, spawn = 0, seeded = false;
+    let sc = 1, floor = 0, x0 = 0, x1 = 0, seeded = false;
     const ptr = { x: -999, y: -999, px: 0, py: 0, vx: 0, vy: 0, down: false, moved: 0, inside: false };
     const sprites: HTMLCanvasElement[] = [];
 
@@ -74,8 +72,8 @@ export const toppings: Experiment = {
     const stage = new Stage({
       host, env, heavy: true, label: toppings.label,
       resize(w, h, pw, ph) {
-        sc = clamp(Math.min(w, h * 0.8) / 380, 0.6, 2.2);
-        floor = h * 0.76; x0 = w * 0.07; x1 = w * 0.93;
+        sc = clamp(Math.min(w, h * 0.8) / 300, 0.7, 2.4);
+        floor = h * 0.82; x0 = 0; x1 = w;
         if (pw) {
           const kx = w / pw, ky = h / ph, kr = Math.min(kx, ky);
           for (const b of bodies) { b.x *= kx; b.y *= ky; b.r *= kr; }
@@ -84,17 +82,14 @@ export const toppings: Experiment = {
         if (!seeded) {
           seeded = true;
           // a starting pile so the first frame is already a composition
-          for (let i = 0; i < 84; i++) add(x0 + 30 * sc + R() * (x1 - x0 - 60 * sc), floor - 20 - R() * h * 0.5);
-          for (let i = 0; i < 240; i++) step(1 / 60);
+          for (let i = 0; i < 48; i++) add(w * 0.2 + R() * w * 0.6, floor - 20 - R() * h * 0.6);
+          for (let i = 0; i < 300; i++) step(1 / 60);
+          // keep only what landed on the shelf
+          for (let i = bodies.length - 1; i >= 0; i--) if (bodies[i].y > floor) bodies.splice(i, 1);
         }
       },
       frame(dt, t) {
         if (dt > 0) {
-          spawn -= dt;
-          if (spawn <= 0 && !env.reduced) {
-            spawn = bodies.length < 95 ? 0.14 : 0.45;
-            add(x0 + R() * (x1 - x0), -30 * sc, (R() - 0.5) * 40);
-          }
           const n = 2;
           for (let i = 0; i < n; i++) step(dt / n);
         }
@@ -144,9 +139,9 @@ export const toppings: Experiment = {
           }
         }
       }
-      // pizza top, its rounded edges, and the walls of the tile
+      // the shelf, its rounded ends, and the walls of the tile
       const W = stage ? stage.w : 0, H = stage ? stage.h : 0;
-      const cr = 16 * sc;
+      const cr = 2 * sc;
       for (const b of bodies) {
         if (b.x > x0 && b.x < x1 && b.y + b.r > floor && b.y < floor + 40 * sc) {
           b.y = floor - b.r;
@@ -178,43 +173,10 @@ export const toppings: Experiment = {
     function draw(t: number) {
       const g = stage.ctx, w = stage.w, h = stage.h, lw = Math.max(1.5, 2.6 * sc);
       g.clearRect(0, 0, w, h);
-      // backdrop: halftone "table" shadow under the pie and a ruled line
-      g.fillStyle = dots(g, C.ink, 6, 1.1, stage.dpr);
-      g.globalAlpha = 0.22;
-      g.beginPath(); g.ellipse(w / 2, floor + 62 * sc, (x1 - x0) * 0.55, 16 * sc, 0, 0, TAU); g.fill();
-      g.globalAlpha = 1;
-
-      // peel handle
-      g.lineWidth = lw; g.strokeStyle = C.ink; g.lineCap = "round"; g.lineJoin = "round";
-      g.fillStyle = C.crust;
-      const py = floor + 34 * sc;
-      g.beginPath(); g.roundRect(x1 - 10 * sc, py, w - x1 + 30 * sc, 10 * sc, 5 * sc); g.fill(); g.stroke();
-      g.beginPath(); g.roundRect(x0 - 14 * sc, py - 4 * sc, x1 - x0 + 24 * sc, 8 * sc, 4 * sc); g.fill(); g.stroke();
-
-      // pizza slab, side view: crust, sauce, cheese with drips
-      const th = 30 * sc;
-      g.beginPath(); g.roundRect(x0 - 4 * sc, floor, x1 - x0 + 8 * sc, th, [6 * sc, 6 * sc, 14 * sc, 14 * sc]);
-      g.fillStyle = C.crust; g.fill();
-      g.save(); g.clip();
-      g.fillStyle = dots(g, C.cheeseDeep, 5, 1.3, stage.dpr); g.fillRect(x0, floor + th * 0.45, x1 - x0, th);
-      g.restore();
-      g.stroke();
-      g.beginPath(); g.rect(x0, floor, x1 - x0, 7 * sc); g.fillStyle = C.tomato; g.fill();
-      // cheese band with drips
-      g.beginPath();
-      g.moveTo(x0 - 2 * sc, floor - 2 * sc);
-      g.lineTo(x1 + 2 * sc, floor - 2 * sc);
-      g.lineTo(x1 + 2 * sc, floor + 6 * sc);
-      const drips = 9;
-      for (let i = drips; i >= 0; i--) {
-        const x = x0 + ((x1 - x0) * i) / drips;
-        const len = (i % 3 === 1 ? 18 : i % 2 ? 10 : 5) * sc * (1 + 0.15 * Math.sin(t * 1.3 + i));
-        g.quadraticCurveTo(x + 9 * sc, floor + 6 * sc, x + 6 * sc, floor + 6 * sc + len * 0.6);
-        g.quadraticCurveTo(x + 3 * sc, floor + 6 * sc + len, x, floor + 6 * sc + len * 0.6);
-        g.quadraticCurveTo(x - 2 * sc, floor + 6 * sc, x - 6 * sc, floor + 6 * sc);
-      }
-      g.closePath();
-      g.fillStyle = C.cheese; g.fill(); g.stroke();
+      // the shelf: one ink line
+      g.lineWidth = Math.max(1.5, 2 * sc); g.strokeStyle = C.ink; g.lineCap = "round";
+      g.beginPath(); g.moveTo(w * 0.04, floor); g.lineTo(w * 0.96, floor); g.stroke();
+      void lw; void t;
 
       // toppings
       const S = 40;
@@ -265,7 +227,7 @@ export const toppings: Experiment = {
 
     return {
       act() {
-        // a handful dropped from the sky over the middle of the pie
+        // a handful dropped from above the middle of the shelf
         for (let i = 0; i < 9; i++) add(stage.w * (0.3 + R() * 0.4), -20 * sc - R() * 60 * sc, (R() - 0.5) * 160, R() * 80);
         env.poke(); env.sfx("pop"); stage.kick(3000);
       },

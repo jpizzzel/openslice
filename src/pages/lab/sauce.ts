@@ -1,28 +1,26 @@
-// Exp. 02 Sauce Spiral: ladle sauce onto a dough base. The ladle trails the
-// pointer, strokes smooth out and slowly spread. Idles with a demo spiral.
-import { C, Stage, TAU, clamp, drag, dots, lerp, rng, type Experiment } from "./kit";
+// Sauce Spiral: draw with a ladle of tomato sauce. The ladle trails the
+// pointer, strokes smooth out and spread a little as they settle. It starts
+// with one finished spiral and never draws on its own.
+import { C, Stage, TAU, clamp, drag, lerp, type Experiment } from "./kit";
 
 interface Pt { x: number; y: number; w: number; tw: number }
 
 export const sauce: Experiment = {
   id: "sauce",
   title: "Sauce Spiral",
-  line: "Ladle style. Draw a spiral, watch it spread. Reset with the ladle.",
-  label: "Sauce Spiral: draw with the pointer to ladle tomato sauce onto a pizza base. The sauce smooths and spreads. A reset button clears it.",
-  hint: "Draw with the ladle",
-  tone: "ink",
+  line: "Draw with the pointer to ladle sauce. It spreads as it settles.",
+  label: "Sauce Spiral: draw with the pointer to ladle tomato sauce. The sauce smooths and spreads. A clear button wipes it.",
   ar: [1, 1],
   create(host, env) {
     let cx = 0, cy = 0, R = 1, sc = 1;
     let strokes: Pt[][] = [];
     let cur: Pt[] | null = null;
     const ladle = { x: 0, y: 0, tx: 0, ty: 0, vis: 0, down: false };
-    let auto = !env.reduced, autoU = 0, autoHold = 0, touched = false, idle = 0;
+    let auto = false, autoU = 0, autoHold = 0;
     let wipe = 0; // 1 -> 0 fade while clearing
     let layer = document.createElement("canvas");
     layer.width = 0;
     let lg = layer.getContext("2d")!;
-    const specks = (() => { const r = rng(3); return Array.from({ length: 70 }, () => [r() * TAU, Math.sqrt(r()) * 0.86, 0.6 + r() * 1.4]); })();
 
     const stage = new Stage({
       host, env, label: sauce.label,
@@ -36,8 +34,8 @@ export const sauce: Experiment = {
         layer.width = stage.canvas.width; layer.height = stage.canvas.height;
         lg = layer.getContext("2d")!;
         if (old.width) lg.drawImage(old, 0, 0, layer.width, layer.height);
-        if (env.reduced && !strokes.length && !touched && !old.width) {
-          // static composition: a finished spiral
+        if (!old.width) {
+          // the still frame: one finished spiral
           spiral(1);
           bakeAll();
         }
@@ -102,11 +100,8 @@ export const sauce: Experiment = {
           if (!cur) { cur = []; strokes.push(cur); ladle.x = ladle.tx; ladle.y = ladle.ty; }
           addPoint(ladle.tx, ladle.ty, 300);
           ladle.vis = Math.min(1, ladle.vis + dt * 3);
-          if (autoU >= 1) { cur = null; autoHold = 2.4; }
+          if (autoU >= 1) { cur = null; auto = false; }
         }
-      } else if (!ladle.down && touched) {
-        idle += dt;
-        if (idle > 9 && !env.reduced) restartAuto();
       }
 
       // spreading
@@ -126,14 +121,18 @@ export const sauce: Experiment = {
           wipe = 0; strokes = []; cur = null;
           lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, layer.width, layer.height);
           if (auto) { autoU = 0; autoHold = 0; }
+          if (redraw) { redraw = false; auto = !env.reduced; if (env.reduced) { spiral(1); bakeAll(); } }
         }
       }
       if (!auto && !ladle.down) ladle.vis = Math.max(0, ladle.vis - dt * 0.8);
       void t;
     }
 
+    // keyboard play: wipe, then the ladle draws one spiral and stops
+    let redraw = false;
     function restartAuto() {
-      auto = true; autoU = 0; autoHold = 0; wipe = 1; touched = false; cur = null;
+      auto = false; autoU = 0; autoHold = 0; cur = null; redraw = true;
+      if (strokes.length || layer.width) wipe = 1;
     }
 
     function paintStroke(g: CanvasRenderingContext2D, s: Pt[]) {
@@ -142,7 +141,6 @@ export const sauce: Experiment = {
         return;
       }
       g.save();
-      g.beginPath(); g.arc(cx, cy, R * 0.86, 0, TAU); g.clip();
       g.lineCap = "round"; g.lineJoin = "round";
       const pass = (col: string, add: number, mul: number, ox: number, oy: number) => {
         g.strokeStyle = col;
@@ -162,23 +160,6 @@ export const sauce: Experiment = {
     function draw() {
       const g = stage.ctx, w = stage.w, h = stage.h, lw = Math.max(1.5, 3 * sc);
       g.clearRect(0, 0, w, h);
-      // halftone shadow
-      g.fillStyle = dots(g, C.ink2, 7, 1.6, stage.dpr);
-      g.beginPath(); g.arc(cx + 10 * sc, cy + 14 * sc, R * 1.02, 0, TAU); g.fill();
-      // crust
-      g.beginPath(); g.arc(cx, cy, R, 0, TAU);
-      g.fillStyle = C.crust; g.fill();
-      g.lineWidth = lw; g.strokeStyle = C.ink; g.stroke();
-      g.save(); g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.clip();
-      g.fillStyle = dots(g, C.cheeseDeep, 6, 1.5, stage.dpr);
-      g.beginPath(); g.arc(cx + R * 0.35, cy + R * 0.4, R, 0, TAU); g.arc(cx, cy, R * 0.86, 0, TAU, true); g.fill("evenodd");
-      g.restore();
-      // dough
-      g.beginPath(); g.arc(cx, cy, R * 0.86, 0, TAU);
-      g.fillStyle = C.dough; g.fill();
-      g.lineWidth = lw * 0.7; g.stroke();
-      g.fillStyle = C.ink3;
-      for (const [a, r, s] of specks) { g.beginPath(); g.arc(cx + Math.cos(a) * r * R, cy + Math.sin(a) * r * R, s * sc, 0, TAU); g.fill(); }
 
       // sauce: baked layer + live strokes
       g.save();
@@ -210,8 +191,8 @@ export const sauce: Experiment = {
       down(e) {
         const p = stage.pos(e);
         if (auto) { auto = false; cur = null; strokes.forEach((s) => s.forEach((q) => (q.tw = Math.max(q.w, q.tw * 0.9)))); }
-        if (wipe > 0) { wipe = 0; }
-        touched = true; idle = 0;
+        if (wipe > 0) { wipe = 0; strokes = []; lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, layer.width, layer.height); }
+        redraw = false;
         ladle.down = true; ladle.tx = p.x; ladle.ty = p.y; ladle.vis = 1;
         if (env.reduced) { ladle.x = p.x; ladle.y = p.y; }
         else if (Math.hypot(ladle.x - p.x, ladle.y - p.y) > 60 * sc) { ladle.x = p.x; ladle.y = p.y; }
@@ -222,7 +203,7 @@ export const sauce: Experiment = {
       move(e, active) {
         const p = stage.pos(e);
         ladle.tx = p.x; ladle.ty = p.y;
-        if (!auto) { ladle.vis = Math.max(ladle.vis, 0.9); idle = 0; }
+        if (!auto) ladle.vis = Math.max(ladle.vis, 0.9);
         if (active) {
           if (env.reduced) { ladle.x = p.x; ladle.y = p.y; addPoint(p.x, p.y, 200); }
           stage.kick(2600);
@@ -234,15 +215,15 @@ export const sauce: Experiment = {
     // the ladle reset button travels with the stage into the modal
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "lab-chip lab-chip--btn";
-    btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="15" r="6" fill="currentColor"/><path d="M13 11 L21 3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><span>Reset</span>`;
-    btn.setAttribute("aria-label", "Reset the sauce");
+    btn.className = "lab-btn";
+    btn.textContent = "Clear";
+    btn.setAttribute("aria-label", "Clear the sauce");
     const reset = () => {
       env.sfx("whoosh"); env.poke();
       cur = null; ladle.down = false;
       if (env.reduced) {
         strokes = []; lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, layer.width, layer.height); stage.kick(200);
-      } else { wipe = 1; touched = true; idle = 3; auto = false; }
+      } else { wipe = 1; auto = false; redraw = false; stage.kick(1200); }
     };
     btn.addEventListener("click", reset);
     host.appendChild(btn);

@@ -174,7 +174,7 @@ export const TOOLS: Tool[] = [
     platform: "TBA",
     status: "prepping",
     by: ["jonah", "peter"],
-    blurb: "Another paid app is on our list. It doesn't know yet.",
+    blurb: "Another rebuild of a paid app. Not announced yet.",
     story: "Still in the dough. Check back later, or watch the repo.",
     features: [],
     links: [],
@@ -282,6 +282,13 @@ const TRUNK: Trunk = {
 export const SITE = {
   name: "OpenSlice",
   tagline: "Free tools, served hot.",
+  /** the one sentence under the name on the home page */
+  intro: "Free, open source rebuilds of apps we'd otherwise pay for. Made by two roommates who also run a pizza night in Somerville.",
+  /** the short "who we are" note on the home page */
+  who: [
+    "We're Jonah Pflaster and Peter Morganelli. We've been roommates since freshman year in 2023, and we're seniors now.",
+    "On Saturdays we run Saturday Slices at Peter's Pizzeria in Somerville. When an app we rely on costs more than it should, we build our own and post it here for free.",
+  ],
   repo: "https://github.com/jpizzzel/toolbox",
   trunk: TRUNK,
   since: 2023,

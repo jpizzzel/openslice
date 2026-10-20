@@ -1,101 +1,35 @@
+// TOOL: one tool, plainly. Name, cover, story, features, details, links, next tool.
 import "../styles/pages/tool.css";
 import type { Page } from "../core/page";
-import { gsap, ScrollTrigger, reducedMotion, finePointer } from "../core/motion";
-import { SplitText } from "gsap/SplitText";
-import { loaderGone } from "../core/ready";
-import { bus } from "../core/bus";
-import { SITE, STATUS_LABEL, TOOLS, type Tool } from "../data/site";
-import { glyph, mascot, poster, type Pose } from "../art/index";
-import { flattenSvgs } from "../art/flatten";
-import {
-  arrowSVG, esc, footerHTML, isClassified, makers, pad, redact, replacesHTML, statusPill,
-} from "./toolbox/shared";
-
-gsap.registerPlugin(SplitText);
+import { gsap } from "../core/motion";
+import { SITE, TOOLS, type Tool } from "../data/site";
+import { poster } from "../art/index";
+import { arrowSVG, esc, footerHTML, isClassified, makers, replacesText, rise, statusText } from "./toolbox/shared";
 
 const N = TOOLS.length;
-const POSE: Record<string, Pose> = { jonah: "point", peter: "wave" };
-
-/** Splits a story into a highlighted lead clause and the rest. */
-function storyHTML(t: Tool) {
-  if (isClassified(t)) return redact(t.story, 3);
-  const m = t.story.match(/^(.+?[,.:])\s(.*)$/s);
-  if (!m) return esc(t.story);
-  return `<span class="td-lead">${esc(m[1])}</span> ${esc(m[2])}`;
-}
-
-function featuresHTML(t: Tool) {
-  if (!t.features.length) {
-    const widths = [78, 54, 66];
-    return widths
-      .map((w, i) => `
-      <li class="td-feat is-redacted">
-        <span class="td-feat__num mono">${pad(i + 1)}</span>
-        <span class="td-feat__txt"><span class="rd rd--block" style="--w:${w}%;--rd:${i * 0.4}s"><span class="sr-only">Redacted</span></span></span>
-        <i class="td-feat__line" aria-hidden="true"></i>
-      </li>`)
-      .join("");
-  }
-  return t.features
-    .map((f, i) => `
-      <li class="td-feat">
-        <span class="td-feat__num mono">${pad(i + 1)}</span>
-        <span class="td-feat__txt"><span class="td-feat__in">${esc(f)}</span></span>
-        <i class="td-feat__line" aria-hidden="true"></i>
-      </li>`)
-    .join("");
-}
-
-/** A receipt barcode drawn from the slug: deterministic bars, guard bars at both ends. */
-function barcode(seed: string) {
-  let x = 0;
-  let bars = "";
-  const bar = (w: number, draw: boolean) => { if (draw) bars += `<rect x="${x}" width="${w}" height="40"/>`; x += w; };
-  bar(1, true); bar(1, false); bar(1, true); bar(2, false);
-  for (const ch of seed) {
-    const c = ch.charCodeAt(0);
-    for (let b = 0; b < 4; b++) {
-      bar(1 + ((c >> (b * 2)) & 3) % 3, true);
-      bar(1 + ((c >> b) & 1) + ((c * (b + 3)) % 2), false);
-    }
-  }
-  bar(1, true); bar(1, false); bar(1, true);
-  return `<svg viewBox="0 0 ${x} 40" preserveAspectRatio="none">${bars}</svg>`;
-}
-const barcodeText = (t: Tool, i: number) =>
-  `${pad(i + 1)} ${String(t.year).slice(2)}${[...t.slug].reduce((a, c) => a + c.charCodeAt(0), 0)} 0000`;
-
-/** links to show, or a served tool that lives in the repo: either way the order is up */
-const isReady = (t: Tool) => t.links.length > 0 || t.status === "served";
 
 function linksHTML(t: Tool) {
-  if (!t.links.length) {
-    return `
-      <p class="td-soon serif">${t.status === "served" ? "Grab it from the repo." : "Recipe drops soon. Watch the pass."}</p>
-      <div class="td-btns">
-        <a class="td-btn" href="${SITE.repo}" target="_blank" rel="noopener" data-cursor="GitHub">
-          <span>Watch the repo</span>${arrowSVG("ne")}
-        </a>
-      </div>`;
+  if (t.links.length) {
+    return `<div class="td-btns">${t.links
+      .map((l) => {
+        const ext = /^https?:/.test(l.href);
+        return `<a class="td-btn" href="${esc(l.href)}"${ext ? ` target="_blank" rel="noopener"` : ""}><span>${esc(l.label)}</span>${arrowSVG(ext ? "ne" : "right")}</a>`;
+      })
+      .join("")}</div>`;
   }
-  return `<div class="td-btns">${t.links
-    .map((l) => {
-      const ext = /^https?:/.test(l.href);
-      return `<a class="td-btn" href="${esc(l.href)}"${ext ? ` target="_blank" rel="noopener"` : ""} data-cursor="Go">
-        <span>${esc(l.label)}</span>${arrowSVG(ext ? "ne" : "right")}</a>`;
-    })
-    .join("")}</div>`;
+  if (t.status === "served") {
+    return `<div class="td-btns"><a class="td-btn" href="${SITE.repo}" target="_blank" rel="noopener"><span>Get it on GitHub</span>${arrowSVG("ne")}</a></div>`;
+  }
+  return `<p class="td-note">Not released yet. <a class="td-a" href="${SITE.repo}" target="_blank" rel="noopener">Watch the repo</a>.</p>`;
 }
 
 function notFound(slug: string) {
   return `
 <article class="p-tool td-404">
-  <div class="td-404__art" aria-hidden="true">${mascot("jonah", "point")}</div>
-  <div class="td-404__copy">
-    <p class="label">Toolbox / ${esc(slug)}</p>
-    <h1 class="td-404__h serif">This slice isn't on the menu.</h1>
-    <p class="td-404__p">We checked the oven, the fridge and under the couch. Nothing called "${esc(slug)}" yet.</p>
-    <a class="td-btn td-btn--ink" href="/toolbox" data-cursor="Back"><span>Back to the toolbox</span>${arrowSVG("left")}</a>
+  <div class="td-404__in" data-now>
+    <a class="td-back" href="/toolbox">${arrowSVG("left")}<span>Toolbox</span></a>
+    <h1 class="td-name td-name--sm">Not found</h1>
+    <p class="td-blurb">There is no tool called "${esc(slug)}".</p>
   </div>
 </article>
 ${footerHTML()}`;
@@ -103,359 +37,73 @@ ${footerHTML()}`;
 
 function template(t: Tool, i: number) {
   const next = TOOLS[(i + 1) % N];
-  const ppl = makers(t);
   const cls = isClassified(t);
-  // spaces as no-break spaces: an inline-block span would swallow a plain one
-  const chars = [...t.name.toUpperCase()].map((c) => `<span class="td-ch">${c === " " ? "&nbsp;" : esc(c)}</span>`).join("");
+  const ppl = makers(t);
+  const details: [string, string][] = [
+    ["Made by", ppl.map((p) => `<a class="td-a" href="${esc(p.site)}" target="_blank" rel="noopener">${esc(p.name)}</a>`).join("<br>")],
+    ["Platform", esc(t.platform)],
+    ["Status", esc(statusText(t))],
+    ["Replaces", esc(replacesText(t))],
+    ["Year", String(t.year)],
+    ["License", "MIT"],
+  ];
   return `
-<article class="p-tool${cls ? " is-classified" : ""}" style="--tc:${t.color}">
-  <section class="td-hero">
-    <div class="td-top">
-      <a class="td-back td-fade" href="/toolbox" data-cursor="Back">${arrowSVG("left")}<span>Toolbox</span></a>
-      <span class="td-fade mono td-idx">${pad(i + 1)} / ${pad(N)}</span>
-      <span class="td-fade td-kind">${esc(t.kind)}</span>
-      <span class="td-fade">${statusPill(t)}</span>
-      <span class="td-fade td-plat label">${esc(t.platform)}</span>
+<article class="p-tool${cls ? " is-classified" : ""}">
+  <section class="td-hero" aria-labelledby="td-h1">
+    <a class="td-back" href="/toolbox" data-now>${arrowSVG("left")}<span>Toolbox</span></a>
+    <div class="td-copy">
+      <p class="td-kind" data-now>${esc(t.kind)}</p>
+      <h1 id="td-h1" class="td-name" data-now>${esc(t.name)}</h1>
+      <p class="td-blurb" data-now>${esc(t.blurb)}</p>
+      <div data-now>${linksHTML(t)}</div>
     </div>
-
-    <div class="td-mega mega" aria-hidden="true">${pad(i + 1)}</div>
-
-    <figure class="td-poster" data-cursor="${cls ? "Shh" : "Tilt"}">
-      <span class="td-poster__shadow" aria-hidden="true"></span>
-      <div class="td-poster__tilt">
-        <div class="td-poster__art">${poster(t, { label: `${t.name} poster` })}</div>
-        <span class="td-sheen" aria-hidden="true"><i></i></span>
-        ${cls ? `<span class="td-stamp td-stamp--big" aria-hidden="true">Classified</span>` : ""}
-      </div>
+    <figure class="td-cover" data-now style="--c:${t.color}">
+      <div class="td-cover__in">${poster(t, { label: `${t.name} cover` })}</div>
     </figure>
-
-    <div class="td-title">
-      <h1 class="td-name" style="--chars:${t.name.length}">
-        <span class="sr-only">${esc(t.name)}</span>
-        <span class="td-name__mask" aria-hidden="true">${chars}</span>
-      </h1>
-      ${t.codename ? `<span class="td-wt">Working<br>title</span>` : ""}
-      ${cls ? `<span class="td-wt td-wt--cls" aria-hidden="true">Top<br>secret</span>` : ""}
-    </div>
-    <p class="td-blurb serif td-fade">${cls ? redact(t.blurb, 4) : esc(t.blurb)}</p>
-
-    <dl class="td-facts">
-      <div class="td-fade"><dt class="label">Made by</dt><dd>${ppl.map((p) => esc(p.name)).join("<br>")}</dd></div>
-      <div class="td-fade"><dt class="label">Status</dt><dd>${esc(STATUS_LABEL[t.status])}</dd></div>
-      <div class="td-fade"><dt class="label">Replaces</dt><dd>${replacesHTML(t)}</dd></div>
-      <div class="td-fade"><dt class="label">Year</dt><dd>${t.year}</dd></div>
-    </dl>
   </section>
 
-  <section class="td-story" aria-labelledby="td-story-h">
-    <div class="td-side">
-      <h2 id="td-story-h" class="label">${cls ? "The story, mostly" : "The story"}</h2>
-      <div class="td-glyph" aria-hidden="true">${glyph(t.glyph)}</div>
-    </div>
-    <p class="td-story__text serif">${storyHTML(t)}</p>
-  </section>
-
-  <section class="td-feats" aria-labelledby="td-feats-h">
-    <div class="td-side">
-      <h2 id="td-feats-h" class="label">What it does</h2>
-      <p class="td-side__n caps-red">${pad(t.features.length || 3)}<span>${cls ? "redacted" : "things"}</span></p>
-    </div>
-    <ol class="td-feat-list">${featuresHTML(t)}</ol>
-  </section>
-
-  <section class="td-credits" aria-label="Receipt and links">
-    <div class="td-toss td-toss--receipt"><div class="td-card td-receipt">
-      <div class="td-receipt__head">
-        <span class="td-receipt__logo" aria-hidden="true">${glyph("receipt")}</span>
-        <p class="td-receipt__shop">${esc(SITE.name)}<span>${esc(SITE.where)}</span></p>
+  <section class="td-body">
+    <div class="td-main">
+      <div class="td-block" data-later>
+        <h2 class="td-h2">About</h2>
+        <p class="td-story">${cls ? "Details coming soon." : esc(t.story)}</p>
       </div>
-      <h2 class="td-receipt__h">Receipt</h2>
-      <p class="td-receipt__row td-receipt__meta"><span>Order #${pad(i + 1)}</span><span>${esc(t.kind)}</span></p>
-      <dl class="td-receipt__items">
-        <div><dt>Made by</dt><dd>${ppl
-          .map((p) => `<a class="u-link" href="${esc(p.site)}" target="_blank" rel="noopener">${esc(p.name)}</a>`)
-          .join("<br>")}</dd></div>
-        <div><dt>Platform</dt><dd>${esc(t.platform)}</dd></div>
-        <div><dt>Replaces</dt><dd>${replacesHTML(t)}</dd></div>
-        <div><dt>Year</dt><dd>${t.year}</dd></div>
-        <div><dt>License</dt><dd>MIT</dd></div>
-      </dl>
-      <p class="td-receipt__row td-receipt__sub"><span>Subtotal</span><span>$0.00</span></p>
-      <p class="td-receipt__row td-receipt__sub"><span>Subscription</span><span>None</span></p>
-      <p class="td-receipt__row td-receipt__total"><span>Total</span><span>$0.00</span></p>
-      <div class="td-receipt__code" aria-hidden="true">${barcode(t.slug + pad(i + 1))}<span>${barcodeText(t, i)}</span></div>
-      <p class="td-receipt__thanks">Thank you, come again</p>
-      ${cls ? `<span class="td-stamp td-stamp--card" aria-hidden="true">Classified</span>` : ""}
-    </div></div>
-    <div class="td-toss td-toss--order"><div class="td-card td-order">
-      <div class="td-order__cooks n${ppl.length}" aria-hidden="true">
-        ${ppl.map((p) => `<span class="td-mascot">${mascot(p.id, POSE[p.id] ?? "stand", { apron: true })}</span>`).join("")}
-      </div>
-      <p class="td-order__k"><span>Ticket #${pad(i + 1)}</span><span>${isReady(t) ? "Ready" : "Firing"}</span></p>
-      <h2 class="td-order__h">${isReady(t) ? "Order<br>up!" : "Still in<br>the oven"}</h2>
-      ${linksHTML(t)}
-      <p class="td-order__foot">Free forever. Open source, MIT.</p>
-    </div></div>
+      ${!cls && t.features.length ? `
+      <div class="td-block" data-later>
+        <h2 class="td-h2">What it does</h2>
+        <ul class="td-feats">${t.features.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
+      </div>` : ""}
+    </div>
+    <div class="td-details" data-later>
+      <h2 class="td-h2">Details</h2>
+      <dl class="td-dl">${details.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
+    </div>
   </section>
 
-  <a class="td-next" href="/toolbox/${next.slug}" data-cursor="Next" style="--nc:${next.color}">
-    <span class="td-next__top"><span class="label">Next slice</span><span class="mono">${pad(((i + 1) % N) + 1)} / ${pad(N)}</span></span>
-    <span class="td-next__name" style="--chars:${next.name.length}">
-      <span class="td-next__roll"><span>${esc(next.name)}</span><span aria-hidden="true">${esc(next.name)}</span></span>
-    </span>
-    <span class="td-next__kind label">${esc(next.kind)} / ${esc(next.platform)}</span>
-    <span class="td-next__poster" aria-hidden="true"><span class="td-next__tilt">${poster(next)}</span></span>
-  </a>
+  <nav class="td-nextwrap" aria-label="Next tool" data-later>
+    <a class="td-next" href="/toolbox/${next.slug}">
+      <span class="td-next__k">Next</span>
+      <span class="td-next__name">${esc(next.name)}</span>
+      <span class="td-next__kind">${esc(next.kind)}, ${esc(next.platform)}</span>
+      <span class="td-next__go" aria-hidden="true">${arrowSVG("right")}</span>
+    </a>
+  </nav>
 </article>
 ${footerHTML()}`;
 }
 
 const page: Page = {
-  title: (p) => TOOLS.find((t) => t.slug === p.slug)?.name ?? "Slice not found",
+  title: (p) => TOOLS.find((t) => t.slug === p.slug)?.name ?? "Not found",
   section: "Toolbox",
   mount({ root, params, first }) {
     const i = TOOLS.findIndex((t) => t.slug === params.slug);
-    if (i < 0) {
-      root.innerHTML = notFound(params.slug ?? "");
-      return;
-    }
-    const t = TOOLS[i];
-    root.innerHTML = template(t, i);
+    root.innerHTML = i < 0 ? notFound(params.slug ?? "") : template(TOOLS[i], i);
     const el = root.querySelector<HTMLElement>(".p-tool")!;
-    const offs: (() => void)[] = [];
+    const ctx = gsap.context(() => {}, el);
     let alive = true;
-    let split: SplitText | null = null;
-    // both posters ride scroll and pointer driven transforms: as images they are rastered once
-    offs.push(flattenSvgs(el.querySelectorAll<SVGSVGElement>(".td-poster__art > svg, .td-next__tilt > svg")));
-    const fig = el.querySelector<HTMLElement>(".td-poster")!;
-    const title = el.querySelector<HTMLElement>(".td-title")!;
-    const nameEl = el.querySelector<HTMLElement>(".td-name")!;
-    const wtEl = el.querySelector<HTMLElement>(".td-wt");
-
-    // Keep the giant name clear of the poster: on wide layouts the name may only run up to
-    // the poster's resting (rotated) left edge minus a gap. Measured from layout boxes, so
-    // the scroll parallax and the intro transforms never feed back into it.
-    const fitName = () => {
-      nameEl.style.fontSize = "";
-      if (getComputedStyle(fig).position !== "absolute") return;
-      const w = fig.offsetWidth, h = fig.offsetHeight;
-      const th = (6 * Math.PI) / 180;
-      const ex = (w / 2) * Math.cos(th) + (h / 2) * Math.sin(th);
-      const ey = (w / 2) * Math.sin(th) + (h / 2) * Math.cos(th);
-      const figLeft = fig.offsetLeft + w / 2 - ex;
-      const figBottom = fig.offsetTop + h / 2 + ey;
-      if (title.offsetTop + nameEl.offsetTop > figBottom + 8) return;
-      const gap = Math.max(28, innerWidth * 0.025);
-      const extra = wtEl ? wtEl.offsetWidth + 14 : 0;
-      const avail = figLeft - gap - (title.offsetLeft + nameEl.offsetLeft) - extra;
-      const nw = nameEl.offsetWidth;
-      if (avail > 0 && nw > avail) {
-        nameEl.style.fontSize = `${(parseFloat(getComputedStyle(nameEl).fontSize) * avail) / nw}px`;
-      }
-    };
-    fitName();
-    let fitRaf = 0;
-    const onResize = () => {
-      cancelAnimationFrame(fitRaf);
-      fitRaf = requestAnimationFrame(fitName);
-    };
-    window.addEventListener("resize", onResize);
-    offs.push(() => { window.removeEventListener("resize", onResize); cancelAnimationFrame(fitRaf); });
-    document.fonts?.ready.then(() => {
-      if (!alive) return;
-      const before = nameEl.style.fontSize;
-      fitName();
-      if (nameEl.style.fontSize !== before) ScrollTrigger.refresh();
-    });
-
-    const ctx = gsap.context(() => {
-      if (reducedMotion) return;
-
-      // hero parallax
-      gsap.fromTo(".td-poster", { rotation: window.innerWidth <= 720 ? 5 : 6 }, {
-        yPercent: -14, rotation: 11, ease: "none",
-        scrollTrigger: { trigger: ".td-hero", start: "top top", end: "bottom top", scrub: 0.6 },
-      });
-      gsap.to(".td-mega", {
-        yPercent: 30, ease: "none",
-        scrollTrigger: { trigger: ".td-hero", start: "top top", end: "bottom top", scrub: 0.6 },
-      });
-
-      // story, line by line
-      const story = el.querySelector<HTMLElement>(".td-story__text")!;
-      // aria "none": the split only wraps lines, the paragraph text stays readable as is
-      split = SplitText.create(story, {
-        type: "lines", mask: "lines", linesClass: "td-sl", autoSplit: true, aria: "none",
-        onSplit: (self) =>
-          gsap.from(self.lines, {
-            yPercent: 112, rotation: 2.5, duration: 1.3, ease: "expo.out", stagger: 0.11,
-            scrollTrigger: { trigger: story, start: "top 78%", toggleActions: "play none none reverse" },
-          }),
-      });
-      gsap.fromTo(".td-glyph", { rotation: -50, scale: 0.6, autoAlpha: 0 }, {
-        rotation: -8, scale: 1, autoAlpha: 1, duration: 1.2, ease: "back.out(1.7)",
-        scrollTrigger: { trigger: ".td-story", start: "top 75%" },
-      });
-
-      // features: lines draw in
-      el.querySelectorAll<HTMLElement>(".td-feat").forEach((row, n) => {
-        const tl = gsap.timeline({ scrollTrigger: { trigger: row, start: "top 88%" } });
-        tl.from(row.querySelector(".td-feat__line"), { scaleX: 0, duration: 1.3, ease: "expo.inOut" }, n * 0.04)
-          .from(row.querySelector(".td-feat__num"), { yPercent: 100, autoAlpha: 0, duration: 0.8, ease: "expo.out" }, 0.3)
-          .from(row.querySelector(".td-feat__in, .rd--block"), { yPercent: 110, duration: 1, ease: "expo.out" }, 0.35);
-      });
-      gsap.from(".td-side__n", {
-        yPercent: 60, autoAlpha: 0, duration: 1, ease: "expo.out",
-        scrollTrigger: { trigger: ".td-feats", start: "top 75%" },
-      });
-
-      // receipt + order up sign: slapped down on the pass
-      const mob = window.innerWidth <= 720;
-      // resting tilt lives on .td-toss (CSS rotate); gsap only animates the toss on the inner card
-      gsap.fromTo(".td-receipt", { rotation: mob ? -7 : -10, yPercent: 30, xPercent: -8 }, {
-        rotation: 0, yPercent: 0, xPercent: 0, ease: "none",
-        scrollTrigger: { trigger: ".td-credits", start: "top bottom", end: "center 60%", scrub: 0.8 },
-      });
-      gsap.fromTo(".td-order", { rotation: mob ? 6 : 9, yPercent: 45, xPercent: 10 }, {
-        rotation: 0, yPercent: 0, xPercent: 0, ease: "none",
-        scrollTrigger: { trigger: ".td-credits", start: "top bottom", end: "center 55%", scrub: 0.8 },
-      });
-      gsap.from(".td-mascot", {
-        yPercent: 75, rotation: 10, duration: 1.3, ease: "back.out(1.5)", stagger: 0.15,
-        scrollTrigger: { trigger: ".td-order", start: "top 70%" },
-      });
-
-      // next slice
-      gsap.from(".td-next__roll", {
-        yPercent: 100, duration: 1.3, ease: "expo.out",
-        scrollTrigger: { trigger: ".td-next", start: "top 80%" },
-      });
-    }, el);
-
-    // springy tilt on the hero poster
-    // springy tilt on the hero poster, with a sheen that slides across and a table shadow
-    // that drifts against the tilt (light from the top left)
-    if (finePointer && !reducedMotion) {
-      const tilt = el.querySelector<HTMLElement>(".td-poster__tilt")!;
-      const band = el.querySelector<HTMLElement>(".td-sheen i")!;
-      const shadow = el.querySelector<HTMLElement>(".td-poster__shadow")!;
-      let r: DOMRect | null = null;
-      ctx.add(() => {
-        gsap.set(tilt, { transformPerspective: 900 });
-        const spring = { duration: 0.9, ease: "elastic.out(1, 0.5)" };
-        const rx = gsap.quickTo(tilt, "rotationX", spring);
-        const ry = gsap.quickTo(tilt, "rotationY", spring);
-        const bx = gsap.quickTo(band, "xPercent", { duration: 0.7, ease: "power3" });
-        const sx = gsap.quickTo(shadow, "x", { duration: 0.8, ease: "power3" });
-        const sy = gsap.quickTo(shadow, "y", { duration: 0.8, ease: "power3" });
-        // quickTo tweens stay parked in the global timeline until killed
-        offs.push(() => [rx, ry, bx, sx, sy].forEach((q) => q.tween.kill()));
-        const enter = () => { r = fig.getBoundingClientRect(); };
-        const move = (e: PointerEvent) => {
-          if (!r) enter();
-          const u = (e.clientX - r!.left) / r!.width - 0.5;
-          const v = (e.clientY - r!.top) / r!.height - 0.5;
-          ry(u * 22);
-          rx(v * -18);
-          bx(u * 90);
-          sx(-u * 34);
-          sy(-v * 22);
-        };
-        const leave = () => { r = null; rx(0); ry(0); bx(0); sx(0); sy(0); };
-        fig.addEventListener("pointerenter", enter);
-        fig.addEventListener("pointermove", move);
-        fig.addEventListener("pointerleave", leave);
-        offs.push(() => {
-          fig.removeEventListener("pointerenter", enter);
-          fig.removeEventListener("pointermove", move);
-          fig.removeEventListener("pointerleave", leave);
-        });
-      });
-    }
-
-    const nextEl = el.querySelector<HTMLElement>(".td-next")!;
-    const pop = () => bus.emit("sfx", { name: "pop" });
-    nextEl.addEventListener("pointerenter", pop);
-    offs.push(() => nextEl.removeEventListener("pointerenter", pop));
-
-    // the next poster trails the cursor across the section, leaning into the motion
-    if (finePointer && !reducedMotion) {
-      const np = el.querySelector<HTMLElement>(".td-next__poster")!;
-      let ox = 0, oy = 0;
-      // how far left the poster may drift: never across the name, it keeps to its own columns
-      let minX = -Infinity;
-      let lastX = 0;
-      let still = 0;
-      offs.push(() => window.clearTimeout(still));
-      ctx.add(() => {
-        const qx = gsap.quickTo(np, "x", { duration: 1.1, ease: "power3" });
-        const qy = gsap.quickTo(np, "y", { duration: 1.1, ease: "power3" });
-        const qr = gsap.quickTo(np, "rotation", { duration: 0.9, ease: "power3" });
-        offs.push(() => [qx, qy, qr].forEach((q) => q.tween.kill()));
-        const enter = (e: PointerEvent) => {
-          if (getComputedStyle(np).position !== "absolute") { ox = NaN; return; }
-          const r = nextEl.getBoundingClientRect();
-          ox = r.left + np.offsetLeft + np.offsetWidth / 2;
-          const nameR = nextEl.querySelector<HTMLElement>(".td-next__name")!.getBoundingClientRect();
-          minX = Math.min(0, nameR.right + 28 - (r.left + np.offsetLeft));
-          oy = r.top + np.offsetTop + np.offsetHeight / 2;
-          lastX = e.clientX;
-        };
-        const move = (e: PointerEvent) => {
-          if (Number.isNaN(ox)) return;
-          qx(Math.max(minX, (e.clientX - ox) * 0.5));
-          qy((e.clientY - oy) * 0.5);
-          qr(gsap.utils.clamp(-9, 9, (e.clientX - lastX) * 0.6));
-          lastX = e.clientX;
-          window.clearTimeout(still);
-          still = window.setTimeout(() => qr(0), 90);
-        };
-        const leave = () => { window.clearTimeout(still); qx(0); qy(0); qr(0); };
-        nextEl.addEventListener("pointerenter", enter);
-        nextEl.addEventListener("pointermove", move);
-        nextEl.addEventListener("pointerleave", leave);
-        offs.push(() => {
-          nextEl.removeEventListener("pointerenter", enter);
-          nextEl.removeEventListener("pointermove", move);
-          nextEl.removeEventListener("pointerleave", leave);
-        });
-      });
-    }
-
-    // intro
-    if (!reducedMotion) {
-      const chs = el.querySelectorAll(".td-ch");
-      const fades = el.querySelectorAll(".td-fade");
-      const wt = el.querySelectorAll(".td-wt");
-      const stamp = el.querySelector(".td-stamp--big");
-      ctx.add(() => {
-        gsap.set(chs, { yPercent: 110 });
-        gsap.set(fades, { autoAlpha: 0, y: 18 });
-        gsap.set(".td-poster__art", { autoAlpha: 0, yPercent: 40, rotation: 16, scale: 0.9 });
-        if (wt.length) gsap.set(wt, { autoAlpha: 0, scale: 1.8, rotation: -30 });
-        if (stamp) gsap.set(stamp, { xPercent: -50, yPercent: -50, rotation: -16, autoAlpha: 0, scale: 2.2 });
-      });
-      (async () => {
-        if (first) await loaderGone;
-        if (!alive) return;
-        ctx.add(() => {
-          // later visits start as the transition cover peels away, not after it
-          const tl = gsap.timeline({ defaults: { ease: "expo.out" }, delay: first ? 0 : 0.2 });
-          tl.to(chs, { yPercent: 0, duration: 0.9, stagger: 0.06 }, 0)
-            .to(".td-poster__art", { autoAlpha: 1, yPercent: 0, rotation: 0, scale: 1, duration: 1.6 }, 0.1)
-            .to(fades, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.05 }, 0.3);
-          if (wt.length) tl.to(wt, { autoAlpha: 1, scale: 1, rotation: -12, duration: 0.7, ease: "back.out(2.2)" }, 0.9);
-          if (stamp) tl.to(stamp, { autoAlpha: 1, scale: 1, duration: 0.5, ease: "back.out(2.5)", onStart: () => bus.emit("sfx", { name: "pop" }) }, 1.1);
-        });
-      })();
-    }
-
+    rise(ctx, [...el.querySelectorAll("[data-now]")], [...el.querySelectorAll("[data-later]")], first, () => alive);
     return () => {
       alive = false;
-      offs.forEach((f) => f());
-      split?.revert();
-      split?.kill();
-      split = null;
       ctx.revert();
     };
   },

@@ -1,24 +1,22 @@
-// Exp. 04 Halftone Mirror: a giant slice drawn as a field of halftone dots.
-// Dots swell and push away around the pointer like a lens. No camera.
+// Halftone Mirror: a slice drawn as a field of halftone dots. Dots swell
+// and push away around the pointer like a lens. No camera.
 import { C, Stage, TAU, clamp, drag, type Experiment } from "./kit";
 
 // palette index per cell
-const COLS = [C.ink2, C.paper, C.cheese, C.tomato, C.basilLight, C.crust];
+const COLS = ["#d6cfc3", C.ink2, C.cheese, C.tomato, C.basilLight, C.crust];
 
 export const halftone: Experiment = {
   id: "halftone",
   title: "Halftone Mirror",
-  line: "A slice printed in dots. Move over it and the dots get out of your way.",
+  line: "A slice printed in halftone dots. Move over it and the dots part.",
   label: "Halftone Mirror: a large pizza slice made of halftone dots that swell and part around the pointer like a magnifying lens.",
-  hint: "Hover or drag",
-  tone: "ink",
   ar: [4, 5],
   heavy: true,
   create(host, env) {
     let xs = new Float32Array(0), ys = new Float32Array(0), vs = new Float32Array(0);
     let cs = new Uint8Array(0), n = 0, step = 10, sig = 100;
     const p = { x: 0, y: 0, tx: 0, ty: 0, on: false, amp: 0, tamp: 0, idle: 0 };
-    let t0 = 0;
+    let t0 = 0, actTimer = 0;
 
     // slice described in a unit box (0..1). tip at bottom, crust arc on top.
     const tip = [0.5, 0.95];
@@ -34,16 +32,16 @@ export const halftone: Experiment = {
       const inCone = side(A[0], A[1], tip[0], tip[1], u, v) <= 0 && side(tip[0], tip[1], B[0], B[1], u, v) <= 0;
       if (inCone && dArc < arcR + 0.02 && dArc > arcR - 0.075) {
         const edge = dArc > arcR - 0.01 || dArc < arcR - 0.065;
-        return edge ? [0.95, 1] : [0.62 + 0.25 * (u - 0.1), 5];
+        return edge ? [0.72, 1] : [0.62 + 0.25 * (u - 0.1), 5];
       }
       if (!inCone || dArc > arcR) return [0.1, 0];
       // outline near the cone edges
       const eA = Math.abs(side(A[0], A[1], tip[0], tip[1], u, v)) / Math.hypot(tip[0] - A[0], tip[1] - A[1]);
       const eB = Math.abs(side(tip[0], tip[1], B[0], B[1], u, v)) / Math.hypot(tip[0] - B[0], tip[1] - B[1]);
-      if (Math.min(eA, eB) < 0.012) return [0.95, 1];
+      if (Math.min(eA, eB) < 0.012) return [0.72, 1];
       for (const [x, y, r] of pep) {
         const d = Math.hypot(u - x, v - y);
-        if (d < r) return [d > r - 0.012 ? 0.95 : 0.7 + 0.25 * (1 - d / r), d > r - 0.012 ? 1 : 3];
+        if (d < r) return [d > r - 0.012 ? 0.72 : 0.7 + 0.25 * (1 - d / r), d > r - 0.012 ? 1 : 3];
       }
       for (const [x, y, r] of basil) {
         const d = Math.hypot((u - x) * 0.7, v - y);
@@ -83,18 +81,13 @@ export const halftone: Experiment = {
         if (!t0) t0 = t;
         const w = stage.w, h = stage.h;
         if (dt > 0) {
-          if (!p.on) {
-            p.idle += dt;
-            // idle orbit, a lazy lissajous
-            const k = t * 0.45;
-            p.tx = w * (0.5 + 0.3 * Math.sin(k * 1.3));
-            p.ty = h * (0.46 + 0.28 * Math.sin(k * 0.9 + 1));
-            p.tamp = 0.75;
-          } else p.tamp = 1;
+          // the lens only shows while the pointer is over the toy
+          p.tamp = p.on ? 1 : 0;
+          void w; void h;
           const e = 1 - Math.exp(-dt * (p.on ? 10 : 2.5));
           p.x += (p.tx - p.x) * e; p.y += (p.ty - p.y) * e;
           p.amp += (p.tamp - p.amp) * (1 - Math.exp(-dt * 4));
-        } else if (!p.amp) p.amp = env.reduced && !p.on ? 0.6 : p.amp;
+        }
         draw(t - t0);
       },
     });
@@ -102,7 +95,8 @@ export const halftone: Experiment = {
     function draw(t: number) {
       const g = stage.ctx, w = stage.w, h = stage.h;
       g.clearRect(0, 0, w, h);
-      const half = step * 0.5, s2 = 1 / (2 * sig * sig), amp = p.amp, wave = env.reduced ? 0 : 1;
+      const half = step * 0.5, s2 = 1 / (2 * sig * sig), amp = p.amp, wave = 0;
+      void t;
       for (let col = 0; col < COLS.length; col++) {
         g.beginPath();
         for (let i = 0; i < n; i++) {
@@ -112,21 +106,13 @@ export const halftone: Experiment = {
           const lens = Math.exp(-d2 * s2) * amp;
           const v = vs[i];
           let r: number;
-          if (col === 0) r = half * (0.14 + lens * 0.55);
+          if (col === 0) r = half * (0.12 + lens * 0.4);
           else r = half * clamp(v * (0.78 + 0.12 * wave * Math.sin(t * 1.6 + x * 0.018 + y * 0.012)) * (1 + lens * 0.7), 0.05, 1.18);
           if (lens > 0.02) { const d = Math.sqrt(d2) || 1; x += (dx / d) * lens * step * 1.4; y += (dy / d) * lens * step * 1.4; }
           g.moveTo(x + r, y); g.arc(x, y, r, 0, TAU);
         }
         g.fillStyle = COLS[col];
         g.fill();
-      }
-      // registration marks, printer style
-      g.strokeStyle = C.ink3; g.lineWidth = 1;
-      const m = 14, L = 10;
-      for (let k = 0; k < 4; k++) {
-        const x = k & 1 ? w - m : m, y = k & 2 ? h - m : m;
-        g.beginPath(); g.moveTo(x - L, y); g.lineTo(x + L, y); g.moveTo(x, y - L); g.lineTo(x, y + L); g.stroke();
-        g.beginPath(); g.arc(x, y, L * 0.5, 0, TAU); g.stroke();
       }
     }
 
@@ -148,11 +134,12 @@ export const halftone: Experiment = {
         p.on = true; p.tx = stage.w * (0.25 + Math.random() * 0.5); p.ty = stage.h * (0.25 + Math.random() * 0.5);
         if (env.reduced) { p.x = p.tx; p.y = p.ty; p.amp = 1; }
         env.poke(); env.sfx("click"); stage.kick(1500);
-        window.setTimeout(() => { p.on = false; stage.kick(1200); }, 1400);
+        window.clearTimeout(actTimer);
+        actTimer = window.setTimeout(() => { p.on = false; stage.kick(1200); }, 1400);
       },
       start: () => stage.start(),
       stop: () => stage.stop(),
-      destroy() { off(); stage.canvas.removeEventListener("pointerleave", leave); stage.destroy(); },
+      destroy() { window.clearTimeout(actTimer); off(); stage.canvas.removeEventListener("pointerleave", leave); stage.destroy(); },
     };
   },
 };

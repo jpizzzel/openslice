@@ -22,7 +22,6 @@ export const C = {
 } as const;
 
 export type SfxName = "tick" | "pop" | "whoosh" | "click";
-export type Tone = "ink" | "tomato" | "paper" | "dough" | "cheese" | "basil";
 
 export const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -49,9 +48,9 @@ export interface Sub {
 }
 
 /**
- * One rAF for every running toy. The focused toy (hovered, touched, centred
- * or expanded) always runs at full rate; other heavy toys run every other
- * frame. `solo` (modal) pauses everything else. Halts when the tab hides.
+ * One rAF for every running toy. A toy only runs while someone is playing
+ * with it (hovered, focused, touched or expanded), so usually nothing runs.
+ * `solo` (modal) pauses everything else. Halts when the tab hides.
  */
 export class Loop {
   private subs = new Set<Sub>();
@@ -120,7 +119,7 @@ export interface ToyEnv {
   reduced: boolean;
   /** throttled sound effect */
   sfx(name: SfxName, minGapMs?: number): void;
-  /** the person touched the toy: hides the hint, claims focus */
+  /** the person touched the toy: claims focus */
   poke(): void;
 }
 
@@ -138,9 +137,7 @@ export interface Experiment {
   line: string;
   /** describes the toy for assistive tech */
   label: string;
-  hint: string;
-  tone: Tone;
-  /** width / height of the tile */
+  /** width / height of the toy when expanded */
   ar: [number, number];
   heavy?: boolean;
   create(host: HTMLElement, env: ToyEnv): Toy;

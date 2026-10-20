@@ -1,0 +1,57 @@
+/* ============ Covers stack (home hero + /toolbox) ============
+   The host sets --cw (cover width), and may set --cv-h (stage height),
+   --cv-x / --cv-y (where the front cover's centre sits in the stage). */
+.cv {
+  --cw: 320px;
+  --cv-h: calc(var(--cw) * 1.62);
+  /* centre the whole pile (the front cover plus the fan behind it), never past the left edge */
+  --cv-x: max(calc(var(--cw) * 0.56), calc(50% - var(--cw) * 0.375));
+  --cv-y: 52%;
+  position: relative;
+}
+.cv-stage {
+  position: relative; height: var(--cv-h);
+  touch-action: pan-y; user-select: none; -webkit-user-select: none;
+  cursor: grab;
+}
+.cv.is-dragging .cv-stage { cursor: grabbing; }
+.cv.is-dragging .cv-card { pointer-events: none; }
+
+.cv-card {
+  position: absolute; left: var(--cv-x); top: var(--cv-y);
+  width: var(--cw); aspect-ratio: 4 / 5;
+  margin-left: calc(var(--cw) / -2); margin-top: calc(var(--cw) * -0.625);
+  display: block; color: var(--ink); border-radius: 3px;
+  -webkit-user-drag: none; -webkit-tap-highlight-color: transparent;
+  will-change: transform, opacity; backface-visibility: hidden;
+}
+.cv-card__art {
+  position: absolute; inset: 0; display: block; overflow: hidden; border-radius: 3px;
+  background: var(--c);
+  box-shadow: 0 1px 0 rgb(255 255 255 / .3) inset, 0 34px 60px -30px rgb(20 18 16 / .42), 0 10px 22px -12px rgb(20 18 16 / .26);
+}
+.cv-card__art svg, .cv-card__art img { width: 100%; height: 100%; pointer-events: none; }
+.cv-card__shade {
+  position: absolute; inset: 0; border-radius: 3px; background: var(--ink); opacity: 0; pointer-events: none;
+  will-change: opacity;
+}
+.cv-card:focus-visible { outline: none; }
+.cv-card:focus-visible .cv-card__art { outline: 2px solid var(--ink); outline-offset: 6px; }
+
+/* before the script measures, keep the pile from flashing flat */
+.cv:not([data-ready]) .cv-card:not(:first-child) { visibility: hidden; }
+
+/* ---- shared controls: index + prev / next ---- */
+.cv-ctrl { display: flex; align-items: center; gap: 14px; }
+.cv-idx { font-size: var(--t-sm); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 3.4em; }
+.cv-idx b { color: var(--ink); font-weight: 500; }
+.cv-btn {
+  display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--line); color: var(--ink); background: transparent;
+  transition: border-color .25s, background-color .25s, color .25s;
+}
+.cv-btn svg { width: 16px; height: 16px; }
+.cv-btn:hover { border-color: var(--ink); }
+.cv-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.cv-btn:disabled { opacity: .35; cursor: default; }
+.cv-btn:disabled:hover { border-color: var(--line); }

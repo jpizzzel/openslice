@@ -1,4 +1,4 @@
-// Exp. 03 Dough Stretch: a soft body blob of dough (ring of points with
+// Dough Stretch: a soft body blob of dough (ring of points with
 // neighbour springs + shape matching). Grab it anywhere, stretch, let go.
 import { C, Stage, TAU, clamp, closedCurve, drag, dots, rng, type Experiment } from "./kit";
 
@@ -7,10 +7,8 @@ const N = 36;
 export const dough: Experiment = {
   id: "dough",
   title: "Dough Stretch",
-  line: "A ball of dough with feelings. Grab it, stretch it, it always springs back.",
+  line: "Grab the dough and pull. It springs back when you let go.",
   label: "Dough Stretch: a soft blob of pizza dough with a little face. Grab and drag to stretch it; it springs back when released.",
-  hint: "Grab and pull",
-  tone: "tomato",
   ar: [5, 4],
   create(host, env) {
     const px = new Float32Array(N), py = new Float32Array(N);
@@ -20,7 +18,7 @@ export const dough: Experiment = {
     const ox = new Float32Array(N), oy = new Float32Array(N); // grab offsets
     const hx = new Float32Array(N), hy = new Float32Array(N); // highlight copy
     let R = 1, homeX = 0, homeY = 0, rest1 = 0, rest2 = 0, sc = 1, seeded = false;
-    let grab = -1, gx = 0, gy = 0, stretch = 0, maxStretch = 0, nextPoke = 2, blink = 0;
+    let grab = -1, gx = 0, gy = 0, stretch = 0, maxStretch = 0, blink = 0;
     const flour = (() => { const r = rng(11); return Array.from({ length: 26 }, () => [r() * TAU, Math.sqrt(r()) * 0.8, 0.8 + r() * 1.6]); })();
 
     const shape = () => {
@@ -52,17 +50,7 @@ export const dough: Experiment = {
         if (dt > 0) {
           const n = 4;
           for (let s = 0; s < n; s++) step(dt / n, t);
-          if (!env.reduced && grab < 0) {
-            nextPoke -= dt;
-            if (nextPoke <= 0) {
-              // idle wobble: a little poke from a random side
-              nextPoke = 2.6 + Math.random() * 2.5;
-              const i = (Math.random() * N) | 0;
-              vx[i] += rx[i] * 3; vy[i] += ry[i] * 3;
-            }
-          }
           blink = Math.max(0, blink - dt);
-          if (blink === 0 && Math.random() < dt * 0.25) blink = 0.14;
         }
         draw(t);
       },
@@ -79,7 +67,8 @@ export const dough: Experiment = {
 
     function step(dt: number, t: number) {
       const [cx, cy] = centroid();
-      const breathe = env.reduced ? 1 : 1 + 0.018 * Math.sin(t * 2.1);
+      const breathe = 1;
+      void t;
       const kShape = 34, kAnchor = 46, kHome = 14, k1 = 240, k2 = 90, kGrab = 1100;
       for (let i = 0; i < N; i++) {
         // shape matching around the centroid plus an absolute anchor to the

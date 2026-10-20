@@ -1,4 +1,4 @@
-// Exp. 06 Kinetic Type: OPENSLICE in condensed caps. Each letter hangs on a
+// Kinetic Type: OPENSLICE in condensed caps. Each letter hangs on a
 // spring, leans toward the pointer and squashes/stretches with its velocity.
 import { clamp, type Experiment, type Sub } from "./kit";
 
@@ -7,16 +7,13 @@ const WORD = "OPENSLICE";
 export const kinetic: Experiment = {
   id: "type",
   title: "Kinetic Type",
-  line: "Nine letters on springs. They lean in when you get close. Click to make them jump.",
+  line: "Letters on springs. Move close to tilt them, click to make them jump.",
   label: "Kinetic Type: the word OpenSlice in tall condensed letters that lean toward the pointer, squash and stretch on springs, and jump when clicked.",
-  hint: "Move close / click",
-  tone: "cheese",
   ar: [3, 2],
   create(host, env) {
     host.insertAdjacentHTML("beforeend", `
       <div class="ktype" role="img" aria-label="${kinetic.label}">
         <div class="ktype__row">${[...WORD].map((c) => `<span class="ktype__ch" data-ch="${c}" aria-hidden="true"><i>${c}</i></span>`).join("")}</div>
-        <div class="ktype__base" aria-hidden="true"><span>Est. on springs</span><span>Squash / stretch / repeat</span></div>
       </div>`);
     const root = host.querySelector(".ktype") as HTMLElement;
     const chars = [...root.querySelectorAll<HTMLElement>(".ktype__ch")];
@@ -43,10 +40,7 @@ export const kinetic: Experiment = {
       for (let i = 0; i < L.length; i++) {
         const l = L[i];
         let tx = 0, ty = 0, ts = 0;
-        if (!env.reduced) {
-          ty = Math.sin(t * 2.2 + i * 0.55) * H * 0.025 * (1 - p.amt);
-          ts = Math.sin(t * 2.2 + i * 0.55 + 1.2) * 0.04 * (1 - p.amt);
-        }
+        void t;
         if (p.amt > 0.001) {
           const dx = p.x - l.cx, dy = p.y - l.cy;
           const pull = Math.exp(-(dx * dx + dy * dy) / (2 * sig * sig)) * p.amt;

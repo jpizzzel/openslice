@@ -22,7 +22,7 @@ export function renderFooter(): string {
       </div>
       <div class="sf-col">
         <span class="sf-k">Source</span>
-        <a class="u-link" href="${SITE.repo}" target="_blank" rel="noopener" data-cursor="GitHub">${SITE.repo.replace(/^https?:\/\/(www\.)?/, "")}</a>
+        <a class="u-link" href="${SITE.repo}" target="_blank" rel="noopener" data-cursor="GitHub">${SITE.repo.replace(/^https?:\/\/(www\.)?/, "").replace(/\//g, "/<wbr>")}</a>
         <span class="sf-v">MIT licensed. Every slice open source.</span>
       </div>
     </div>

@@ -150,6 +150,11 @@ export const clock: Experiment = {
     render(true);
 
     return {
+      act() {
+        // bite the first slice still on the plate
+        const slot = slots.find((s) => !s.classList.contains("is-eaten") && !bitten.has(Number(s.dataset.i)));
+        if (slot) click({ target: slot } as unknown as Event);
+      },
       start() {
         render(true);
         if (env.reduced) timer = window.setInterval(() => render(), 1000);

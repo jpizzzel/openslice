@@ -176,38 +176,44 @@ export function initHero(kit: Kit, intro: Promise<void>) {
     }
   });
 
-  kit.add(() => {
-    // Scroll: the burst spreads out, numerals part, box sinks.
-    const mm = gsap.matchMedia();
-    kit.onCleanup(() => mm.revert());
-    mm.add({ wide: "(min-width: 721px)", narrow: "(max-width: 720px)" }, (c) => {
-      const wide = !!c.conditions?.wide;
-      const tl = gsap.timeline({
-        defaults: { ease: "none" },
-        scrollTrigger: {
-          trigger: wide ? hero : stage, start: wide ? "top top" : "top 20%", end: "bottom top",
-          scrub: 0.7, invalidateOnRefresh: true,
-        },
-      });
-      objs.forEach((o, i) => {
-        const d = OBJECTS[i];
-        tl.to(o.querySelector(".o-scroll"), {
-          x: () => ((d.x - 50) / 100) * stage.offsetWidth * (wide ? 1.1 : 0.5),
-          y: () => -((100 - d.y) / 100) * stage.offsetHeight * (wide ? 0.55 : 0.3) - 40,
-          rotation: (d.x < 50 ? -1 : 1) * (20 + (i % 4) * 12),
-          scale: 1 + d.s / 60,
-        }, 0);
-      });
-      tl.to(speed, { scale: 1.5, opacity: 0 }, 0);
-      if (wide) {
-        tl.to(nums[0].closest(".h-num"), { xPercent: -28 }, 0)
-          .to(nums[1].closest(".h-num"), { xPercent: 28 }, 0)
-          .to(hero.querySelector(".h-box"), { y: 120, rotation: -6 }, 0)
-          .to(hero.querySelector(".h-facts"), { y: -80 }, 0)
-          .to(hero.querySelector(".h-statement"), { y: -40 }, 0);
-      }
+  // Scroll: the burst spreads out, numerals part, box sinks. Rebuilt when the
+  // layout flips between wide and narrow. (Not gsap.matchMedia: it never removes
+  // its MediaQueryList listeners, so every home mount leaked two of them.)
+  const mq = window.matchMedia("(min-width: 721px)");
+  let scrollTl: gsap.core.Timeline | null = null;
+  const buildScroll = () => kit.add(() => {
+    scrollTl?.revert();
+    const wide = mq.matches;
+    const tl = (scrollTl = gsap.timeline({
+      defaults: { ease: "none" },
+      scrollTrigger: {
+        trigger: wide ? hero : stage, start: wide ? "top top" : "top 20%", end: "bottom top",
+        scrub: 0.7, invalidateOnRefresh: true,
+      },
+    }));
+    objs.forEach((o, i) => {
+      const d = OBJECTS[i];
+      tl.to(o.querySelector(".o-scroll"), {
+        x: () => ((d.x - 50) / 100) * stage.offsetWidth * (wide ? 1.1 : 0.5),
+        y: () => -((100 - d.y) / 100) * stage.offsetHeight * (wide ? 0.55 : 0.3) - 40,
+        rotation: (d.x < 50 ? -1 : 1) * (20 + (i % 4) * 12),
+        scale: 1 + d.s / 60,
+      }, 0);
     });
+    tl.to(speed, { scale: 1.5, opacity: 0 }, 0);
+    if (wide) {
+      tl.to(nums[0].closest(".h-num"), { xPercent: -28 }, 0)
+        .to(nums[1].closest(".h-num"), { xPercent: 28 }, 0)
+        .to(hero.querySelector(".h-box"), { y: 120, rotation: -6 }, 0)
+        .to(hero.querySelector(".h-facts"), { y: -80 }, 0)
+        .to(hero.querySelector(".h-statement"), { y: -40 }, 0);
+    }
+  });
+  buildScroll();
+  mq.addEventListener("change", buildScroll);
+  kit.onCleanup(() => mq.removeEventListener("change", buildScroll));
 
+  kit.add(() => {
     // Intro: hidden until the preloader leaves.
     gsap.set([...nums, ...lines, and, ...words], { yPercent: 115 });
     gsap.set(intros, { scale: 0, autoAlpha: 0 });

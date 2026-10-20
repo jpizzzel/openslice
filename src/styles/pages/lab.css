@@ -40,6 +40,8 @@
   user-select: none;
 }
 .p-lab__count span { display: inline-block; }
+/* decorative paper numerals live in a pseudo element (the real count is in .sr-only) */
+.p-lab__count [data-count]::before { content: attr(data-n); }
 .p-lab__countlab {
   display: flex; gap: 8px; margin-top: 14px; padding-left: 2px;
 }
@@ -164,6 +166,8 @@
   transition: opacity .5s var(--ease-out), transform .5s var(--ease-out);
 }
 .lab-tone--paper .lab-tile__hint, .lab-tone--dough .lab-tile__hint, .lab-tone--cheese .lab-tile__hint { background: var(--ink); color: var(--paper); }
+.lab-stage:focus { outline: none; }
+.lab-stage:focus-visible { outline: 2px solid var(--tomato); outline-offset: 4px; }
 .lab-tile.is-used .lab-tile__hint, .p-lab-modal .lab-tile__hint { opacity: 0; transform: translateY(-6px); }
 .lab-chip--btn {
   pointer-events: auto; cursor: pointer;

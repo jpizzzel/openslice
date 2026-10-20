@@ -60,6 +60,8 @@ export class Loop {
   private frame = 0;
   focus = "";
   solo = "";
+  /** performance.now() of the last page scroll; set by the page */
+  lastScroll = -1e9;
 
   constructor() {
     document.addEventListener("visibilitychange", this.vis);
@@ -89,10 +91,15 @@ export class Loop {
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     this.frame++;
+    // while the page scrolls, leave the frame budget to scrolling: toys that
+    // are not focused tick at a third of the rate (time still accumulates)
+    const scrolling = now - this.lastScroll < 180;
     for (const s of this.subs) {
       if (this.solo && s.key !== this.solo) continue;
       s.acc = (s.acc ?? 0) + dt;
-      if (s.heavy && !this.solo && s.key !== this.focus && this.frame % 2) continue;
+      if (!this.solo && s.key !== this.focus) {
+        if (scrolling ? this.frame % 3 : s.heavy && this.frame % 2) continue;
+      }
       const d = Math.min(0.05, s.acc);
       s.acc = 0;
       s.tick(d, now / 1000);
@@ -121,6 +128,8 @@ export interface Toy {
   start(): void;
   stop(): void;
   destroy(): void;
+  /** keyboard play (Enter / Space on the focused stage): one good default action */
+  act?(): void;
 }
 
 export interface Experiment {

@@ -264,6 +264,11 @@ export const toppings: Experiment = {
     stage.canvas.addEventListener("pointerleave", leave);
 
     return {
+      act() {
+        // a handful dropped from the sky over the middle of the pie
+        for (let i = 0; i < 9; i++) add(stage.w * (0.3 + R() * 0.4), -20 * sc - R() * 60 * sc, (R() - 0.5) * 160, R() * 80);
+        env.poke(); env.sfx("pop"); stage.kick(3000);
+      },
       start: () => stage.start(),
       stop: () => stage.stop(),
       destroy() { off(); stage.canvas.removeEventListener("pointerleave", leave); stage.destroy(); },

@@ -1,5 +1,5 @@
 // Small helpers shared by the about, trunk and 404 pages.
-import { gsap, reducedMotion } from "../../core/motion";
+import { gsap, ScrollTrigger, reducedMotion } from "../../core/motion";
 import { loaderGone } from "../../core/ready";
 
 // The footer is owned by the chrome team. Glob it so this module builds
@@ -62,10 +62,39 @@ export function springDrag(el: HTMLElement, onGrab?: () => void): () => void {
   el.addEventListener("pointermove", move);
   el.addEventListener("pointerup", up);
   el.addEventListener("pointercancel", up);
+  el.addEventListener("lostpointercapture", up);
   return () => {
     el.removeEventListener("pointerdown", down);
     el.removeEventListener("pointermove", move);
     el.removeEventListener("pointerup", up);
     el.removeEventListener("pointercancel", up);
+    el.removeEventListener("lostpointercapture", up);
+    // quickTo tweens are paused and live in the global timeline forever:
+    // kill them or they retain the whole detached page.
+    qx.tween.kill(); qy.tween.kill();
+    gsap.killTweensOf(el);
+  };
+}
+
+/**
+ * Like gsap.matchMedia() with one query and an else branch, but it removes its
+ * MediaQueryList listener on cleanup (gsap.matchMedia never does, which leaks
+ * a listener per page visit). Each branch runs inside its own gsap.context
+ * scoped to `scope`, reverted when the query flips or on cleanup.
+ */
+export function responsive(scope: Element, query: string, match: () => void, otherwise: () => void): () => void {
+  const mq = window.matchMedia(query);
+  let ctx: gsap.Context | null = null;
+  const run = () => {
+    ctx?.revert();
+    ctx = gsap.context(mq.matches ? match : otherwise, scope);
+  };
+  const flip = () => { run(); ScrollTrigger.refresh(); };
+  run();
+  mq.addEventListener("change", flip);
+  return () => {
+    mq.removeEventListener("change", flip);
+    ctx?.revert();
+    ctx = null;
   };
 }

@@ -35,7 +35,9 @@
 .p-toolbox .tb-card__shade {
   position: absolute; inset: 0; border-radius: 3px; background: var(--ink); opacity: 0; pointer-events: none;
 }
-.p-toolbox .tb-card__cap { display: none; }
+.p-toolbox .tb-card__cap {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
 /* specular sheen: a soft band of light, driven by transform only */
 .p-toolbox .tb-card__sheen {
   position: absolute; inset: 0; overflow: hidden; border-radius: 3px; pointer-events: none; opacity: 0;
@@ -138,6 +140,13 @@
   transform: rotate(-9deg);
 }
 
+/* layers for everything whose opacity scrubs every frame, so the heavy SVG art underneath is never re-rastered */
+.p-toolbox.is-pinned .tb-card__shade,
+.p-toolbox.is-pinned .tb-card__sheen,
+.p-toolbox.is-pinned .tb-item,
+.p-toolbox.is-pinned .tb-cta { will-change: opacity; }
+.p-toolbox.is-pinned .tb-card__art { will-change: transform; }
+
 .p-toolbox.is-pinned .tb-meta {
   position: absolute; left: var(--left); top: 43vh; z-index: 3;
   display: grid; grid-template-columns: repeat(2, minmax(0, 215px)); gap: 40px 22px;
@@ -199,7 +208,7 @@
 .p-toolbox.is-flat .tb-cards::-webkit-scrollbar { display: none; }
 .p-toolbox.is-flat .tb-card { flex: 0 0 var(--cw); scroll-snap-align: center; position: relative; }
 .p-toolbox.is-flat .tb-card__cap {
-  display: flex; gap: 10px; position: absolute; left: 0; top: calc(100% + 14px);
+  display: flex; gap: 10px; width: auto; height: auto; overflow: visible; clip-path: none; position: absolute; left: 0; top: calc(100% + 14px);
   font-size: var(--t-sm); color: var(--ink); white-space: nowrap;
 }
 .p-toolbox.is-flat .tb-card__cap b { font-family: var(--f-mono); font-weight: 500; font-size: var(--t-xs); color: var(--muted); padding-top: 2px; }

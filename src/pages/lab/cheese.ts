@@ -260,6 +260,12 @@ export const cheese: Experiment = {
     });
 
     return {
+      act() {
+        // a quick tug: fling the slice out and let it spring home
+        touched = true; held = false;
+        off.vx += Math.cos(bis) * R * 9; off.vy += Math.sin(bis) * R * 9;
+        env.poke(); env.sfx("click"); stage.kick(3500);
+      },
       start: () => stage.start(),
       stop: () => stage.stop(),
       destroy() { offDrag(); stage.destroy(); },

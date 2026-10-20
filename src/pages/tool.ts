@@ -1,6 +1,6 @@
 import "../styles/pages/tool.css";
 import type { Page } from "../core/page";
-import { gsap, reducedMotion, finePointer } from "../core/motion";
+import { gsap, ScrollTrigger, reducedMotion, finePointer } from "../core/motion";
 import { SplitText } from "gsap/SplitText";
 import { loaderGone } from "../core/ready";
 import { bus } from "../core/bus";
@@ -189,6 +189,47 @@ const page: Page = {
     const el = root.querySelector<HTMLElement>(".p-tool")!;
     const offs: (() => void)[] = [];
     let alive = true;
+    let split: SplitText | null = null;
+    const fig = el.querySelector<HTMLElement>(".td-poster")!;
+    const title = el.querySelector<HTMLElement>(".td-title")!;
+    const nameEl = el.querySelector<HTMLElement>(".td-name")!;
+    const wtEl = el.querySelector<HTMLElement>(".td-wt");
+
+    // Keep the giant name clear of the poster: on wide layouts the name may only run up to
+    // the poster's resting (rotated) left edge minus a gap. Measured from layout boxes, so
+    // the scroll parallax and the intro transforms never feed back into it.
+    const fitName = () => {
+      nameEl.style.fontSize = "";
+      if (getComputedStyle(fig).position !== "absolute") return;
+      const w = fig.offsetWidth, h = fig.offsetHeight;
+      const th = (6 * Math.PI) / 180;
+      const ex = (w / 2) * Math.cos(th) + (h / 2) * Math.sin(th);
+      const ey = (w / 2) * Math.sin(th) + (h / 2) * Math.cos(th);
+      const figLeft = fig.offsetLeft + w / 2 - ex;
+      const figBottom = fig.offsetTop + h / 2 + ey;
+      if (title.offsetTop + nameEl.offsetTop > figBottom + 8) return;
+      const gap = Math.max(28, innerWidth * 0.025);
+      const extra = wtEl ? wtEl.offsetWidth + 14 : 0;
+      const avail = figLeft - gap - (title.offsetLeft + nameEl.offsetLeft) - extra;
+      const nw = nameEl.offsetWidth;
+      if (avail > 0 && nw > avail) {
+        nameEl.style.fontSize = `${(parseFloat(getComputedStyle(nameEl).fontSize) * avail) / nw}px`;
+      }
+    };
+    fitName();
+    let fitRaf = 0;
+    const onResize = () => {
+      cancelAnimationFrame(fitRaf);
+      fitRaf = requestAnimationFrame(fitName);
+    };
+    window.addEventListener("resize", onResize);
+    offs.push(() => { window.removeEventListener("resize", onResize); cancelAnimationFrame(fitRaf); });
+    document.fonts?.ready.then(() => {
+      if (!alive) return;
+      const before = nameEl.style.fontSize;
+      fitName();
+      if (nameEl.style.fontSize !== before) ScrollTrigger.refresh();
+    });
 
     const ctx = gsap.context(() => {
       if (reducedMotion) return;
@@ -205,8 +246,9 @@ const page: Page = {
 
       // story, line by line
       const story = el.querySelector<HTMLElement>(".td-story__text")!;
-      SplitText.create(story, {
-        type: "lines", mask: "lines", linesClass: "td-sl", autoSplit: true,
+      // aria "none": the split only wraps lines, the paragraph text stays readable as is
+      split = SplitText.create(story, {
+        type: "lines", mask: "lines", linesClass: "td-sl", autoSplit: true, aria: "none",
         onSplit: (self) =>
           gsap.from(self.lines, {
             yPercent: 112, rotation: 2.5, duration: 1.3, ease: "expo.out", stagger: 0.11,
@@ -254,27 +296,87 @@ const page: Page = {
     }, el);
 
     // springy tilt on the hero poster
+    // springy tilt on the hero poster, with a sheen that slides across and a table shadow
+    // that drifts against the tilt (light from the top left)
     if (finePointer && !reducedMotion) {
-      const fig = el.querySelector<HTMLElement>(".td-poster")!;
       const tilt = el.querySelector<HTMLElement>(".td-poster__tilt")!;
-      gsap.set(tilt, { transformPerspective: 900 });
-      const rx = gsap.quickTo(tilt, "rotationX", { duration: 0.9, ease: "elastic.out(1, 0.5)" });
-      const ry = gsap.quickTo(tilt, "rotationY", { duration: 0.9, ease: "elastic.out(1, 0.5)" });
-      const move = (e: PointerEvent) => {
-        const r = fig.getBoundingClientRect();
-        ry(((e.clientX - r.left) / r.width - 0.5) * 22);
-        rx(((e.clientY - r.top) / r.height - 0.5) * -18);
-      };
-      const leave = () => { rx(0); ry(0); };
-      fig.addEventListener("pointermove", move);
-      fig.addEventListener("pointerleave", leave);
-      offs.push(() => { fig.removeEventListener("pointermove", move); fig.removeEventListener("pointerleave", leave); });
+      const band = el.querySelector<HTMLElement>(".td-sheen i")!;
+      const shadow = el.querySelector<HTMLElement>(".td-poster__shadow")!;
+      let r: DOMRect | null = null;
+      ctx.add(() => {
+        gsap.set(tilt, { transformPerspective: 900 });
+        const spring = { duration: 0.9, ease: "elastic.out(1, 0.5)" };
+        const rx = gsap.quickTo(tilt, "rotationX", spring);
+        const ry = gsap.quickTo(tilt, "rotationY", spring);
+        const bx = gsap.quickTo(band, "xPercent", { duration: 0.7, ease: "power3" });
+        const sx = gsap.quickTo(shadow, "x", { duration: 0.8, ease: "power3" });
+        const sy = gsap.quickTo(shadow, "y", { duration: 0.8, ease: "power3" });
+        const enter = () => { r = fig.getBoundingClientRect(); };
+        const move = (e: PointerEvent) => {
+          if (!r) enter();
+          const u = (e.clientX - r!.left) / r!.width - 0.5;
+          const v = (e.clientY - r!.top) / r!.height - 0.5;
+          ry(u * 22);
+          rx(v * -18);
+          bx(u * 90);
+          sx(-u * 34);
+          sy(-v * 22);
+        };
+        const leave = () => { r = null; rx(0); ry(0); bx(0); sx(0); sy(0); };
+        fig.addEventListener("pointerenter", enter);
+        fig.addEventListener("pointermove", move);
+        fig.addEventListener("pointerleave", leave);
+        offs.push(() => {
+          fig.removeEventListener("pointerenter", enter);
+          fig.removeEventListener("pointermove", move);
+          fig.removeEventListener("pointerleave", leave);
+        });
+      });
     }
 
     const nextEl = el.querySelector<HTMLElement>(".td-next")!;
     const pop = () => bus.emit("sfx", { name: "pop" });
     nextEl.addEventListener("pointerenter", pop);
     offs.push(() => nextEl.removeEventListener("pointerenter", pop));
+
+    // the next poster trails the cursor across the section, leaning into the motion
+    if (finePointer && !reducedMotion) {
+      const np = el.querySelector<HTMLElement>(".td-next__poster")!;
+      let ox = 0, oy = 0;
+      let lastX = 0;
+      let still = 0;
+      offs.push(() => window.clearTimeout(still));
+      ctx.add(() => {
+        const qx = gsap.quickTo(np, "x", { duration: 1.1, ease: "power3" });
+        const qy = gsap.quickTo(np, "y", { duration: 1.1, ease: "power3" });
+        const qr = gsap.quickTo(np, "rotation", { duration: 0.9, ease: "power3" });
+        const enter = (e: PointerEvent) => {
+          if (getComputedStyle(np).position !== "absolute") { ox = NaN; return; }
+          const r = nextEl.getBoundingClientRect();
+          ox = r.left + np.offsetLeft + np.offsetWidth / 2;
+          oy = r.top + np.offsetTop + np.offsetHeight / 2;
+          lastX = e.clientX;
+        };
+        const move = (e: PointerEvent) => {
+          if (Number.isNaN(ox)) return;
+          qx((e.clientX - ox) * 0.5);
+          qy((e.clientY - oy) * 0.5);
+          qr(gsap.utils.clamp(-9, 9, (e.clientX - lastX) * 0.6));
+          lastX = e.clientX;
+          window.clearTimeout(still);
+          still = window.setTimeout(() => qr(0), 90);
+        };
+        const leave = () => { window.clearTimeout(still); qx(0); qy(0); qr(0); };
+        nextEl.addEventListener("pointerenter", enter);
+        nextEl.addEventListener("pointermove", move);
+        nextEl.addEventListener("pointerleave", leave);
+        offs.push(() => {
+          nextEl.removeEventListener("pointerenter", enter);
+          nextEl.removeEventListener("pointermove", move);
+          nextEl.removeEventListener("pointerleave", leave);
+        });
+      });
+    }
 
     // intro
     if (!reducedMotion) {
@@ -306,6 +408,9 @@ const page: Page = {
     return () => {
       alive = false;
       offs.forEach((f) => f());
+      split?.revert();
+      split?.kill();
+      split = null;
       ctx.revert();
     };
   },

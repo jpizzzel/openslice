@@ -4,7 +4,7 @@ import { gsap, ScrollTrigger, reducedMotion, finePointer } from "../core/motion"
 import { bus } from "../core/bus";
 import { PEOPLE, SITE, STATUS_LABEL, TOOLS, type Person } from "../data/site";
 import { glyph, mascot, scene, type GlyphId, type Pose } from "../art";
-import { esc, footerHTML, springDrag, whenReady, words } from "./about/kit";
+import { esc, footerHTML, responsive, springDrag, whenReady, words } from "./about/kit";
 
 interface Chapter {
   id: string;
@@ -170,6 +170,7 @@ function template() {
       <header class="ab-time__head">
         <p class="label">Chapters</p>
         <h2 id="ab-time-h" class="ab-time__h"><span class="caps-red">The story</span> <em class="serif">so far</em></h2>
+        <p class="ab-time__odo" aria-hidden="true">${[0, 1, 2, 3].map(() => `<span class="ab-odo__win"><span class="ab-odo__col">${"0123456789X".split("").map((d) => `<span>${d}</span>`).join("")}</span></span>`).join("")}</p>
       </header>
       <ol class="ab-time__track">${CHAPTERS.map(chapterHTML).join("")}</ol>
       <div class="ab-time__rail" aria-hidden="true">
@@ -248,7 +249,6 @@ const page: Page = {
     let alive = true;
     const offs: (() => void)[] = [];
     const ctx = gsap.context(() => {}, el);
-    const mm = gsap.matchMedia();
 
     // Cards: spring drag + raise the one you grab.
     const cards = [...el.querySelectorAll<HTMLElement>(".ab-card")];
@@ -274,7 +274,6 @@ const page: Page = {
         alive = false;
         offs.forEach((f) => f());
         ctx.revert();
-        mm.revert();
       };
     }
 
@@ -317,21 +316,32 @@ const page: Page = {
       gsap.from(".ab-card--hi", { y: 200, xPercent: 20, rotation: -16, autoAlpha: 0, duration: 1.4, delay: 0.12, ease: "expo.out", scrollTrigger: { trigger: ".ab-hi__table", start: "top 80%", once: true } });
     });
 
-    // Timeline: pinned horizontal scroll on wide screens, stacked list on small ones.
-    mm.add("(min-width: 900px)", () => {
-      const pin = el.querySelector<HTMLElement>(".ab-time__pin")!;
+    // Timeline: a horizontal scroll on wide screens, stacked list on small ones.
+    // The pin is CSS sticky inside a section sized to the scroll distance, so
+    // nothing is reparented or re-measured mid-scroll (no pin spacer, no CLS).
+    const section = el.querySelector<HTMLElement>(".ab-time")!;
+    const odo = [...el.querySelectorAll<HTMLElement>(".ab-time__odo .ab-odo__col")];
+    const rollTo = (year: string) => {
+      odo.forEach((col, k) => {
+        const ch = year[k] ?? "0";
+        const idx = ch === "X" ? 10 : Number(ch);
+        gsap.to(col, { yPercent: -idx * (100 / 11), duration: 0.9 + k * 0.12, ease: "expo.out", overwrite: true });
+      });
+    };
+    offs.push(responsive(el, "(min-width: 900px)", () => {
       const track = el.querySelector<HTMLElement>(".ab-time__track")!;
       const rail = el.querySelector<HTMLElement>(".ab-time__line")!;
       const dist = () => Math.max(0, track.scrollWidth - window.innerWidth);
+      const size = () => { section.style.height = `${Math.round(window.innerHeight + dist())}px`; };
+      size();
+      ScrollTrigger.addEventListener("refreshInit", size);
       const tl = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
-          trigger: pin,
-          pin: true,
-          anticipatePin: 1,
+          trigger: section,
           scrub: 0.8,
           start: "top top",
-          end: () => "+=" + dist(),
+          end: "bottom bottom",
           invalidateOnRefresh: true,
         },
       });
@@ -340,6 +350,8 @@ const page: Page = {
         .fromTo(".ab-time__rider", { x: 0, rotation: 0 }, { x: () => rail.offsetWidth, rotation: 720 }, 0);
 
       const ticks = [...el.querySelectorAll<HTMLElement>(".ab-time__ticks li")];
+      gsap.set(odo, { yPercent: 0 });
+      rollTo(CHAPTERS[0].year);
       el.querySelectorAll<HTMLElement>(".ab-ch").forEach((ch, i) => {
         const gl = ch.querySelectorAll(".ab-ch__g");
         gsap.set(gl, { scale: 0, autoAlpha: 0 });
@@ -348,7 +360,10 @@ const page: Page = {
           containerAnimation: tl,
           start: "left 60%",
           end: "right 40%",
-          onToggle: (s) => ticks[i]?.classList.toggle("is-on", s.isActive),
+          onToggle: (s) => {
+            ticks[i]?.classList.toggle("is-on", s.isActive);
+            if (s.isActive) rollTo(CHAPTERS[i].year);
+          },
           onEnter: () => {
             gsap.to(gl, { scale: 1, autoAlpha: 1, duration: 0.9, stagger: 0.08, ease: "back.out(2.4)", overwrite: true });
             if (gl.length) bus.emit("sfx", { name: "pop" });
@@ -359,20 +374,22 @@ const page: Page = {
         gsap.fromTo(ch.querySelector(".ab-ch__m--a"), { y: 40, rotation: -6 }, { y: -20, rotation: 4, ease: "none", scrollTrigger: { trigger: ch, containerAnimation: tl, start: "left right", end: "right left", scrub: true } });
         gsap.fromTo(ch.querySelector(".ab-ch__m--b"), { y: -10, rotation: 6 }, { y: 30, rotation: -4, ease: "none", scrollTrigger: { trigger: ch, containerAnimation: tl, start: "left right", end: "right left", scrub: true } });
       });
-    }, el);
-
-    mm.add("(max-width: 899px)", () => {
+      return () => {
+        ScrollTrigger.removeEventListener("refreshInit", size);
+        section.style.height = "";
+        gsap.killTweensOf(odo);
+      };
+    }, () => {
       el.querySelectorAll<HTMLElement>(".ab-ch").forEach((ch) => {
         const gl = ch.querySelectorAll(".ab-ch__g");
         gsap.from(ch.querySelectorAll(".ab-ch__m"), { y: 60, autoAlpha: 0, duration: 1.1, stagger: 0.1, ease: "expo.out", scrollTrigger: { trigger: ch, start: "top 80%", once: true } });
         gsap.from(gl, { scale: 0, autoAlpha: 0, duration: 0.9, stagger: 0.08, ease: "back.out(2.4)", scrollTrigger: { trigger: ch, start: "top 60%", once: true } });
       });
-    }, el);
+    }));
 
     return () => {
       alive = false;
       offs.forEach((f) => f());
-      mm.revert();
       ctx.revert();
     };
   },

@@ -207,6 +207,12 @@ export const dough: Experiment = {
     });
 
     return {
+      act() {
+        // a squish from both sides
+        for (let i = 0; i < N; i++) { vx[i] -= rx[i] * 4; vy[i] += ry[i] * 2.5; }
+        maxStretch = 0; blink = 0.2;
+        env.poke(); env.sfx("pop"); stage.kick(2500);
+      },
       start: () => stage.start(),
       stop: () => stage.stop(),
       destroy() { off(); stage.destroy(); },

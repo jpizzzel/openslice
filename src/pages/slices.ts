@@ -4,7 +4,7 @@ import { gsap, ScrollTrigger, reducedMotion, finePointer } from "../core/motion"
 import { bus } from "../core/bus";
 import { SITE, STATUS_LABEL, TOOLS, type Tool } from "../data/site";
 import { glyph, poster, scene, type GlyphId } from "../art";
-import { esc, footerHTML, whenReady } from "./about/kit";
+import { esc, footerHTML, responsive, whenReady } from "./about/kit";
 
 const DAYS: { d: string; long: string; what: string; g: GlyphId }[] = [
   { d: "Mon", long: "Monday", what: "Building", g: "laptop" },
@@ -94,17 +94,16 @@ function template() {
         </li>`,
       ).join("")}
     </ol>
-    <div class="sl-week__ticker" aria-hidden="true"><div class="sl-week__tape">${Array(2)
-      .fill(
-        DAYS.map((d) => `<span${d.d === "Sat" ? ' class="is-sat"' : ""}>${d.d === "Sat" ? "Pizza day" : "Build day"}</span><i>${glyph("slice")}</i>`).join(""),
-      )
+    <div class="sl-week__ticker" aria-hidden="true"><div class="sl-week__tape">${[0, 1]
+      // two runs for a seamless loop; render each glyph separately so svg ids stay unique
+      .map(() => DAYS.map((d) => `<span${d.d === "Sat" ? ' class="is-sat"' : ""}>${d.d === "Sat" ? "Pizza day" : "Build day"}</span><i>${glyph("slice")}</i>`).join(""))
       .join("")}</div></div>
   </section>
 
   ${
     sliceos
       ? `<section class="sl-os" aria-labelledby="sl-os-h">
-    <a class="sl-os__poster" href="/toolbox/${sliceos.slug}" data-cursor="Peek" aria-label="${esc(sliceos.name)} details">${poster(sliceos)}</a>
+    <a class="sl-os__poster" href="/toolbox/${sliceos.slug}" data-cursor="Peek" aria-hidden="true" tabindex="-1">${poster(sliceos)}</a>
     <div class="sl-os__copy">
       <p class="label">Fig. 04 / ${esc(sliceos.kind)}</p>
       <h2 id="sl-os-h" class="sl-os__h"><span class="caps-red">${esc(sliceos.name)}</span><em class="serif">the back of house</em></h2>
@@ -130,6 +129,88 @@ function pairFruits(branches: SVGPathElement[], fruits: SVGElement[]) {
   });
 }
 
+/**
+ * Fruits swing from their stems and leaves rustle when the pointer brushes
+ * past: one damped angular spring per item, driven by pointer velocity.
+ * Each item's drawing is wrapped in an inner <g> so the spring never fights
+ * the GSAP scale tweens on the outer group. The ticker only runs while
+ * something is still moving; item centres are cached and re-read lazily
+ * after a scroll or resize (no layout reads in the frame loop).
+ */
+function makeSwing(stage: HTMLElement, fruits: SVGElement[], leaves: SVGElement[]) {
+  if (!finePointer) return null;
+  const NS = "http://www.w3.org/2000/svg";
+  type Item = { g: SVGGElement; px: number; py: number; cx: number; cy: number; a: number; v: number; k: number; c: number; gain: number; max: number };
+  const wrap = (el: SVGElement, k: number, c: number, gain: number, max: number, pivotTop: boolean): Item | null => {
+    const g = document.createElementNS(NS, "g") as SVGGElement;
+    while (el.firstChild) g.appendChild(el.firstChild);
+    el.appendChild(g);
+    let bb: DOMRect;
+    try { bb = g.getBBox(); } catch { return null; }
+    // fruits hang from the top of their stem, leaves pivot at their centre
+    const px = bb.x + bb.width / 2, py = pivotTop ? bb.y : bb.y + bb.height / 2;
+    return { g, px, py, cx: 0, cy: 0, a: 0, v: 0, k, c, gain, max };
+  };
+  const items = [
+    ...fruits.map((f) => wrap(f, 60, 4.2, 0.09, 26, true)),
+    ...leaves.map((l) => wrap(l, 160, 7, 0.16, 34, false)),
+  ].filter((x): x is Item => !!x);
+  if (!items.length) return null;
+
+  let dirty = true, running = false, lx = 0, ly = 0, has = false;
+  const measure = () => {
+    dirty = false;
+    for (const it of items) {
+      const r = it.g.getBoundingClientRect();
+      it.cx = r.left + r.width / 2; it.cy = r.top + r.height / 2;
+    }
+  };
+  const tick = (_t: number, dms: number) => {
+    const dt = Math.min(0.05, dms / 1000);
+    let moving = false;
+    for (const it of items) {
+      if (it.a === 0 && it.v === 0) continue;
+      it.v += (-it.k * it.a - it.c * it.v) * dt;
+      it.a += it.v * dt;
+      if (Math.abs(it.a) < 0.02 && Math.abs(it.v) < 0.05) { it.a = 0; it.v = 0; }
+      else moving = true;
+      it.g.setAttribute("transform", `rotate(${it.a.toFixed(2)} ${it.px.toFixed(1)} ${it.py.toFixed(1)})`);
+    }
+    if (!moving) { gsap.ticker.remove(tick); running = false; }
+  };
+  const move = (e: PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    if (dirty) measure();
+    if (!has) { lx = e.clientX; ly = e.clientY; has = true; return; }
+    const vx = e.clientX - lx, vy = e.clientY - ly;
+    lx = e.clientX; ly = e.clientY;
+    const R = 90;
+    for (const it of items) {
+      const dx = e.clientX - it.cx, dy = e.clientY - it.cy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 > R * R) continue;
+      const fall = 1 - Math.sqrt(d2) / R;
+      // horizontal sweeps push hardest; a little vertical for leaves
+      it.v += (vx + vy * 0.25 * Math.sign(dx || 1)) * it.gain * 60 * fall;
+      it.v = Math.max(-it.max * 8, Math.min(it.max * 8, it.v));
+      if (!running) { running = true; gsap.ticker.add(tick); }
+    }
+  };
+  const leave = () => { has = false; };
+  const stale = () => { dirty = true; };
+  stage.addEventListener("pointermove", move, { passive: true });
+  stage.addEventListener("pointerleave", leave);
+  window.addEventListener("scroll", stale, { passive: true });
+  window.addEventListener("resize", stale);
+  return () => {
+    stage.removeEventListener("pointermove", move);
+    stage.removeEventListener("pointerleave", leave);
+    window.removeEventListener("scroll", stale);
+    window.removeEventListener("resize", stale);
+    gsap.ticker.remove(tick);
+  };
+}
+
 const page: Page = {
   title: "The Trunk",
   section: "Slices",
@@ -139,7 +220,6 @@ const page: Page = {
     let alive = true;
     const offs: (() => void)[] = [];
     const ctx = gsap.context(() => {}, el);
-    const mm = gsap.matchMedia();
 
     const stage = el.querySelector<HTMLElement>(".sl-tree__stage")!;
     const svg = stage.querySelector<SVGSVGElement>(".sl-tree__art svg");
@@ -157,7 +237,24 @@ const page: Page = {
       f.style.transformBox = "fill-box";
       f.style.transformOrigin = "50% 50%";
       f.style.cursor = "pointer";
+      // keyboard: every fruit is a real stop that opens its tool
+      const t = bySlug.get(f.dataset.slug || "");
+      if (t) {
+        f.setAttribute("tabindex", "0");
+        f.setAttribute("role", "link");
+        f.setAttribute("aria-label", `${toolName(t)}, ${STATUS_LABEL[t.status]}`);
+      }
     });
+    if (svg && fruits.length) {
+      // the fruits are focusable links, so the drawing can't be aria-hidden
+      svg.removeAttribute("aria-hidden");
+      svg.removeAttribute("focusable");
+      svg.setAttribute("role", "group");
+      svg.setAttribute("aria-label", "The tree: Saturday Slices is the trunk, every tool is a branch");
+    }
+    const leaves = svg ? [...svg.querySelectorAll<SVGGElement>('[data-part="leaf"]')] : [];
+    const swing = reducedMotion ? null : makeSwing(stage, fruits, leaves);
+    if (swing) offs.push(swing);
 
     // Tooltip card for fruits.
     const tip = el.querySelector<HTMLElement>(".sl-tip")!;
@@ -180,7 +277,7 @@ const page: Page = {
       gsap.set(tip, { x, y });
       gsap.fromTo(tip, { autoAlpha: 0, scale: 0.85, yPercent: -90 }, { autoAlpha: 1, scale: 1, yPercent: -110, duration: 0.45, ease: "back.out(2)" });
       links.get(t.slug)?.classList.add("is-hot");
-      if (!reducedMotion) gsap.to(f, { scale: 1.18, duration: 0.5, ease: "back.out(3)", overwrite: "auto" });
+      if (!reducedMotion && f.dataset.shown !== "0") gsap.to(f, { scale: 1.18, duration: 0.5, ease: "back.out(3)", overwrite: "auto" });
       bus.emit("sfx", { name: "tick" });
     };
     const hideTip = (f: SVGElement) => {
@@ -195,12 +292,21 @@ const page: Page = {
         const a = links.get(f.dataset.slug || "");
         if (a) a.click();
       };
+      const key = (e: KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); click(); }
+      };
       f.addEventListener("pointerenter", enter);
       f.addEventListener("pointerleave", leave);
+      f.addEventListener("focus", enter);
+      f.addEventListener("blur", leave);
+      f.addEventListener("keydown", key);
       f.addEventListener("click", click);
       offs.push(() => {
         f.removeEventListener("pointerenter", enter);
         f.removeEventListener("pointerleave", leave);
+        f.removeEventListener("focus", enter);
+        f.removeEventListener("blur", leave);
+        f.removeEventListener("keydown", key);
         f.removeEventListener("click", click);
       });
     });
@@ -225,7 +331,7 @@ const page: Page = {
     const cleanup = () => {
       alive = false;
       offs.forEach((f) => f());
-      mm.revert();
+      gsap.killTweensOf([tip, ...fruits]);
       ctx.revert();
     };
 
@@ -281,7 +387,7 @@ const page: Page = {
       // SliceOS poster tilts as it scrolls by.
       gsap.fromTo(".sl-os__poster", { rotation: -8, y: 80 }, { rotation: 3, y: -40, ease: "none", scrollTrigger: { trigger: ".sl-os", start: "top bottom", end: "bottom top", scrub: true } });
       el.querySelectorAll<HTMLElement>(".sl-os__h").forEach((h) => {
-        gsap.from(h.children, { yPercent: 100, autoAlpha: 0, duration: 1.2, ease: "expo.out", stagger: 0.1, scrollTrigger: { trigger: h, start: "top 85%", once: true } });
+        gsap.from(h.children, { yPercent: 100, opacity: 0, duration: 1.2, ease: "expo.out", stagger: 0.1, scrollTrigger: { trigger: h, start: "top 85%", once: true } });
       });
     });
 
@@ -299,29 +405,34 @@ const page: Page = {
         const out = () => { rx(0); ry(0); };
         p.addEventListener("pointermove", move);
         p.addEventListener("pointerleave", out);
-        offs.push(() => { p.removeEventListener("pointermove", move); p.removeEventListener("pointerleave", out); });
+        offs.push(() => {
+          p.removeEventListener("pointermove", move); p.removeEventListener("pointerleave", out);
+          // paused quickTo tweens stay in the global timeline and would retain the page
+          rx.tween.kill(); ry.tween.kill();
+        });
       }
     }
 
     // The tree: pinned, branches draw with scroll, fruit springs in when its branch completes.
     const buildTree = (pinIt: boolean) => {
+      // desktop "pin" is CSS sticky inside a tall section (see slices.css): no
+      // pin spacer, no reparenting, no layout shift while scrolling
       const n = Math.max(1, branches.length);
       const spanOf = (i: number) => ({ start: (i / n) * 0.82, end: ((i + 1) / n) * 0.82 + 0.06 });
       const thresholds = pairs.map(({ bi }) => Math.min(0.99, spanOf(bi).end));
       fruits.forEach((f) => { f.dataset.shown = "0"; });
       gsap.set(fruits, { scale: 0, opacity: 0 });
       gsap.set(branches, { strokeDashoffset: 1, opacity: 0 });
+      gsap.set(leaves, { scale: 0, transformOrigin: "50% 50%" });
       gsap.set(".sl-tree__tag", { autoAlpha: 0, y: 20 });
       gsap.set(".sl-tree__list li", { autoAlpha: 0.25 });
 
       const tl = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
-          trigger: ".sl-tree__pin",
+          trigger: pinIt ? ".sl-tree" : ".sl-tree__pin",
           start: pinIt ? "top top" : "top 75%",
-          end: pinIt ? "+=180%" : "bottom 60%",
-          pin: pinIt,
-          anticipatePin: 1,
+          end: pinIt ? "bottom bottom" : "bottom 60%",
           scrub: 0.6,
           onUpdate: (s) => {
             const p = s.progress;
@@ -347,6 +458,11 @@ const page: Page = {
         const s = spanOf(i);
         tl.to(b, { strokeDashoffset: 0, duration: s.end - s.start }, s.start)
           .to(b, { opacity: 1, duration: 0.01 }, s.start);
+        // the two leaves on this branch sprout as the stroke passes them
+        [0.45, 0.72].forEach((at, j) => {
+          const leaf = leaves[i * 2 + j];
+          if (leaf) tl.to(leaf, { scale: 1, duration: 0.05, ease: "back.out(3)" }, s.start + (s.end - s.start) * at * 0.9);
+        });
       });
       tl.fromTo(".sl-tree__progress > span", { scaleX: 0 }, { scaleX: 1, duration: 1 }, 0)
         .to(".sl-tree__tag--roots", { autoAlpha: 1, y: 0, duration: 0.12 }, 0)
@@ -356,8 +472,7 @@ const page: Page = {
         .fromTo(".sl-tree__art", { scale: 0.94 }, { scale: 1, duration: 1 }, 0);
     };
 
-    mm.add("(min-width: 900px)", () => buildTree(true), el);
-    mm.add("(max-width: 899px)", () => buildTree(false), el);
+    offs.push(responsive(el, "(min-width: 900px)", () => buildTree(true), () => buildTree(false)));
 
     return cleanup;
   },

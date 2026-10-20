@@ -8,7 +8,7 @@ import { markFirstRender } from "./ready";
 
 let cleanup: Cleanup | void;
 let busy = false;
-let queued: string | null = null;
+let queued: { path: string; push: boolean } | null = null;
 let first = true;
 
 const view = () => document.getElementById("view") as HTMLElement;
@@ -34,9 +34,16 @@ async function render(pathname: string) {
 
   // Pages may wait on loaderGone inside mount(), so the loader must not wait
   // for mount to settle. Signal as soon as mount has been called.
-  const mounting = page.mount({ root: el, params, first });
-  if (first) markFirstRender();
-  cleanup = await mounting;
+  try {
+    const mounting = page.mount({ root: el, params, first });
+    if (first) markFirstRender();
+    cleanup = await mounting;
+  } catch (e) {
+    // Never leave the visitor behind a transition cover with a dead page.
+    console.error(e);
+    if (first) markFirstRender();
+    el.innerHTML = `<section style="padding:30vh 10vw"><h1 class="caps-red" style="font-size:var(--t-2xl)">Kitchen fire.</h1><p class="serif" style="font-size:var(--t-lg)">Something burned on this page. <a class="u-link" href="/">Back to the front</a>.</p></section>`;
+  }
   bus.emit("route:after", { path: pathname, section: page.section });
   ScrollTrigger.refresh();
   if (!first) await enter(el);
@@ -46,14 +53,13 @@ async function render(pathname: string) {
 export async function navigate(to: string, push = true) {
   const url = new URL(to, location.href);
   if (url.origin !== location.origin) { location.href = to; return; }
-  if (push && url.pathname === location.pathname && url.hash) return;
+  if (busy) { queued = { path: url.pathname + url.search + url.hash, push }; return; }
   if (push && url.pathname === location.pathname) return;
-  if (busy) { queued = url.pathname; return; }
   busy = true;
   bus.emit("route:before", { to: url.pathname });
   if (push) history.pushState({}, "", url.pathname + url.search + url.hash);
   try { await render(url.pathname); } finally { busy = false; }
-  if (queued) { const q = queued; queued = null; navigate(q); }
+  if (queued) { const q = queued; queued = null; navigate(q.path, q.push); }
 }
 
 export function initRouter() {

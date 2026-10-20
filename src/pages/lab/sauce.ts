@@ -248,6 +248,12 @@ export const sauce: Experiment = {
     host.appendChild(btn);
 
     return {
+      act() {
+        // the ladle draws a fresh spiral
+        env.poke(); env.sfx("whoosh");
+        if (env.reduced) { reset(); spiral(1); bakeAll(); stage.kick(200); }
+        else { restartAuto(); stage.kick(); }
+      },
       start: () => stage.start(),
       stop: () => stage.stop(),
       destroy() { off(); btn.removeEventListener("click", reset); btn.remove(); stage.destroy(); },

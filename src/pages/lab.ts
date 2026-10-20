@@ -35,7 +35,7 @@ function tileHTML(exp: Experiment, i: number) {
   return `
   <article class="lab-tile" data-exp="${exp.id}" style="--ar:${exp.ar[0]} / ${exp.ar[1]}" aria-labelledby="lab-t-${exp.id}">
     <div class="lab-tile__frame">
-      <div class="lab-stage lab-tone--${exp.tone}" role="group" aria-label="${exp.label}">
+      <div class="lab-stage lab-tone--${exp.tone}" role="group" tabindex="0" aria-label="${exp.label} Press Enter to play.">
         <span class="lab-tile__num mono" aria-hidden="true">${n}</span>
         <span class="lab-chip lab-tile__hint" aria-hidden="true">${finePointer ? exp.hint : "Tap to play"}</span>
       </div>
@@ -62,7 +62,7 @@ const page: Page = {
         <aside class="p-lab__side" aria-label="About the lab">
           <div class="p-lab__sticky">
             <div class="p-lab__countwrap">
-              <p class="p-lab__count mega" aria-label="${total} experiments"><span data-count aria-hidden="true">${pad(reducedMotion ? total : 0)}</span></p>
+              <p class="p-lab__count mega"><span class="sr-only">${total} experiments</span><span data-count data-n="${pad(reducedMotion ? total : 0)}" aria-hidden="true"></span></p>
               <p class="p-lab__countlab"><span class="label">Experiments</span><span>in the oven</span></p>
             </div>
             <nav class="p-lab__index" aria-label="Experiments">
@@ -199,6 +199,10 @@ const page: Page = {
     }, { rootMargin: "-45% 0px -45% 0px" });
     tiles.forEach((t) => mid.observe(t.frame));
     kills.push(() => mid.disconnect());
+
+    const onScroll = () => { loop.lastScroll = performance.now(); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    kills.push(() => window.removeEventListener("scroll", onScroll));
 
     let hovered = "";
     tiles.forEach((t) => {
@@ -368,6 +372,19 @@ const page: Page = {
       window.removeEventListener("resize", onResize);
     });
 
+    // keyboard play: Enter / Space on a focused stage runs the toy's default action
+    tiles.forEach((t) => {
+      const key = (e: KeyboardEvent) => {
+        if (e.target !== t.stage || (e.key !== "Enter" && e.key !== " ")) return;
+        e.preventDefault();
+        const toy = ensure(t);
+        toy.start();
+        toy.act?.();
+      };
+      t.stage.addEventListener("keydown", key);
+      kills.push(() => t.stage.removeEventListener("keydown", key));
+    });
+
     tiles.forEach((t) => {
       const open = () => { sfx("click"); openModal(t); };
       t.expand.addEventListener("click", open);
@@ -380,7 +397,8 @@ const page: Page = {
     let alive = true;
     if (!reducedMotion) {
       // hide now so nothing flashes while the preloader leaves
-      tiles.forEach((t, i) => gsap.set(t.el, { opacity: 0, y: 70, rotation: i % 2 ? 2.2 : -2.2, transformOrigin: "50% 100%" }));
+      // (no tilt in the single column layout: a rotated full width tile would poke past the viewport)
+      tiles.forEach((t, i) => gsap.set(t.el, { opacity: 0, y: 70, rotation: cols === 1 ? 0 : i % 2 ? 2.2 : -2.2, transformOrigin: "50% 100%" }));
       const masks = pageEl.querySelectorAll(".p-lab__mask > *");
       const meta = pageEl.querySelectorAll(".p-lab__meta > div, .p-lab__index li, .p-lab__about, .p-lab__countlab");
       gsap.set(masks, { yPercent: 110 });
@@ -396,7 +414,7 @@ const page: Page = {
             .to(countEl, { yPercent: 0, opacity: 1, duration: 1.2, ease: "expo.out" }, 0)
             .to(counter, {
               v: total, duration: 1.4, ease: "expo.out",
-              onUpdate: () => { countEl.textContent = pad(Math.round(counter.v)); },
+              onUpdate: () => { countEl.dataset.n = pad(Math.round(counter.v)); },
             }, 0.1),
         );
         // tiles rise with a slight tilt as they scroll in
@@ -414,7 +432,7 @@ const page: Page = {
       };
       (first ? loaderGone : Promise.resolve()).then(intro);
     } else {
-      countEl.textContent = pad(total);
+      countEl.dataset.n = pad(total);
     }
 
     return () => {

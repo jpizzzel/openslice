@@ -127,6 +127,7 @@ export const printer: Experiment = {
     }
 
     return {
+      act() { env.poke(); env.sfx("click"); print(); },
       start() {
         if (started) return;
         started = true;

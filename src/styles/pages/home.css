@@ -2,9 +2,13 @@
 .p-home {
   --hl: calc(64px + var(--gutter));
   --hc: calc((100vw - var(--hl) - var(--gutter)) / 12);
-  --red-size: clamp(1.45rem, 0.7rem + 1.45vw, 2.65rem);
+  /* never below 24px: the red lists must count as large text for contrast */
+  --red-size: clamp(1.5rem, 0.7rem + 1.45vw, 2.65rem);
+  /* tomato as text: a hair deeper than the token so it clears 3:1 on flour */
+  --tomato-text: #f2362a;
   position: relative;
 }
+.p-home .caps-red, .p-home .mf-w--hot, .p-home .h-cta__title em { color: var(--tomato-text); }
 .p-home .label { display: block; }
 .p-home ul, .p-home ol { margin: 0; padding: 0; }
 
@@ -105,6 +109,7 @@
 .p-home .h-col__foot { margin-top: 1.3em; }
 .p-home .h-col--oven { left: 0; }
 .p-home .h-col--for { left: calc(var(--hc) * 1.75); }
+.p-home .h-col--for li { white-space: normal; max-width: calc(var(--hc) * 1.4); }
 .p-home .h-col--stack { left: calc(var(--hc) * 3.3); z-index: -1; }
 .p-home .h-col--fed { right: 0; }
 
@@ -493,7 +498,40 @@
 
 /* ───────────────────────── tablet ───────────────────────── */
 @media (max-width: 1100px) and (min-width: 721px) {
-  .p-home .h-col--stack { display: none; }
+  /* hero: the burst gets the full width, then the red lists sit side by side */
+  .p-home .h-hero {
+    height: auto; min-height: 0; max-height: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: calc(var(--gutter) * 2);
+    align-items: start;
+    padding: calc(var(--header-h) + 8px) var(--gutter) 56px var(--hl);
+  }
+  .p-home .h-hero > * { position: relative; left: auto; right: auto; top: auto; bottom: auto; translate: none; }
+  .p-home .h-stage { grid-column: 1 / -1; grid-row: 1; width: 100%; height: min(78vw, 64vh); margin-bottom: 40px; }
+  .p-home .h-objs { inset: 0 6% 22% 6%; }
+  .p-home .h-box { width: 34%; }
+  .p-home .h-lines { left: 8%; width: 84%; bottom: 20%; }
+  .p-home .h-num { position: absolute; font-size: 30vw; z-index: 0; }
+  .p-home .h-num--l { top: calc(var(--header-h) + 2vw); left: calc(var(--hl) - 0.05em); }
+  .p-home .h-num--r { top: calc(var(--header-h) + min(78vw, 64vh) - 22vw); right: var(--gutter); left: auto; }
+  .p-home .h-facts { grid-column: 1; grid-row: 2 / 4; width: 100%; }
+  .p-home .h-and { grid-column: 2; grid-row: 2; margin: 0 0 0.5em; }
+  .p-home .h-statement { grid-column: 2; grid-row: 3; width: 100%; align-self: end; }
+  .p-home .h-cols {
+    grid-column: 1 / -1; grid-row: 4;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px var(--gutter);
+    height: auto; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
+  }
+  .p-home .h-col { position: static; }
+  .p-home .h-col .label { margin-bottom: 1.2em; }
+  .p-home .h-col li, .p-home .h-col--for li { white-space: normal; max-width: none; }
+  .p-home .h-col--stack { z-index: auto; }
+
+  /* CTA: the giant word gets its own row so it never runs under the arrow */
+  .p-home .cta { grid-template-columns: 1fr auto; grid-template-areas: "k arrow" "word word" "sub sub"; row-gap: 14px; }
+  .p-home .cta__word { font-size: 12.4vw; }
+  .p-home .cta__arrow { width: 56px; }
   .p-home .h-mb__note { grid-column: 1 / 9; margin-top: 24px; }
   .p-home .h-mb__legend { grid-column: 9 / 13; }
   .p-home .h-mb__title { grid-column: 1 / -1; }

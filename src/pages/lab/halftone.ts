@@ -143,6 +143,13 @@ export const halftone: Experiment = {
     stage.canvas.addEventListener("pointerleave", leave);
 
     return {
+      act() {
+        // hop the lens to a new spot on the slice
+        p.on = true; p.tx = stage.w * (0.25 + Math.random() * 0.5); p.ty = stage.h * (0.25 + Math.random() * 0.5);
+        if (env.reduced) { p.x = p.tx; p.y = p.ty; p.amp = 1; }
+        env.poke(); env.sfx("click"); stage.kick(1500);
+        window.setTimeout(() => { p.on = false; stage.kick(1200); }, 1400);
+      },
       start: () => stage.start(),
       stop: () => stage.stop(),
       destroy() { off(); stage.canvas.removeEventListener("pointerleave", leave); stage.destroy(); },

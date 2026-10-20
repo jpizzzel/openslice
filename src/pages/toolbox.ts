@@ -1,6 +1,6 @@
 import "../styles/pages/toolbox.css";
 import type { Page } from "../core/page";
-import { gsap, lenis, reducedMotion, finePointer } from "../core/motion";
+import { gsap, ScrollTrigger, lenis, reducedMotion, finePointer } from "../core/motion";
 import { loaderGone } from "../core/ready";
 import { bus } from "../core/bus";
 import { SITE, TOOLS, type Tool } from "../data/site";
@@ -46,13 +46,12 @@ function template() {
     <div class="tb-cards" role="group" aria-label="Tool posters">
       <span class="tb-table" aria-hidden="true"><i></i></span>
       ${TOOLS.map((t, i) => `
-      <a class="tb-card" href="/toolbox/${t.slug}" data-i="${i}" data-cursor="Open" draggable="false" tabindex="-1"
-         aria-label="${esc(`${t.name}, ${t.kind}`)}" style="--c:${t.color}">
+      <a class="tb-card" href="/toolbox/${t.slug}" data-i="${i}" data-cursor="Open" draggable="false" tabindex="-1" style="--c:${t.color}">
         <span class="tb-card__in">
           <span class="tb-card__art">${poster(t)}</span>
           <span class="tb-card__sheen" aria-hidden="true"><i></i></span>
           <span class="tb-card__shade" aria-hidden="true"></span>
-          <span class="tb-card__cap" aria-hidden="true"><b>${pad(i + 1)}</b>${esc(t.name)}</span>
+          <span class="tb-card__cap"><b>${pad(i + 1)}</b> ${esc(t.name)}<span class="sr-only">, ${esc(t.kind)}</span></span>
         </span>
       </a>`).join("")}
     </div>
@@ -216,6 +215,19 @@ const page: Page = {
         cy = stage.clientHeight * 0.48;
       };
 
+      // style writes are cached per node so a frame only touches what actually changed
+      type Prop = "transform" | "opacity" | "visibility" | "zIndex";
+      const last = new Map<HTMLElement, Partial<Record<Prop, string>>>();
+      const put = (n: HTMLElement, prop: Prop, v: string) => {
+        let c = last.get(n);
+        if (!c) last.set(n, (c = {}));
+        if (c[prop] === v) return;
+        c[prop] = v;
+        n.style[prop] = v;
+      };
+      let queued = false;
+      const request = () => { queued = true; };
+      const tick = () => { if (queued) { queued = false; render(); } };
       const render = () => {
         const p = state.p;
         cards.forEach((c, i) => {
@@ -246,37 +258,39 @@ const page: Page = {
           const near = clamp(1 - Math.abs(d), 0, 1);
           rx += state.my * -9 * near;
           ry += state.mx * 12 * near;
-          c.style.transform = `perspective(1700px) translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,${z.toFixed(1)}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) rotateZ(${rz.toFixed(2)}deg)`;
-          c.style.opacity = o.toFixed(3);
-          c.style.visibility = o < 0.01 ? "hidden" : "visible";
-          c.style.zIndex = String(d <= 0 ? 200 - Math.round(-d * 10) : 100 - Math.round(d * 10));
-          shades[i].style.opacity = sh.toFixed(3);
+          const hidden = o < 0.01;
+          put(c, "visibility", hidden ? "hidden" : "visible");
+          if (hidden) return; // nothing to draw: skip the transform work for off-stage posters
+          put(c, "transform", `perspective(1700px) translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,${z.toFixed(1)}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) rotateZ(${rz.toFixed(2)}deg)`);
+          put(c, "opacity", o.toFixed(3));
+          put(c, "zIndex", String(d <= 0 ? 200 - Math.round(-d * 10) : 100 - Math.round(d * 10)));
+          put(shades[i], "opacity", sh.toFixed(2));
           // specular sheen: a band of light glides across each poster as it lands, and follows the hover tilt
           if (Math.abs(d) < 1.3) {
-            sheens[i].style.opacity = (near * 0.9 + 0.1).toFixed(3);
-            sheenBands[i].style.transform = `translate3d(${(d * 150 - 20 + state.mx * 34).toFixed(1)}%,0,0)`;
-          } else if (sheens[i].style.opacity !== "0") {
-            sheens[i].style.opacity = "0";
+            put(sheens[i], "opacity", (near * 0.9 + 0.1).toFixed(2));
+            put(sheenBands[i], "transform", `translate3d(${(d * 150 - 20 + state.mx * 34).toFixed(1)}%,0,0)`);
+          } else {
+            put(sheens[i], "opacity", "0");
           }
         });
         // list: keep the active item vertically centered
         const f = clamp(Math.floor(p), 0, N - 1);
         const fr = p - f;
         const lcy = centers.length ? centers[f] + ((centers[Math.min(f + 1, N - 1)] ?? centers[f]) - centers[f]) * fr : 0;
-        track.style.transform = `translate3d(0, ${(-lcy).toFixed(1)}px, 0)`;
+        put(track, "transform", `translate3d(0, ${(-lcy).toFixed(1)}px, 0)`);
         items.forEach((it, i) => {
           const a = clamp(1 - Math.abs(i - p), 0, 1);
-          it.style.opacity = (0.16 + 0.84 * a * a).toFixed(3);
+          put(it, "opacity", (0.16 + 0.84 * a * a).toFixed(2));
         });
         setOdometer(tens, ones, p + 1);
         setActive(clamp(Math.round(p), 0, N - 1));
         const settle = 1 - clamp(Math.abs(p - Math.round(p)) * 5, 0, 1);
-        cta.style.opacity = settle.toFixed(3);
-        cta.style.transform = `translate3d(0, ${((1 - settle) * 10).toFixed(1)}px, 0)`;
+        put(cta, "opacity", settle.toFixed(2));
+        put(cta, "transform", `translate3d(0, ${((1 - settle) * 10).toFixed(1)}px, 0)`);
         // the "table" shadow under the front poster: tight when it lands, loose mid-flight, slides against the tilt
         const lift = 1 - settle;
-        table.style.transform = `translate3d(${(-state.mx * 26).toFixed(1)}px, ${(-state.my * 10 + lift * 22).toFixed(1)}px, 0) scale(${(1 + lift * 0.22).toFixed(3)}, ${(1 + lift * 0.4).toFixed(3)})`;
-        table.style.opacity = (0.75 - lift * 0.4).toFixed(3);
+        put(table, "transform", `translate3d(${(-state.mx * 26).toFixed(1)}px, ${(-state.my * 10 + lift * 22).toFixed(1)}px, 0) scale(${(1 + lift * 0.22).toFixed(3)}, ${(1 + lift * 0.4).toFixed(3)})`);
+        put(table, "opacity", (0.75 - lift * 0.4).toFixed(2));
       };
 
       measure();
@@ -289,11 +303,14 @@ const page: Page = {
           pin: true,
           scrub: 0.75,
           invalidateOnRefresh: true,
-          onRefresh: () => { measure(); render(); },
+          onRefresh: () => { measure(); last.clear(); render(); },
           onUpdate: () => scheduleSnap(),
         },
       });
-      tl.to(state, { p: N - 1, ease: "none", onUpdate: render });
+      tl.to(state, { p: N - 1, ease: "none", onUpdate: request });
+      // one render per frame no matter how many tweens (scrub, hover tilt) asked for it
+      gsap.ticker.add(tick);
+      mo.push(() => gsap.ticker.remove(tick));
       const st = tl.scrollTrigger!;
       const step = () => (st.end - st.start) / (N - 1);
       const inRange = (pad = 4) => window.scrollY >= st.start - pad && window.scrollY <= st.end + pad;
@@ -345,7 +362,7 @@ const page: Page = {
       };
 
       // hover tilt of the front poster
-      const qx = gsap.quickTo(state, "mx", { duration: 0.9, ease: "power3", onUpdate: render });
+      const qx = gsap.quickTo(state, "mx", { duration: 0.9, ease: "power3", onUpdate: request });
       const qy = gsap.quickTo(state, "my", { duration: 0.9, ease: "power3" });
       if (finePointer) {
         listen(mo, cardsWrap, "pointermove", (e) => {
@@ -403,6 +420,7 @@ const page: Page = {
         window.clearTimeout(autoTimer);
         mode = { go() {}, owns: () => false };
         el.classList.remove("is-pinned", "is-dragging");
+        last.clear();
         [...cards, track, ...items, ...shades, ...sheens, ...sheenBands, cta, table].forEach((n) => n.removeAttribute("style"));
         cards.forEach((c, i) => c.style.setProperty("--c", TOOLS[i].color));
       };
@@ -454,11 +472,20 @@ const page: Page = {
       };
     }
 
-    const mm = gsap.matchMedia();
-    mm.add(
-      { pinned: "(min-width: 721px) and (prefers-reduced-motion: no-preference)", flat: "(max-width: 720px), (prefers-reduced-motion: reduce)" },
-      (c) => (c.conditions?.pinned ? setupPinned() : setupFlat())
-    );
+    // Own media query switch instead of gsap.matchMedia: gsap never detaches its MediaQueryList
+    // listeners, so every visit would leak two. Each mode runs inside its own gsap.context.
+    const mq = window.matchMedia("(min-width: 721px) and (prefers-reduced-motion: no-preference)");
+    let modeCtx: gsap.Context | null = null;
+    let modeOff: Off | null = null;
+    const applyMode = () => {
+      modeOff?.();
+      modeCtx?.revert();
+      modeCtx = gsap.context(() => { modeOff = mq.matches ? setupPinned() : setupFlat(); }, el);
+    };
+    const onMq = () => { applyMode(); window.requestAnimationFrame(() => ScrollTrigger.refresh()); };
+    mq.addEventListener("change", onMq);
+    offs.push(() => mq.removeEventListener("change", onMq));
+    applyMode();
 
     // ---------- shared input ----------
     on(stage, "click", (e) => {
@@ -532,7 +559,10 @@ const page: Page = {
     return () => {
       alive = false;
       offs.forEach((f) => f());
-      mm.revert();
+      modeOff?.();
+      modeCtx?.revert();
+      modeOff = null;
+      modeCtx = null;
       ctx.revert();
     };
   },

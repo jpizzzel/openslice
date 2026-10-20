@@ -32,8 +32,8 @@ function markup() {
     </a>
     <div class="ch-meta" aria-hidden="true"><span>est. ${SITE.since}</span><span>two roommates</span><span>one oven</span></div>
     <nav class="ch-nav" aria-label="Primary">
-      <span class="ch-lbl ch-nav-lbl">Menu<i aria-hidden="true"></i></span>
-      <div class="ch-lw"><ul class="ch-list">${links}</ul><span class="ch-arrow" aria-hidden="true">&rarr;</span></div>
+      <button class="ch-lbl ch-nav-lbl" type="button" aria-expanded="true" aria-controls="ch-list">Menu<i aria-hidden="true"></i></button>
+      <div class="ch-lw"><ul class="ch-list" id="ch-list">${links}</ul><span class="ch-arrow" aria-hidden="true">&rarr;</span></div>
     </nav>
     ${audioBtn("ch-audio-d")}
     ${countdownHTML("ch-cd")}
@@ -123,6 +123,21 @@ export function initChrome() {
   new MutationObserver(syncTheme).observe(view, { attributes: true, attributeFilter: ["data-theme"] });
   syncTheme();
 
+  /* ---------- tucked nav: mouse hover, or tap/click the "Menu" button ---------- */
+  const nav = $(".ch-nav");
+  const navBtn = $<HTMLButtonElement>(".ch-nav-lbl");
+  let navOpen = false;
+  const setNav = (v: boolean) => {
+    navOpen = v;
+    body.classList.toggle("nav-open", v);
+    navBtn.setAttribute("aria-expanded", String(v || !tucked));
+  };
+  nav.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") setNav(true); });
+  nav.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") setNav(false); });
+  navBtn.addEventListener("click", (e) => { if ((e as PointerEvent).pointerType !== "mouse") setNav(!navOpen); });
+  document.addEventListener("pointerdown", (e) => { if (navOpen && !nav.contains(e.target as Node)) setNav(false); }, { passive: true });
+  nav.addEventListener("keydown", (e) => { if (e.key === "Escape" && navOpen) { setNav(false); navBtn.focus(); } });
+
   /* ---------- scroll hint + footer awareness ---------- */
   const scrollHint = $(".ch-scroll");
   let scrolled = false, tucked = false;
@@ -131,7 +146,7 @@ export function initChrome() {
     if (s !== scrolled) { scrolled = s; scrollHint.classList.toggle("is-gone", s); body.classList.toggle("is-scrolled", s); }
     // past the first screenful of type, fold the stacked nav up into "Menu"
     const t = window.scrollY > 120;
-    if (t !== tucked) { tucked = t; body.classList.toggle("nav-tucked", t); }
+    if (t !== tucked) { tucked = t; body.classList.toggle("nav-tucked", t); navBtn.setAttribute("aria-expanded", String(navOpen || !t)); }
   };
   addEventListener("scroll", onScroll, { passive: true });
   let footIO: IntersectionObserver | null = null;
@@ -260,6 +275,7 @@ export function initChrome() {
     scrollHint.classList.remove("is-gone");
     body.classList.remove("is-scrolled", "nav-tucked");
     tucked = false;
+    setNav(false);
     syncTheme();
     watchFooter();
     cursor?.recheck();

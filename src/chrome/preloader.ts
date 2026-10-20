@@ -50,6 +50,12 @@ export function runPreloader() {
   };
   raf = requestAnimationFrame(step);
 
+  // Loader type stays hidden until the webfonts are in, so the fallback-to-webfont
+  // swap never registers as a layout shift. A slow font still shows after 1.2s.
+  const typeIn = () => root.classList.add("is-type");
+  document.fonts?.ready.then(typeIn);
+  setTimeout(typeIn, 1200);
+
   // reveal the wordmark letters as soon as fonts are usable
   const letters = root.querySelectorAll(".ld-word span span");
   if (!reducedMotion) {

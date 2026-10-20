@@ -16,6 +16,7 @@ const page: Page = {
     root.innerHTML = `<div class="p-404">
       <section class="nf" aria-labelledby="nf-h">
         <span class="nf__num" aria-hidden="true">404</span>
+        <div class="nf__torch" aria-hidden="true"><div class="nf__torch-in"><span class="nf__num nf__num--lit">404</span></div></div>
         <div class="nf__box" aria-hidden="true">
           <span class="nf__lid">${glyph("box-open")}</span>
         </div>
@@ -35,6 +36,43 @@ const page: Page = {
     let alive = true;
     const ctx = gsap.context(() => {}, el);
     if (reducedMotion) return () => { alive = false; ctx.revert(); };
+
+    // Flashlight: a warm circle of light sweeps the page looking for the
+    // missing slice. Under it the giant 404 shows its halftone ink. Pure
+    // transforms: the circle moves one way, its content the opposite way.
+    const sec0 = el.querySelector<HTMLElement>(".nf")!;
+    const torch = el.querySelector<HTMLElement>(".nf__torch")!;
+    const torchIn = el.querySelector<HTMLElement>(".nf__torch-in")!;
+    let W = 1, H = 1, TR = 1;
+    const fit = () => {
+      W = sec0.clientWidth; H = sec0.clientHeight; TR = torch.offsetWidth / 2;
+      torchIn.style.width = `${W}px`; torchIn.style.height = `${H}px`;
+    };
+    const ro = new ResizeObserver(fit);
+    ro.observe(sec0);
+    fit();
+    const beam = { x: W * 0.62, y: H * 0.45, tx: W * 0.62, ty: H * 0.45, user: 0 };
+    const tx = gsap.quickSetter(torch, "x", "px"), ty = gsap.quickSetter(torch, "y", "px");
+    const ix = gsap.quickSetter(torchIn, "x", "px"), iy = gsap.quickSetter(torchIn, "y", "px");
+    const sweep = (time: number, dms: number) => {
+      const dt = Math.min(0.05, dms / 1000);
+      if (beam.user > 0) beam.user -= dt;
+      else {
+        // nobody is holding the flashlight: it searches on its own
+        beam.tx = W * (0.5 + 0.34 * Math.sin(time * 0.5));
+        beam.ty = H * (0.48 + 0.22 * Math.sin(time * 0.83 + 1.3));
+      }
+      const k = 1 - Math.exp(-dt * (beam.user > 0 ? 9 : 2.2));
+      beam.x += (beam.tx - beam.x) * k; beam.y += (beam.ty - beam.y) * k;
+      tx(beam.x - TR); ty(beam.y - TR);
+      ix(TR - beam.x); iy(TR - beam.y);
+    };
+    gsap.ticker.add(sweep);
+    const aim = (e: PointerEvent) => {
+      const r = sec0.getBoundingClientRect();
+      beam.tx = e.clientX - r.left; beam.ty = e.clientY - r.top; beam.user = 2.5;
+    };
+    sec0.addEventListener("pointermove", aim);
 
     ctx.add(() => {
       gsap.set(".nf__li", { yPercent: 110 });
@@ -91,6 +129,9 @@ const page: Page = {
 
     return () => {
       alive = false;
+      gsap.ticker.remove(sweep);
+      ro.disconnect();
+      sec0.removeEventListener("pointermove", aim);
       sec.removeEventListener("pointermove", move);
       sec.removeEventListener("pointerdown", down);
       gsap.killTweensOf(crumbs);

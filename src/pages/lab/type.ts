@@ -81,10 +81,10 @@ export const kinetic: Experiment = {
       if (env.reduced) run();
     };
     const leave = () => { p.on = false; if (env.reduced) run(); };
-    const down = (e: PointerEvent) => {
-      const q = local(e);
+    const down = (e: PointerEvent, atX?: number) => {
+      const q = atX === undefined ? local(e) : { x: atX, y: H / 2 };
       p.x = q.x; p.y = q.y;
-      if (e.pointerType !== "mouse") p.on = true;
+      if (e.pointerType !== "mouse" && atX === undefined) p.on = true;
       // ripple jump from the click point
       L.forEach((l, i) => {
         const d = Math.abs(l.cx - q.x) / W;
@@ -95,16 +95,21 @@ export const kinetic: Experiment = {
     };
     root.addEventListener("pointermove", move);
     root.addEventListener("pointerleave", leave);
-    root.addEventListener("pointerdown", down);
+    const onDown = (e: PointerEvent) => down(e);
+    root.addEventListener("pointerdown", onDown);
 
     return {
+      act() {
+        // the same ripple jump as a click, from the middle of the word
+        down({ clientX: 0, clientY: 0, pointerType: "keyboard" } as PointerEvent, W / 2);
+      },
       start() { measure(); if (!env.reduced) { running = true; env.loop.add(sub); } else tick(0, 0); },
       stop() { env.loop.remove(sub); running = false; },
       destroy() {
         env.loop.remove(sub); ro.disconnect();
         root.removeEventListener("pointermove", move);
         root.removeEventListener("pointerleave", leave);
-        root.removeEventListener("pointerdown", down);
+        root.removeEventListener("pointerdown", onDown);
         root.remove();
       },
     };

@@ -123,7 +123,8 @@ export const halftone: Experiment = {
       // registration marks, printer style
       g.strokeStyle = C.ink3; g.lineWidth = 1;
       const m = 14, L = 10;
-      for (const [x, y] of [[m, m], [w - m, m], [m, h - m], [w - m, h - m]]) {
+      for (let k = 0; k < 4; k++) {
+        const x = k & 1 ? w - m : m, y = k & 2 ? h - m : m;
         g.beginPath(); g.moveTo(x - L, y); g.lineTo(x + L, y); g.moveTo(x, y - L); g.lineTo(x, y + L); g.stroke();
         g.beginPath(); g.arc(x, y, L * 0.5, 0, TAU); g.stroke();
       }

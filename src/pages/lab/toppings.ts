@@ -153,7 +153,8 @@ export const toppings: Experiment = {
           if (b.vy > 0) b.vy *= -0.12;
           b.vx *= 0.86; b.va = b.vx / b.r;
         } else {
-          for (const cx of [x0, x1]) {
+          for (let side = 0; side < 2; side++) {
+            const cx = side ? x1 : x0;
             const dx = b.x - cx, dy = b.y - (floor + cr), rr = b.r + cr;
             const d2 = dx * dx + dy * dy;
             if (d2 < rr * rr && d2 > 1e-6) {

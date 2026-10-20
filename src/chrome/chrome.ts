@@ -16,10 +16,9 @@ const repoLabel = () => {
 };
 
 const audioBtn = (cls: string) => `
-  <button class="ch-audio ${cls}" type="button" aria-pressed="false">
-    <span class="ch-lbl">Oven</span> <b class="ch-audio-v">Off</b>
+  <button class="ch-audio ${cls}" type="button" aria-pressed="false" aria-label="Oven ambient sound">
+    <span class="ch-lbl" aria-hidden="true">Oven</span> <b class="ch-audio-v" aria-hidden="true">Off</b>
     <svg class="ch-wave" viewBox="0 0 16 8" aria-hidden="true"><g><path d="M0 4 Q3 0.5 6 4 T12 4 T18 4 T24 4 T30 4 T36 4 T42 4 T48 4"/></g></svg>
-    <span class="sr-only">ambient sound</span>
   </button>`;
 
 function markup() {
@@ -106,6 +105,14 @@ export function initChrome() {
         .to(arrow, { scaleX: 1, x: 0, duration: dur * 0.6, ease: "elastic.out(1, .6)" }, dur * 0.4);
     }
   };
+  // row heights follow a vw clamp and the final font: keep the arrow on its row
+  const reseat = () => {
+    if (current < 0 || gsap.isTweening(arrow)) return;
+    gsap.set(arrow, { y: items[current].parentElement!.offsetTop });
+  };
+  let rz = 0;
+  addEventListener("resize", () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(reseat); }, { passive: true });
+  document.fonts?.ready.then(reseat);
   items.forEach((a) => a.addEventListener("pointerenter", () => bus.emit("sfx", { name: "tick" })));
   host.addEventListener("click", (e) => {
     if ((e.target as Element).closest("a")) bus.emit("sfx", { name: "click" });
@@ -128,18 +135,33 @@ export function initChrome() {
   };
   addEventListener("scroll", onScroll, { passive: true });
   let footIO: IntersectionObserver | null = null;
+  let peekIO: IntersectionObserver | null = null;
   const watchFooter = () => {
     footIO?.disconnect();
+    peekIO?.disconnect();
     body.classList.remove("footer-in");
     const f = view.querySelector(".site-footer");
     if (!f) return;
     footIO = new IntersectionObserver(([en]) => body.classList.toggle("footer-in", en.isIntersecting), { rootMargin: "0px 0px -40px 0px" });
     footIO.observe(f);
+    // the crew pops up from behind the wordmark once most of it is in view
+    const word = f.querySelector(".sf-word");
+    if (word) {
+      peekIO = new IntersectionObserver(([en]) => f.classList.toggle("is-peek", en.intersectionRatio > 0.6), { threshold: [0, 0.6, 1] });
+      peekIO.observe(word);
+    }
   };
 
   /* ---------- mobile overlay menu ---------- */
   const mm = $(".mm");
   const mbtn = $<HTMLButtonElement>(".ch-mbtn");
+  const header = $(".ch");
+  // while the overlay is up, everything behind it is out of reach (focus, AT, scroll)
+  const lockBehind = (v: boolean) => {
+    view.inert = v;
+    header.inert = v;
+    document.documentElement.classList.toggle("menu-lock", v);
+  };
   let open = false;
   let tl: gsap.core.Timeline | null = null;
   const focusables = () => [...mm.querySelectorAll<HTMLElement>("a[href], button")];
@@ -159,6 +181,7 @@ export function initChrome() {
     bus.emit("sfx", { name: v ? "pop" : "click" });
     if (v) {
       mm.hidden = false;
+      lockBehind(true);
       lenis?.stop();
       document.addEventListener("keydown", trap);
       const big = mm.querySelectorAll(".mm-t, .mm-n");
@@ -172,6 +195,7 @@ export function initChrome() {
       (mm.querySelector(".mm-list a") as HTMLElement).focus({ preventScroll: true });
     } else {
       document.removeEventListener("keydown", trap);
+      lockBehind(false);
       lenis?.start();
       tl = gsap.timeline({ onComplete: () => { mm.hidden = true; } });
       if (reducedMotion) tl.to(mm, { autoAlpha: 0, duration: 0.15 });
@@ -197,6 +221,7 @@ export function initChrome() {
     mbtn.setAttribute("aria-expanded", "false");
     body.classList.remove("menu-open");
     document.removeEventListener("keydown", trap);
+    lockBehind(false);
     lenis?.start();
   };
   matchMedia("(min-width: 721px)").addEventListener("change", (e) => { if (e.matches) setMenu(false, false); });
@@ -214,6 +239,7 @@ export function initChrome() {
     if (!a) return;
     e.preventDefault();
     if (lenis) lenis.scrollTo(0, { duration: 1.6 }); else scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+    view.focus({ preventScroll: true });
   });
 
   /* ---------- intro after the preloader ---------- */

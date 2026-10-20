@@ -41,11 +41,16 @@ export const cheese: Experiment = {
       for (const s of strands) lay(s);
     };
     const edgeA = (e: 0 | 1) => bis + (e ? half : -half);
+    // reused anchor points (pie side / slice side): no per-frame allocation
+    const pa = { x: 0, y: 0 }, pb = { x: 0, y: 0 };
     const anchor = (s: Strand, slice: boolean) => {
       const a = edgeA(s.e), r = R * s.f * 0.92;
       // cheese clings a bit inside each surface
       const n = (s.e ? -1 : 1) * 0.04;
-      return { x: cx + Math.cos(a + n) * r + (slice ? off.x : 0), y: cy + Math.sin(a + n) * r + (slice ? off.y : 0) };
+      const o = slice ? pb : pa;
+      o.x = cx + Math.cos(a + n) * r + (slice ? off.x : 0);
+      o.y = cy + Math.sin(a + n) * r + (slice ? off.y : 0);
+      return o;
     };
     function lay(s: Strand) {
       const a = anchor(s, false), b = anchor(s, true);
@@ -208,8 +213,9 @@ export const cheese: Experiment = {
         if (s.cut >= 0 && s.life <= 0) continue;
         const thin = clamp(Math.sqrt((R * 0.35) / Math.max(D, R * 0.35)), 0.25, 1);
         const ww = Math.max(1.2, s.w * sc * thin * (s.cut >= 0 ? clamp(s.life, 0, 1) : 1));
-        const segs: [number, number][] = s.cut < 0 ? [[0, SEG - 1]] : [[0, s.cut], [s.cut + 1, SEG - 1]];
-        for (const [p, q] of segs) {
+        const nSeg = s.cut < 0 ? 1 : 2;
+        for (let k = 0; k < nSeg; k++) {
+          const p = s.cut < 0 ? 0 : k ? s.cut + 1 : 0, q = s.cut < 0 ? SEG - 1 : k ? SEG - 1 : s.cut;
           if (q - p < 1) continue;
           strandPath(g, s, p, q);
           g.strokeStyle = C.ink; g.lineWidth = ww + lw * 0.9; g.stroke();
@@ -218,7 +224,7 @@ export const cheese: Experiment = {
         }
         if (s.cut >= 0 && s.life > 0) {
           // droplets on the broken ends
-          for (const i of [s.cut, s.cut + 1]) {
+          for (let i = s.cut; i <= s.cut + 1; i++) {
             g.beginPath(); g.arc(s.xs[i], s.ys[i], ww * 0.75 + 1, 0, TAU);
             g.fillStyle = C.cheese; g.fill(); g.lineWidth = lw * 0.6; g.strokeStyle = C.ink; g.stroke();
           }

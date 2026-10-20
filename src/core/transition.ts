@@ -5,6 +5,7 @@ import { gsap, reducedMotion } from "./motion";
 import { bus } from "./bus";
 import { glyph } from "../art";
 import { sectionFor } from "../chrome/sections";
+import { isSaturday } from "../chrome/countdown";
 
 let panel: HTMLElement | null = null;
 let dest = "";
@@ -48,6 +49,7 @@ export async function leave(view: HTMLElement): Promise<void> {
   const ink = p.firstElementChild!, red = p.lastElementChild!;
   const t = p.querySelector(".pt-t")!, slice = p.querySelector(".pt-slice")!, k = p.querySelector(".pt-k")!;
   t.textContent = dest || "OpenSlice";
+  k.textContent = isSaturday() ? "Fresh out the oven" : "Now serving";
   gsap.killTweensOf([ink, red, t, slice, k, view]);
   spin?.kill();
   p.classList.add("is-on");

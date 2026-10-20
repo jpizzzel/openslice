@@ -1,6 +1,8 @@
 // Shared site footer. Pages append `renderFooter()` at the end of their root.
-// Purely static HTML; styles live in chrome.css under .site-footer.
+// Static HTML; styles live in chrome.css under .site-footer. The chrome adds
+// .is-peek when the wordmark is on screen and Jonah and Peter pop up behind it.
 import { PEOPLE, SITE } from "../data/site";
+import { mascot } from "../art";
 
 export function renderFooter(): string {
   const people = PEOPLE.map((p) => `
@@ -24,7 +26,10 @@ export function renderFooter(): string {
         <span class="sf-v">MIT licensed. Every slice open source.</span>
       </div>
     </div>
-    <div class="sf-word" aria-hidden="true"><span>OPENSLICE</span><i>©</i></div>
+    <div class="sf-word" aria-hidden="true">
+      <div class="sf-peek"><span class="sf-m sf-m1">${mascot("jonah", "wave")}</span><span class="sf-m sf-m2">${mascot("peter", "point")}</span></div>
+      <span class="sf-wm">OPENSLICE</span><i>©</i>
+    </div>
     <div class="sf-base">
       <span>Made in our kitchen, ${SITE.since} to forever.</span>
       <a class="u-link" href="#view" data-native data-sf-top>Back to top</a>

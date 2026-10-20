@@ -10,13 +10,16 @@ function nextSaturday(now: Date) {
 }
 
 export function countdownText(now = new Date()): { label: string; value: string; open: boolean } {
-  if (now.getDay() === 6) return { label: "Oven's hot", value: "Open today", open: true };
+  if (isSaturday(now)) return { label: "Oven's hot", value: "Open today", open: true };
   let s = Math.max(0, Math.floor((nextSaturday(now).getTime() - now.getTime()) / 1000));
   const d = Math.floor(s / 86400); s -= d * 86400;
   const h = Math.floor(s / 3600); s -= h * 3600;
   const m = Math.floor(s / 60); s -= m * 60;
   return { label: "Slicing next", value: `${d}d ${pad(h)}:${pad(m)}:${pad(s)}`, open: false };
 }
+
+/** Saturday mode: true all day Saturday, when Saturday Slices is open. */
+export const isSaturday = (now = new Date()) => now.getDay() === 6;
 
 export function countdownHTML(cls = "") {
   const c = countdownText();
@@ -28,6 +31,8 @@ export function startCountdowns() {
   let id = 0;
   const tick = () => {
     const c = countdownText();
+    // pages and chrome key their Saturday touches off this class
+    document.documentElement.classList.toggle("is-saturday", c.open);
     document.querySelectorAll<HTMLElement>("[data-countdown]").forEach((el) => {
       el.classList.toggle("is-open", c.open);
       const l = el.firstElementChild as HTMLElement, v = el.lastElementChild as HTMLElement;

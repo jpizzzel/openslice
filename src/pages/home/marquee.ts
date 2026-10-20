@@ -1,9 +1,13 @@
 // MARQUEE: two crossing tilted bands. Speed and direction follow scroll velocity.
 import { gsap, ScrollTrigger } from "../../core/motion";
 import type { Kit } from "./kit";
+import { isSaturday } from "../../chrome/countdown";
 
 const FRONT = ["Free tools, served hot", "Open source", "No subscriptions"];
 const BACK = ["Hot out of the kitchen", "Fork it", "Made at 2am", "Pay $0"];
+// Saturday mode: the oven is actually on today
+const FRONT_SAT = ["It's Saturday", "The oven is on", "Free tools, served hot"];
+const BACK_SAT = ["Saturday Slices is open", "Come hungry", "Fork it", "Pay $0"];
 
 function run(words: string[], copies: number) {
   const chunk = words.map((w) => `<span class="mq__w">${w}</span><span class="mq__s">✶</span>`).join("");
@@ -11,10 +15,12 @@ function run(words: string[], copies: number) {
 }
 
 export function marqueeHTML() {
+  const sat = isSaturday();
+  const front = sat ? FRONT_SAT : FRONT;
   return `
-  <section class="h-mq" aria-label="Free tools, served hot. Open source. No subscriptions.">
-    <div class="mq mq--back" aria-hidden="true"><div class="mq__track">${run(BACK, 4)}</div></div>
-    <div class="mq mq--front" aria-hidden="true"><div class="mq__track">${run(FRONT, 4)}</div></div>
+  <section class="h-mq${sat ? " is-sat" : ""}" aria-label="${front.join(". ")}.">
+    <div class="mq mq--back" aria-hidden="true"><div class="mq__track">${run(sat ? BACK_SAT : BACK, 4)}</div></div>
+    <div class="mq mq--front" aria-hidden="true"><div class="mq__track">${run(front, 4)}</div></div>
   </section>`;
 }
 
@@ -28,8 +34,10 @@ export function initMarquee(kit: Kit) {
   });
   const measure = () => bands.forEach((b) => (b.w = b.chunk.offsetWidth));
   measure();
+  // chunks change width when the display font lands, not only on resize
   const ro = new ResizeObserver(measure);
   ro.observe(sec);
+  bands.forEach((b) => ro.observe(b.chunk));
   kit.onCleanup(() => ro.disconnect());
 
   let vel = 0;

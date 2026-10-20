@@ -45,7 +45,10 @@ const page: Page = {
       loop: (target, fn) => loop.add(target, fn),
     };
 
-    const intro = (first ? loaderGone : Promise.resolve()).then(
+    // First visit: wait for the preloader. After a page transition: start as the
+    // sheets begin to peel (enter() lifts them ~0.1s to 0.5s after mount), so the
+    // intro plays in view instead of under the cover.
+    const intro = (first ? loaderGone : new Promise<void>((r) => setTimeout(r, 160))).then(
       () => new Promise<void>((r) => (alive ? requestAnimationFrame(() => r()) : undefined)),
     );
 

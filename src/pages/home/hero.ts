@@ -146,6 +146,9 @@ export function initHero(kit: Kit, intro: Promise<void>) {
     depth: 0.3 + o.s / 28,
   }));
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+  // Box hop: one damped spring shared by the whole burst. A hop kicks it and every
+  // object jumps by its own depth, then settles back into its idle float.
+  const hop = { p: 0, v: 0 };
   if (kit.fine) {
     const move = (e: PointerEvent) => {
       mouse.tx = (e.clientX / innerWidth) * 2 - 1;
@@ -158,10 +161,15 @@ export function initHero(kit: Kit, intro: Promise<void>) {
     const k = 1 - Math.pow(0.002, dt);
     mouse.x += (mouse.tx - mouse.x) * k;
     mouse.y += (mouse.ty - mouse.y) * k;
+    if (hop.p !== 0 || hop.v !== 0) {
+      hop.v += (-140 * hop.p - 9 * hop.v) * dt;
+      hop.p += hop.v * dt;
+      if (Math.abs(hop.p) < 0.05 && Math.abs(hop.v) < 0.5) hop.p = hop.v = 0;
+    }
     for (let i = 0; i < floats.length; i++) {
       const s = seeds[i];
       const t = time * s.sp + s.ph;
-      const y = Math.sin(t) * s.amp - mouse.y * 22 * s.depth;
+      const y = Math.sin(t) * s.amp - mouse.y * 22 * s.depth + hop.p * (0.5 + s.depth * 0.5);
       const x = Math.cos(t * 0.6) * s.amp * 0.4 - mouse.x * 28 * s.depth;
       const r = Math.sin(t * 0.8) * s.rot + mouse.x * 4 * s.depth;
       floats[i].style.transform = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) rotate(${r.toFixed(2)}deg)`;
@@ -208,6 +216,27 @@ export function initHero(kit: Kit, intro: Promise<void>) {
     gsap.set(speed, { autoAlpha: 0, scale: 0.6, transformOrigin: "50% 90%" });
   });
 
+  // Hover (or tap) the box: it squashes, hops, and the whole burst jumps with it.
+  const hbox = hero.querySelector<HTMLElement>(".h-box")!;
+  let ready = false, lastHop = 0;
+  hbox.style.pointerEvents = "auto";
+  hbox.dataset.cursor = "Shake";
+  const shake = () => {
+    const now = performance.now();
+    if (!ready || now - lastHop < 650) return;
+    lastHop = now;
+    kit.add(() => {
+      gsap.timeline({ defaults: { overwrite: "auto" } })
+        .to(box, { scaleY: 0.8, scaleX: 1.12, y: 0, duration: 0.12, ease: "power2.in", transformOrigin: "50% 100%" })
+        .add(() => { hop.v -= 520; bus.emit("sfx", { name: "pop" }); })
+        .to(box, { scaleY: 1.1, scaleX: 0.94, y: -34, rotation: 3, duration: 0.2, ease: "power2.out" })
+        .to(box, { y: 0, scaleX: 1, scaleY: 1, rotation: 0, duration: 1, ease: "elastic.out(1, 0.32)" });
+    });
+  };
+  const hopEv = kit.fine ? "pointerenter" : "pointerdown";
+  hbox.addEventListener(hopEv, shake);
+  kit.onCleanup(() => hbox.removeEventListener(hopEv, shake));
+
   intro.then(() => kit.add(() => {
     const boxR = box.getBoundingClientRect();
     const bx = boxR.left + boxR.width / 2;
@@ -244,6 +273,7 @@ export function initHero(kit: Kit, intro: Promise<void>) {
         // stagger by visual line, so it reads as a masked line reveal
         delay: (i: number) => lineIndex[i] * 0.08,
       }, 1.05)
-      .to(cols, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.08 }, 1.2);
+      .to(cols, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.08 }, 1.2)
+      .add(() => { ready = true; }, 1.9);
   }));
 }

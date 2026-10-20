@@ -149,6 +149,9 @@
 .p-home .mq__w { padding: 0 0.32em; letter-spacing: 0.01em; }
 .p-home .mq__s { display: inline-block; color: var(--ink); font-size: 0.7em; translate: 0 -0.04em; }
 .p-home .mq--back .mq__s { color: var(--tomato); }
+/* Saturday mode: the loud band goes cheese yellow while the oven is on */
+.p-home .h-mq.is-sat .mq--front { background: var(--cheese); color: var(--ink); }
+.p-home .h-mq.is-sat .mq--front .mq__s { color: var(--tomato); }
 
 /* ───────────────────────── MANIFESTO ───────────────────────── */
 .p-home .h-mf {
@@ -312,7 +315,11 @@
   background-repeat: repeat-x;
   background-position: 0 50%;
 }
-.p-home .mb-price { display: grid; justify-items: end; gap: 6px; text-align: right; }
+.p-home .mb-price { display: grid; justify-items: end; gap: 6px; text-align: right; position: relative; }
+/* the struck-out price hangs above the $0 so every row's leader runs to the same edge */
+@media (min-width: 721px) {
+  .p-home .mb-was { position: absolute; right: 0; bottom: 100%; margin-bottom: 8px; white-space: nowrap; }
+}
 .p-home .mb-was { font-size: var(--t-sm); color: var(--mb-mute); text-decoration-color: var(--tomato); text-decoration-thickness: 2px; }
 .p-home .mb-was--none { font-family: var(--f-mono); font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.04em; }
 .p-home .mb-now {
@@ -332,6 +339,7 @@
 }
 .p-home .mb-link:focus-visible { outline-offset: -2px; }
 .p-home .mb-float {
+  will-change: transform;
   position: absolute;
   top: 0; left: 0;
   width: clamp(220px, 19vw, 340px);
@@ -438,7 +446,8 @@
 .p-home .cta::before {
   content: "";
   position: absolute;
-  inset: 0 calc(var(--hl) * -1) 0 calc(var(--gutter) * -1);
+  /* bleed to both viewport edges: the section is padded --hl left, --gutter right */
+  inset: 0 calc(var(--gutter) * -1) 0 calc(var(--hl) * -1);
   background: var(--tomato);
   transform: scaleY(0);
   transform-origin: 50% 100%;
@@ -475,6 +484,7 @@
   pointer-events: none;
   z-index: -1;
   transform: scale(0);
+  will-change: transform;
 }
 .p-home .cta__g svg { width: 100%; height: auto; }
 
@@ -531,6 +541,9 @@
   .p-home .h-col--stack { z-index: auto; }
 
   .p-home .h-mq { margin-top: 0; height: 200px; }
+  /* steeper crossing on narrow screens, or the back band hides behind the front one */
+  .p-home .mq--front { rotate: -6deg; }
+  .p-home .mq--back { rotate: 7deg; }
   .p-home .h-mf { grid-template-columns: 1fr; padding-top: 56px; }
   .p-home .h-mf__text { grid-column: 1; }
 

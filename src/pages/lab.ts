@@ -131,7 +131,7 @@ const page: Page = {
     /* masonry: shortest column first, re-flowed on breakpoint change */
     let cols = 0;
     const mqs = [window.matchMedia("(min-width: 1100px)"), window.matchMedia("(min-width: 721px)")];
-    const flow = () => {
+    const flow = (initial = false) => {
       const n = mqs[0].matches ? 3 : mqs[1].matches ? 2 : 1;
       if (n === cols) return;
       cols = n;
@@ -149,11 +149,15 @@ const page: Page = {
         hts[k] += t.exp.ar[1] / t.exp.ar[0] + 0.32;
       });
       grid.replaceChildren(...colEls);
-      ScrollTrigger.refresh();
+      // Never refresh synchronously inside mount: ScrollTrigger still caches
+      // the previous page's scrollY until the next scroll event, and refresh()
+      // would restore that stale value. The router refreshes after mount.
+      if (!initial) ScrollTrigger.refresh();
     };
-    flow();
-    mqs.forEach((m) => m.addEventListener("change", flow));
-    kills.push(() => mqs.forEach((m) => m.removeEventListener("change", flow)));
+    const reflow = () => flow();
+    flow(true);
+    mqs.forEach((m) => m.addEventListener("change", reflow));
+    kills.push(() => mqs.forEach((m) => m.removeEventListener("change", reflow)));
 
     /* ----------------------------------------------- lifecycle per toy */
     const ensure = (t: Tile) => {
@@ -406,7 +410,7 @@ const page: Page = {
             }));
           },
         });
-        ScrollTrigger.refresh();
+        if (first) ScrollTrigger.refresh();
       };
       (first ? loaderGone : Promise.resolve()).then(intro);
     } else {

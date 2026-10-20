@@ -68,10 +68,13 @@ export const dough: Experiment = {
       },
     });
 
+    const cen = [0, 0];
+    /** centroid into a reused tuple (read it right away) */
     function centroid() {
       let x = 0, y = 0;
       for (let i = 0; i < N; i++) { x += px[i]; y += py[i]; }
-      return [x / N, y / N];
+      cen[0] = x / N; cen[1] = y / N;
+      return cen;
     }
 
     function step(dt: number, t: number) {
@@ -83,7 +86,10 @@ export const dough: Experiment = {
         // rest pose, so a pulled region stretches out like taffy
         let fx = (cx + rx[i] * breathe - px[i]) * kShape + (homeX + rx[i] * breathe - px[i]) * kAnchor * (1 - wt[i] * (grab >= 0 ? 1 : 0)) + (homeX - cx) * kHome;
         let fy = (cy + ry[i] * breathe - py[i]) * kShape + (homeY + ry[i] * breathe - py[i]) * kAnchor * (1 - wt[i] * (grab >= 0 ? 1 : 0)) + (homeY - cy) * kHome;
-        for (const [j, L, k] of [[(i + 1) % N, rest1, k1], [(i + N - 1) % N, rest1, k1], [(i + 2) % N, rest2, k2], [(i + N - 2) % N, rest2, k2]] as const) {
+        for (let n = 0; n < 4; n++) {
+          // neighbours: +1, -1 (rest1/k1) and +2, -2 (rest2/k2), no per-frame arrays
+          const off = n < 2 ? 1 : 2, j = (i + (n & 1 ? N - off : off)) % N;
+          const L = n < 2 ? rest1 : rest2, k = n < 2 ? k1 : k2;
           const dx = px[j] - px[i], dy = py[j] - py[i];
           const d = Math.hypot(dx, dy) || 1e-3;
           const f = (d - L) * k;

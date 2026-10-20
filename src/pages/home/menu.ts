@@ -4,6 +4,7 @@ import { gsap } from "../../core/motion";
 import { poster } from "../../art";
 import { TOOLS, STATUS_LABEL, PEOPLE } from "../../data/site";
 import { esc, type Kit } from "./kit";
+import { isSaturday } from "../../chrome/countdown";
 
 const names = (ids: string[]) =>
   ids.map((id) => PEOPLE.find((p) => p.id === id)?.first ?? id).join(" & ");
@@ -34,7 +35,7 @@ export function menuHTML() {
   return `
   <section class="h-mb" aria-labelledby="mb-title">
     <header class="h-mb__head">
-      <p class="label">(02) Today's menu</p>
+      <p class="label">(02) ${isSaturday() ? "Saturday's menu, oven's on" : "Today's menu"}</p>
       <h2 id="mb-title" class="h-mb__title"><span class="h-mb__t1">The</span> <span class="h-mb__t2">Menu</span></h2>
       <p class="h-mb__note serif">Everything is made from scratch and costs nothing. <em>Seconds are encouraged.</em></p>
       <dl class="h-mb__legend">

@@ -248,8 +248,8 @@ const FACES: Record<Pose, Record<Who, Face>> = {
     peter: { eyes: "wink", brows: "up", mouth: "grin", look: [1, 1] },
   },
   push: {
-    jonah: { dx: 10, eyes: "squint", brows: "angry", mouth: "grit", sweat: true },
-    peter: { dx: 10, eyes: "squint", brows: "angry", mouth: "grit", sweat: true },
+    jonah: { dx: 10, eyes: "squint", brows: "angry", mouth: "grit" },
+    peter: { dx: 10, eyes: "squint", brows: "angry", mouth: "grit" },
   },
   point: {
     jonah: { dx: 3, eyes: "wide", brows: "up", mouth: "o", look: [4, 0] },
@@ -272,8 +272,8 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
     case "stand": {
       return (
         shadow(k) +
-        leg(k, "leg-l", "M94 204C92 230 86 250 84 268", "M85.4 258L84.2 268", [93, 206], sneaker(k, 84, 270, true, 0, 1, accent)) +
-        leg(k, "leg-r", "M106 204C108 230 114 250 116 268", "M114.6 258L115.8 268", [107, 206], sneaker(k, 116, 270, false, 0, 1, accent)) +
+        leg(k, "leg-l", "M94 204C92 230 84 250 81 268", "M82.6 258L81.2 268", [93, 206], sneaker(k, 81, 270, true, 0, 1, accent)) +
+        leg(k, "leg-r", "M106 204C108 230 116 250 119 268", "M117.4 258L118.8 268", [107, 206], sneaker(k, 119, 270, false, 0, 1, accent)) +
         arm("arm-l", "M60 126C46 138 40 154 42 172", [58, 126], hand("fist", 43, 177, 10)) +
         arm("arm-r", "M140 126C158 130 170 146 160 160C156 166 146 168 136 166", [142, 126], hand("fist", 133, 164, -100)) +
         torso(k, who, f)
@@ -285,9 +285,9 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         leg(k, "leg-l", "M94 204C90 228 84 250 82 268", "M83.4 258L82.2 268", [93, 206], sneaker(k, 82, 270, true, -4, 1, accent)) +
         leg(k, "leg-r", "M106 204C110 228 116 248 120 266", "M118.4 256L120 266", [107, 206], sneaker(k, 120, 268, false, -8, 1, accent)) +
         arm("arm-l", "M60 128C48 140 44 156 46 172", [58, 128], hand("fist", 47, 177, 14)) +
-        arm("arm-r", "M140 124C158 116 168 96 166 72", [140, 126], hand("open", 166, 62, 14)) +
-        L("M184 46C190 54 190 64 186 72M192 38C202 50 202 68 194 80M146 44C142 52 142 60 145 66", 2.4) +
-        torso(k, who, f)
+        torso(k, who, f) +
+        arm("arm-r", "M145 127C164 122 176 106 177 84", [145, 127], hand("open", 177, 74, 10)) +
+        L("M190 50C195 57 195 66 191 73M163 50C159 57 159 65 162 71", 2.4)
       );
     }
     case "push": {
@@ -302,6 +302,7 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         leg(k, "leg-r", "M80 206C98 220 106 240 98 268", "M101.4 258L98.4 268", [80, 206], sneaker(k, 98, 270, false, 0, 1, accent)) +
         arm("arm-r", "M134 142C152 152 170 142 184 130", [134, 142], hand("flat", 190, 130, -6)) +
         G(torso(k, who, f), lean) +
+        P("M30 104C24 112 26 120 32 120C38 120 39 112 30 104Z", PAPER, 2.2) + P("M44 92C40 97 41 102 45 102C49 102 49 97 44 92Z", PAPER, 2) +
         L("M186 88l4 -6M180 84l2 -6", 2)
       );
     }
@@ -310,9 +311,9 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         shadow(k) +
         leg(k, "leg-l", "M94 204C92 230 88 250 86 268", "M87.2 258L86.2 268", [93, 206], sneaker(k, 86, 270, true, 0, 1, accent)) +
         leg(k, "leg-r", "M106 204C112 226 122 246 128 264", "M125.6 254L128 264", [107, 206], sneaker(k, 128, 266, false, -6, 1, accent)) +
-        arm("arm-l", "M60 126C42 130 32 146 40 160C44 166 54 168 64 166", [58, 126], hand("fist", 67, 164, 100, true)) +
-        arm("arm-r", "M140 124C156 122 168 118 178 116", [140, 124], hand("point", 182, 116, -4)) +
-        L("M192 100l6 -4M194 116h8M192 132l6 4", 2.4) +
+        arm("arm-l", "M60 126C42 130 32 146 40 160C44 166 54 168 64 166", [58, 126], hand("fist", 63, 162, 100, true)) +
+        arm("arm-r", "M140 124C152 122 160 119 166 117", [140, 124], hand("point", 170, 116, -4)) +
+        L("M184 98l5 -5M190 108l6 -2M180 132l5 4", 2.2) +
         torso(k, who, f)
       );
     }
@@ -322,10 +323,10 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         shadow(k, 100, 66) +
         part("seat", null, pizzaBox(k, 38, 246, 124, 36, 18, 0, true, 3.2)) +
         G(
-          leg(k, "leg-l", "M94 204C90 214 80 220 78 230C76 240 76 248 76 256", "M76 246V256", [93, 206], sneaker(k, 76, 258, true, -10, 1, accent)) +
-          leg(k, "leg-r", "M106 204C112 214 122 222 122 232C122 240 126 246 130 252", "M127 245L130.6 253", [107, 206], sneaker(k, 131, 254, false, 16, 1, accent)) +
-          arm("arm-l", "M60 128C46 144 44 168 54 194", [58, 128], hand("fist", 56, 198, -10)) +
-          arm("arm-r", "M140 128C156 142 160 166 150 192", [142, 128], hand("fist", 148, 196, 10, true)) +
+          leg(k, "leg-l", "M94 204C90 214 82 220 80 228C78 236 78 240 78 246", "M78 236V246", [93, 206], sneaker(k, 78, 248, true, 0, 1, accent)) +
+          leg(k, "leg-r", "M106 204C112 214 120 220 122 228C124 234 125 238 126 243", "M124.4 234L126.2 244", [107, 206], sneaker(k, 127, 245, false, -14, 1, accent)) +
+          arm("arm-l", "M60 128C44 144 42 174 50 200", [58, 128], hand("fist", 51, 205, -10)) +
+          arm("arm-r", "M140 128C156 144 158 174 150 200", [142, 128], hand("fist", 149, 205, 10, true)) +
           torso(k, who, f),
           `transform="translate(0 ${dy})"`) +
         L("M40 34q4 -6 8 0t8 0M150 30q4 -6 8 0t8 0", 2) // a little hum
@@ -338,10 +339,10 @@ function drawPose(k: Kit, who: Who, pose: Pose): string {
         leg(k, "leg-r", "M106 204C110 228 116 250 118 268", "M117 258L118 268", [107, 206], sneaker(k, 118, 270, false, 0, 1, accent)) +
         torso(k, who, f) +
         part("box", null,
-          pizzaBox(k, 40, 192, 120, 24, 30, 8, true, 3.2) +
-          L("M84 150c-6 -8 4 -12 -2 -20M100 146c-6 -8 4 -12 -2 -20M116 150c-6 -8 4 -12 -2 -20", 2.2, GRAY)) +
-        arm("arm-l", "M60 128C46 144 40 166 42 188", [58, 128], hand("flat", 42, 196, 160)) +
-        arm("arm-r", "M140 128C154 144 162 166 162 188", [142, 128], hand("flat", 164, 196, -160, true))
+          pizzaBox(k, 40, 186, 120, 26, 26, 8, true, 3.2) +
+          L("M28 170c-5 -6 3 -10 -2 -16M176 166c-5 -6 3 -10 -2 -16", 2, GRAY)) +
+        arm("arm-l", "M60 128C42 144 34 172 37 204", [58, 128], hand("flat", 37, 197, 0)) +
+        arm("arm-r", "M140 128C158 144 166 172 163 204", [142, 128], hand("flat", 163, 197, 0, true))
       );
     }
   }

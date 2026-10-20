@@ -206,8 +206,8 @@ const page: Page = {
         type: "lines", mask: "lines", linesClass: "td-sl", autoSplit: true,
         onSplit: (self) =>
           gsap.from(self.lines, {
-            yPercent: 105, rotation: 2, ease: "none", stagger: 0.5,
-            scrollTrigger: { trigger: story, start: "top 82%", end: "bottom 62%", scrub: 0.8 },
+            yPercent: 112, rotation: 2.5, duration: 1.3, ease: "expo.out", stagger: 0.11,
+            scrollTrigger: { trigger: story, start: "top 78%", toggleActions: "play none none reverse" },
           }),
       });
       gsap.from(".td-glyph", {
@@ -228,12 +228,12 @@ const page: Page = {
       });
 
       // credits: physical cards tossed onto the table
-      gsap.fromTo(".td-card--credits", { rotation: -14, yPercent: 30, xPercent: -8 }, {
-        rotation: -5, yPercent: 0, xPercent: 0, ease: "none",
+      gsap.fromTo(".td-card--credits", { rotation: -9, yPercent: 30, xPercent: -8 }, {
+        rotation: 0, yPercent: 0, xPercent: 0, ease: "none",
         scrollTrigger: { trigger: ".td-credits", start: "top bottom", end: "center 60%", scrub: 0.8 },
       });
-      gsap.fromTo(".td-card--links", { rotation: 12, yPercent: 45, xPercent: 10 }, {
-        rotation: 3, yPercent: 0, xPercent: 0, ease: "none",
+      gsap.fromTo(".td-card--links", { rotation: 9, yPercent: 45, xPercent: 10 }, {
+        rotation: 0, yPercent: 0, xPercent: 0, ease: "none",
         scrollTrigger: { trigger: ".td-credits", start: "top bottom", end: "center 55%", scrub: 0.8 },
       });
       gsap.from(".td-mascot", {
@@ -252,6 +252,7 @@ const page: Page = {
     if (finePointer && !reducedMotion) {
       const fig = el.querySelector<HTMLElement>(".td-poster")!;
       const tilt = el.querySelector<HTMLElement>(".td-poster__tilt")!;
+      gsap.set(tilt, { transformPerspective: 900 });
       const rx = gsap.quickTo(tilt, "rotationX", { duration: 0.9, ease: "elastic.out(1, 0.5)" });
       const ry = gsap.quickTo(tilt, "rotationY", { duration: 0.9, ease: "elastic.out(1, 0.5)" });
       const move = (e: PointerEvent) => {
@@ -275,12 +276,13 @@ const page: Page = {
       const chs = el.querySelectorAll(".td-ch");
       const fades = el.querySelectorAll(".td-fade");
       const wt = el.querySelectorAll(".td-wt");
+      const stamp = el.querySelector(".td-stamp--big");
       ctx.add(() => {
         gsap.set(chs, { yPercent: 115, rotation: 8 });
         gsap.set(fades, { autoAlpha: 0, y: 18 });
         gsap.set(".td-poster__art", { autoAlpha: 0, yPercent: 40, rotation: 16, scale: 0.9 });
-        gsap.set(wt, { autoAlpha: 0, scale: 1.8, rotation: -30 });
-        gsap.set(".td-stamp--big", { autoAlpha: 0, scale: 2.2 });
+        if (wt.length) gsap.set(wt, { autoAlpha: 0, scale: 1.8, rotation: -30 });
+        if (stamp) gsap.set(stamp, { autoAlpha: 0, scale: 2.2 });
       });
       (async () => {
         if (first) await loaderGone;
@@ -289,9 +291,9 @@ const page: Page = {
           const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
           tl.to(chs, { yPercent: 0, rotation: 0, duration: 1.3, stagger: 0.045 }, 0)
             .to(".td-poster__art", { autoAlpha: 1, yPercent: 0, rotation: 0, scale: 1, duration: 1.6 }, 0.1)
-            .to(fades, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.05 }, 0.3)
-            .to(wt, { autoAlpha: 1, scale: 1, rotation: -12, duration: 0.7, ease: "back.out(2.2)" }, 0.9)
-            .to(".td-stamp--big", { autoAlpha: 1, scale: 1, duration: 0.5, ease: "back.out(2.5)", onStart: () => bus.emit("sfx", { name: "pop" }) }, 1.1);
+            .to(fades, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.05 }, 0.3);
+          if (wt.length) tl.to(wt, { autoAlpha: 1, scale: 1, rotation: 0, duration: 0.7, ease: "back.out(2.2)" }, 0.9);
+          if (stamp) tl.to(stamp, { autoAlpha: 1, scale: 1, duration: 0.5, ease: "back.out(2.5)", onStart: () => bus.emit("sfx", { name: "pop" }) }, 1.1);
         });
       })();
     }

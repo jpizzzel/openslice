@@ -7,7 +7,7 @@ import { esc, type Kit } from "./kit";
 const roll = (word: string) =>
   [...word].map((ch, i) => {
     const c = ch === " " ? "&nbsp;" : esc(ch);
-    return `<span class="cta-ch" style="--i:${i}"><span>${c}</span><span>${c}</span></span>`;
+    return `<span class="cta-ch" style="--i:${i}"><span class="cta-in"><span>${c}</span><span>${c}</span></span></span>`;
   }).join("");
 
 const LINKS: { href: string; k: string; word: string; sub: string; g: GlyphId }[] = [
@@ -43,7 +43,7 @@ export function initCta(kit: Kit) {
   const links = [...sec.querySelectorAll<HTMLElement>(".cta")];
   kit.add(() => {
     links.forEach((a) => {
-      gsap.from(a.querySelectorAll(".cta-ch"), {
+      gsap.from(a.querySelectorAll(".cta-in"), {
         yPercent: 100, duration: 1.2, ease: "expo.out", stagger: 0.025,
         scrollTrigger: { trigger: a, start: "top 88%" },
       });

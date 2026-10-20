@@ -45,6 +45,7 @@
 .p-toolbox .tb-h1 { display: flex; gap: 14px; align-items: baseline; font-weight: 400; font-size: var(--t-sm); }
 .p-toolbox .tb-h1__k { color: var(--ink); }
 .p-toolbox .tb-h1__n { color: var(--muted); }
+.p-toolbox .tb-hint { margin-top: 18px; color: var(--muted); }
 .p-toolbox .tb-tag { font-style: italic; font-size: clamp(1.6rem, 1rem + 1.2vw, 2.4rem); line-height: 1; margin-top: 10px; color: var(--ink); }
 
 .p-toolbox .tb-meta__pair { display: grid; grid-template-columns: 76px 1fr; gap: 0 14px; align-items: start; }
@@ -124,7 +125,7 @@
   position: absolute; left: var(--left); top: 43vh; z-index: 3;
   display: grid; grid-template-columns: repeat(2, minmax(0, 215px)); gap: 40px 22px;
 }
-.p-toolbox.is-pinned .tb-meta__pair[data-k="makers"] { grid-row: span 2; }
+.p-toolbox.is-pinned .tb-meta__pair[data-k="replaces"] { grid-column: span 2; }
 
 .p-toolbox.is-pinned .tb-count {
   position: absolute; left: var(--left); bottom: 2.4vh; z-index: 220; pointer-events: none;
@@ -152,10 +153,21 @@
   position: absolute; right: calc(var(--gutter) + 6px); top: 50%; translate: 0 -50%; z-index: 4;
   display: flex; flex-direction: column; gap: 10px;
 }
-.p-toolbox.is-pinned .tb-ctrl { position: absolute; right: var(--gutter); bottom: 3vh; z-index: 230; }
-.p-toolbox.is-pinned .tb-hint {
-  position: absolute; left: 47%; bottom: 3.4vh; translate: -50% 0; z-index: 3; color: var(--muted);
+.p-toolbox.is-pinned .tb-ctrl { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.p-toolbox.is-pinned .tb-ctrl > * { pointer-events: auto; }
+.p-toolbox.is-pinned .tb-arrow { position: absolute; right: calc(var(--gutter) - 7px); top: 50%; z-index: 4; width: 32px; height: 32px; }
+.p-toolbox.is-pinned .tb-arrow[data-dir="-1"] { margin-top: -118px; }
+.p-toolbox.is-pinned .tb-arrow[data-dir="1"] { margin-top: 86px; }
+.p-toolbox.is-pinned .tb-cta {
+  position: absolute; z-index: 5; right: 6vw; width: min(25vw, 420px); top: calc(50% + 96px);
+  justify-content: center; margin: 0; background: none;
 }
+.p-toolbox.is-pinned .tb-cta__name {
+  padding: 7px 14px 6px; border-radius: 99px; background: var(--ink); color: var(--paper);
+  transition: background-color .4s var(--ease-out), color .4s, transform .6s var(--ease-spring);
+}
+.p-toolbox.is-pinned .tb-cta:hover .tb-cta__name { background: var(--active); color: var(--ink); transform: rotate(-3deg) scale(1.06); }
+.p-toolbox.is-pinned .tb-item { padding: 7.5vh 0; }
 
 /* ================= FLAT RAIL (mobile + reduced motion) ================= */
 .p-toolbox.is-flat { --cw: min(70vw, 360px); }

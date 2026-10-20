@@ -8,6 +8,7 @@ import type { Tool } from "../data/site";
 import type { Who, Pose } from "./mascots";
 export type { Who, Pose };
 export { mascot } from "./mascots";
+import { glyph as drawGlyph } from "./glyphs";
 export type GlyphId =
   | Tool["glyph"]
   | "box" | "box-open" | "slice" | "pizza" | "peel" | "oven" | "laptop" | "keyboard"
@@ -23,9 +24,7 @@ export interface ArtOpts {
 
 /** Small object/topping/icon drawings. */
 export function glyph(id: GlyphId, opts: ArtOpts = {}): string {
-  return svg("0 0 100 100", `
-    <rect x="10" y="10" width="80" height="80" rx="12" fill="#f7f4ef" stroke="#141210" stroke-width="4"/>
-    <text x="50" y="56" text-anchor="middle" font-size="12" font-family="sans-serif">${id}</text>`, opts);
+  return drawGlyph(id, opts);
 }
 
 /** A poster-style artwork for a tool, used on cards. Aspect 4:5 (viewBox 0 0 400 500). */

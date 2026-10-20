@@ -20,6 +20,7 @@ function ensure() {
   panel.innerHTML = `
     <div class="pt-ink"></div>
     <div class="pt-red">
+      <div class="pt-meta"><span>OpenSlice&copy;</span><span>Out of our kitchen</span></div>
       <div class="pt-in">
         <span class="pt-k">Now serving</span>
         <div class="pt-slice">${glyph("slice")}</div>
@@ -27,6 +28,7 @@ function ensure() {
       </div>
     </div>`;
   document.body.appendChild(panel);
+  gsap.set([panel.firstElementChild, panel.lastElementChild], { yPercent: 100 });
   return panel;
 }
 
@@ -55,12 +57,14 @@ export async function leave(view: HTMLElement): Promise<void> {
   gsap.set(t, { yPercent: 110 });
   gsap.set([k, slice], { autoAlpha: 0, scale: 0.6 });
   // label + slice animate on their own clock; the router only waits for the cover
-  gsap.to(t, { yPercent: 0, duration: 0.5, ease: "expo.out", delay: 0.2 });
-  gsap.to([k, slice], { autoAlpha: 1, scale: 1, duration: 0.4, ease: "back.out(2)", delay: 0.18 });
+  gsap.to(t, { yPercent: 0, duration: 0.45, ease: "expo.out", delay: 0.13 });
+  gsap.to([k, slice], { autoAlpha: 1, scale: 1, duration: 0.4, ease: "back.out(2)", delay: 0.12 });
   await gsap.timeline()
-    .to(view, { y: -80, duration: 0.4, ease: "power3.in" }, 0)
-    .to(ink, { yPercent: 0, duration: 0.36, ease: "expo.inOut" }, 0)
-    .to(red, { yPercent: 0, duration: 0.36, ease: "expo.inOut" }, 0.05);
+    .to(view, { y: -80, duration: 0.36, ease: "power3.in" }, 0)
+    .to(ink, { yPercent: 0, duration: 0.34, ease: "expo.inOut" }, 0)
+    .to(red, { yPercent: 0, duration: 0.34, ease: "expo.inOut" }, 0.04)
+    // hold a beat so the destination name lands before the page swaps
+    .to({}, { duration: 0.06 });
   gsap.set(view, { autoAlpha: 0 });
 }
 
@@ -75,9 +79,9 @@ export async function enter(view: HTMLElement): Promise<void> {
     gsap.set(view, { autoAlpha: 1, y: 120 });
     gsap.to(view, { y: 0, duration: 0.7, ease: "expo.out", delay: 0.12, clearProps: "transform" });
     await gsap.timeline()
-      .to(inner, { yPercent: -40, autoAlpha: 0, duration: 0.28, ease: "power3.in" }, 0)
-      .to(red, { yPercent: -100, duration: 0.42, ease: "expo.inOut" }, 0.02)
-      .to(ink, { yPercent: -100, duration: 0.42, ease: "expo.inOut" }, 0.08);
+      .to(inner, { yPercent: -30, autoAlpha: 0, duration: 0.3, ease: "power3.in" }, 0.04)
+      .to(red, { yPercent: -100, duration: 0.4, ease: "expo.inOut" }, 0.06)
+      .to(ink, { yPercent: -100, duration: 0.4, ease: "expo.inOut" }, 0.11);
     p.classList.remove("is-on");
     spin?.kill(); spin = null;
     gsap.set(inner, { yPercent: 0, autoAlpha: 1 });

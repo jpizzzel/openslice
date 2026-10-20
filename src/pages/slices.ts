@@ -11,7 +11,7 @@ const DAYS: { d: string; long: string; what: string; g: GlyphId }[] = [
   { d: "Tue", long: "Tuesday", what: "Building", g: "keyboard" },
   { d: "Wed", long: "Wednesday", what: "Building", g: "terminal" },
   { d: "Thu", long: "Thursday", what: "Building", g: "wrench" },
-  { d: "Fri", long: "Friday", what: "Prepping", g: "dough" },
+  { d: "Fri", long: "Friday", what: "Building", g: "dough" },
   { d: "Sat", long: "Saturday", what: "Slices", g: "pizza" },
   { d: "Sun", long: "Sunday", what: "Building", g: "coffee" },
 ];
@@ -310,7 +310,7 @@ const page: Page = {
       const thresholds = pairs.map(({ bi }) => Math.min(0.99, spanOf(bi).end));
       fruits.forEach((f) => { f.dataset.shown = "0"; });
       gsap.set(fruits, { scale: 0, opacity: 0 });
-      gsap.set(branches, { strokeDashoffset: 1 });
+      gsap.set(branches, { strokeDashoffset: 1, opacity: 0 });
       gsap.set(".sl-tree__tag", { autoAlpha: 0, y: 20 });
       gsap.set(".sl-tree__list li", { autoAlpha: 0.25 });
 
@@ -345,7 +345,8 @@ const page: Page = {
       tl.to({}, { duration: 1 }, 0);
       branches.forEach((b, i) => {
         const s = spanOf(i);
-        tl.to(b, { strokeDashoffset: 0, duration: s.end - s.start }, s.start);
+        tl.to(b, { strokeDashoffset: 0, duration: s.end - s.start }, s.start)
+          .to(b, { opacity: 1, duration: 0.01 }, s.start);
       });
       tl.fromTo(".sl-tree__progress > span", { scaleX: 0 }, { scaleX: 1, duration: 1 }, 0)
         .to(".sl-tree__tag--roots", { autoAlpha: 1, y: 0, duration: 0.12 }, 0)

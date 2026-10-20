@@ -7,7 +7,11 @@ export function pepperoni(k: Kit, x: number, y: number, r: number, w = 2.2): str
     C(0, 0, r, TOMATO, w) +
     C(0, 0, r * 0.74, k.ht(3, TOMATO_DEEP, 3.4)) +
     E(-r * 0.3, -r * 0.32, r * 0.2, r * 0.13, PAPER, 0, `opacity=".85" transform="rotate(-30 ${-r * 0.3} ${-r * 0.32})"`) +
-    C(r * 0.35, r * 0.22, r * 0.09, PAPER, 0, `opacity=".8"`),
+    C(r * 0.35, r * 0.22, r * 0.09, PAPER, 0, `opacity=".8"`) +
+    (r > 14
+      ? [[-0.4, 0.35, 0.07], [0.1, -0.5, 0.06], [0.5, -0.2, 0.05], [-0.1, 0.55, 0.05], [0.05, 0.05, 0.08]].map(([u, v, q]) => C(r * u, r * v, r * q, PAPER, 0, `opacity=".7"`)).join("") +
+        L(`M${-r * 0.5} ${r * 0.62}A${r * 0.8} ${r * 0.8} 0 0 0 ${r * 0.62} ${r * 0.45}`, r * 0.05, INK, `opacity=".35"`)
+      : ""),
     at(x, y));
 }
 

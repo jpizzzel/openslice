@@ -56,7 +56,7 @@ export function initManifesto(kit: Kit) {
     });
     items.forEach((el, i) => {
       if (el.classList.contains("mf-g")) {
-        tl.fromTo(el, { scale: 0, rotation: -60 }, { scale: 1, rotation: 0, duration: 1.4, ease: "back.out(2.5)" }, i * 0.5);
+        tl.fromTo(el, { scale: 0.35, rotation: -50, opacity: 0.13 }, { scale: 1, rotation: 0, opacity: 1, duration: 1.4, ease: "back.out(2.5)" }, i * 0.5);
       } else {
         tl.fromTo(el, { opacity: 0.13 }, { opacity: 1, duration: 1 }, i * 0.5);
       }

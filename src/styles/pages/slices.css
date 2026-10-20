@@ -5,7 +5,7 @@
   position: relative;
   overflow-x: clip;
 }
-.p-slices .sl-l { display: block; overflow: hidden; padding-bottom: 0.05em; }
+.p-slices .sl-l { display: block; overflow: hidden; padding-bottom: 0.05em; line-height: 0.82; }
 .p-slices .sl-li { display: inline-block; will-change: transform; }
 
 .p-slices .sl-btn {
@@ -48,7 +48,7 @@
   margin-top: 2vh;
 }
 .p-slices .sl-hero__title .caps-red {
-  font-size: clamp(6rem, 1rem + 21vw, 26rem);
+  font-size: clamp(6rem, min(19vw, 30vh), 26rem);
   line-height: 0.8;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -141,6 +141,7 @@
   box-shadow: 0 20px 40px -20px rgb(0 0 0 / 0.5);
   transform-origin: 50% 100%;
 }
+.p-slices .sl-tip[hidden] { display: none; }
 .p-slices .sl-tip.is-flip { translate: -90% 0; }
 .p-slices .sl-tip::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; background: var(--ink); rotate: 45deg; translate: -50% 0; }
 .p-slices .sl-tip.is-flip::after { left: 90%; }
@@ -221,7 +222,7 @@
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   column-gap: var(--gutter);
-  padding: clamp(64px, 8vw, 140px) var(--pad-r) clamp(120px, 12vw, 220px) var(--pad-l);
+  padding: clamp(64px, 8vw, 140px) var(--pad-r) clamp(80px, 8vw, 140px) var(--pad-l);
   align-items: center;
 }
 .p-slices .sl-os__poster { grid-column: 1 / 6; display: block; perspective: 900px; will-change: transform; }

@@ -1,8 +1,8 @@
 // Preloader. Paper screen with a giant tomato wordmark and a percentage
 // counter, then Jonah and Peter shove an ink wall across the screen left to
 // right: paper ahead of the wall, ink under it, the live site behind them.
-// API: runPreloader() -> { done(): Promise<void> }; markLoaderGone() fires the
-// moment the wall clears the viewport.
+// API: runPreloader() -> { done(): Promise<void> }; markLoaderGone() fires once
+// the wall has dragged the reveal a third of the way across.
 import { gsap, reducedMotion } from "../core/motion";
 import { markLoaderGone } from "../core/ready";
 import { mascot } from "../art";
@@ -93,14 +93,15 @@ export function runPreloader() {
     const tl = gsap.timeline({
       onUpdate: () => {
         set();
-        if (!marked && s.p >= W) { marked = true; markLoaderGone(); }
+        // the site is on screen behind the crew from here on: let page intros play
+        if (!marked && s.p >= W * 0.35) { marked = true; markLoaderGone(); }
       },
     });
     // the wall slides in with the crew already shoving, they brace, then heave it across
     const brace = crewW * 0.95;
-    tl.to(s, { p: brace, duration: 0.75, ease: "power3.out" })
-      .to(s, { p: brace - 16, duration: 0.2, ease: "power2.out" })
-      .to(s, { p: W + crewW + 40, duration: 1.15, ease: "power3.in" });
+    tl.to(s, { p: brace, duration: 0.62, ease: "power3.out" })
+      .to(s, { p: brace - 16, duration: 0.16, ease: "power2.out" })
+      .to(s, { p: W + crewW + 40, duration: 1.05, ease: "power3.in" });
     // strain: little shoves and bobs while walking
     ms.forEach((m, i) => {
       gsap.fromTo(m, { y: 0, rotate: 0 }, { y: -10 - i * 4, rotate: i ? 2 : -2, duration: 0.18, ease: "sine.inOut", yoyo: true, repeat: 11, delay: 0.1 + i * 0.09 });

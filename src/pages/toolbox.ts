@@ -28,8 +28,8 @@ const META: [MetaKey, string][] = [
   ["makers", "Makers"],
   ["platform", "Platform"],
   ["status", "Status"],
-  ["replaces", "Replaces"],
   ["year", "Year"],
+  ["replaces", "Replaces"],
 ];
 
 function template() {
@@ -40,6 +40,7 @@ function template() {
     <header class="tb-head tb-anim">
       <h1 id="tb-h1" class="tb-h1"><span class="tb-h1__k">Toolbox</span><span class="tb-h1__n">${pad(N)} slices</span></h1>
       <p class="tb-tag serif">${esc(SITE.tagline)}</p>
+      <p class="tb-hint mono" aria-hidden="true">Scroll / drag / arrow keys</p>
     </header>
 
     <div class="tb-cards" role="group" aria-label="Tool posters">
@@ -98,8 +99,6 @@ function template() {
         <svg viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z" fill="currentColor"/></svg>
       </a>
     </div>
-
-    <p class="tb-hint mono tb-anim" aria-hidden="true">Scroll / drag / arrow keys</p>
   </section>
 </div>`;
 }
@@ -205,21 +204,21 @@ const page: Page = {
           let x: number, y: number, z: number, rx: number, ry: number, rz: number, o: number, sh: number;
           if (d <= 0) {
             const k = -d;
-            x = k * 26 * vw;
-            y = -k * 74 * vh;
-            z = k * 140;
-            rx = 8 + k * 30;
-            ry = -16 - k * 10;
-            rz = -2 + jz - k * 13;
-            o = clamp(1 - (k - 1) * 1.4, 0, 1);
+            x = k * 21 * vw + k * k * 4 * vw;
+            y = -k * 57 * vh - k * k * 8 * vh;
+            z = k * 120;
+            rx = 14 + k * 26;
+            ry = -24 - k * 8;
+            rz = -3 + jz + k * 9;
+            o = clamp(1 - (k - 1.1) * 1.2, 0, 1);
             sh = 0;
           } else {
-            x = -d * 13 * vw + jy * vw * 0.4;
-            y = d * 33 * vh;
-            z = -d * 300;
-            rx = 8 + d * 12;
-            ry = -16 - d * 6;
-            rz = -2 + jz * (1 + d) + d * 3;
+            x = -d * 12 * vw + jy * vw * 0.4 * Math.min(d, 1);
+            y = d * 31 * vh;
+            z = -d * 320;
+            rx = 14 + d * 10;
+            ry = -24 + d * 4;
+            rz = -3 + jz * Math.min(d, 1) * 1.6 - d * 4;
             o = d < 2.4 ? 1 : clamp(1 - (d - 2.4) / 0.7, 0, 1);
             sh = clamp(d * 0.3, 0, 0.62);
           }
@@ -243,6 +242,9 @@ const page: Page = {
         });
         setOdometer(tens, ones, p + 1);
         setActive(clamp(Math.round(p), 0, N - 1));
+        const settle = 1 - clamp(Math.abs(p - Math.round(p)) * 5, 0, 1);
+        cta.style.opacity = settle.toFixed(3);
+        cta.style.transform = `translate3d(0, ${((1 - settle) * 10).toFixed(1)}px, 0)`;
       };
 
       measure();
@@ -352,7 +354,7 @@ const page: Page = {
       return () => {
         window.clearTimeout(snapTimer);
         el.classList.remove("is-pinned", "is-dragging");
-        [...cards, track, ...items, ...shades].forEach((n) => n.removeAttribute("style"));
+        [...cards, track, ...items, ...shades, cta].forEach((n) => n.removeAttribute("style"));
         cards.forEach((c, i) => c.style.setProperty("--c", TOOLS[i].color));
       };
     }

@@ -1,12 +1,9 @@
 // HERO: mega "20 / 23" behind an open pizza box that bursts with tools.
 import { gsap } from "../../core/motion";
-import { SplitText } from "gsap/SplitText";
 import { bus } from "../../core/bus";
 import { glyph, type GlyphId } from "../../art";
 import { SITE, TOOLS, STATUS_LABEL } from "../../data/site";
 import { esc, type Kit } from "./kit";
-
-gsap.registerPlugin(SplitText);
 
 interface Obj {
   id: GlyphId;
@@ -64,21 +61,17 @@ export function heroHTML() {
       ${SITE.facts.map((f) => `<li><span class="h-line">${esc(f)}</span></li>`).join("")}
     </ul>
     <p class="h-and caps-red" aria-hidden="true"><span class="h-line">And</span></p>
-    <p class="h-statement caps-red" aria-hidden="true">${esc(statement)}</p>
+    <p class="h-statement caps-red" aria-hidden="true">${statement.split(" ").map((w) => `<span class="h-wm"><span class="h-w">${esc(w)}</span></span>`).join(" ")}</p>
 
     <div class="h-stage" aria-hidden="true">
-      <svg class="h-lines" viewBox="0 0 400 400" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.6">
+      <svg class="h-lines" viewBox="0 0 400 300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.4">
         <g class="h-lines__l">
-          <path d="M70 330 L22 196"/><path d="M92 318 L60 236"/><path d="M48 352 L8 300"/>
-          <path d="M30 150 q8 -10 0 -20 q-8 -10 0 -20"/>
+          <path d="M104 262 L58 140"/><path d="M126 250 L102 186"/>
+          <path d="M22 70 q9 -9 0 -18 q-9 -9 0 -18"/><path d="M60 40 l-10 -14"/>
         </g>
         <g class="h-lines__r">
-          <path d="M330 330 L378 196"/><path d="M308 318 L340 236"/><path d="M352 352 L392 300"/>
-          <path d="M372 150 q-8 -10 0 -20 q8 -10 0 -20"/>
-        </g>
-        <g class="h-lines__dash">
-          <path d="M150 120 l-8 -16"/><path d="M250 120 l8 -16"/><path d="M200 96 l0 -18"/>
-          <path d="M120 200 l-14 -6"/><path d="M280 200 l14 -6"/>
+          <path d="M296 262 L342 140"/><path d="M274 250 L298 186"/>
+          <path d="M378 70 q-9 -9 0 -18 q9 -9 0 -18"/><path d="M340 40 l10 -14"/>
         </g>
       </svg>
       <div class="h-objs">${objs}</div>
@@ -118,7 +111,7 @@ export function initHero(kit: Kit, intro: Promise<void>) {
   const nums = [...hero.querySelectorAll<HTMLElement>(".h-num__in")];
   const lines = [...hero.querySelectorAll<HTMLElement>(".h-facts .h-line")];
   const and = hero.querySelector<HTMLElement>(".h-and .h-line")!;
-  const stmt = hero.querySelector<HTMLElement>(".h-statement")!;
+  const words = [...hero.querySelectorAll<HTMLElement>(".h-statement .h-w")];
   const cols = [...hero.querySelectorAll<HTMLElement>(".h-col")];
   const speed = hero.querySelector<SVGElement>(".h-lines")!;
 
@@ -175,33 +168,40 @@ export function initHero(kit: Kit, intro: Promise<void>) {
     }
   });
 
-  let split: SplitText | null = null;
-
   kit.add(() => {
     // Scroll: the burst spreads out, numerals part, box sinks.
-    const tl = gsap.timeline({
-      defaults: { ease: "none" },
-      scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: 0.7, invalidateOnRefresh: true },
+    const mm = gsap.matchMedia();
+    kit.onCleanup(() => mm.revert());
+    mm.add({ wide: "(min-width: 721px)", narrow: "(max-width: 720px)" }, (c) => {
+      const wide = !!c.conditions?.wide;
+      const tl = gsap.timeline({
+        defaults: { ease: "none" },
+        scrollTrigger: {
+          trigger: wide ? hero : stage, start: wide ? "top top" : "top 20%", end: "bottom top",
+          scrub: 0.7, invalidateOnRefresh: true,
+        },
+      });
+      objs.forEach((o, i) => {
+        const d = OBJECTS[i];
+        tl.to(o.querySelector(".o-scroll"), {
+          x: () => ((d.x - 50) / 100) * stage.offsetWidth * (wide ? 1.1 : 0.5),
+          y: () => -((100 - d.y) / 100) * stage.offsetHeight * (wide ? 0.55 : 0.3) - 40,
+          rotation: (d.x < 50 ? -1 : 1) * (20 + (i % 4) * 12),
+          scale: 1 + d.s / 60,
+        }, 0);
+      });
+      tl.to(speed, { scale: 1.5, opacity: 0 }, 0);
+      if (wide) {
+        tl.to(nums[0].closest(".h-num"), { xPercent: -28 }, 0)
+          .to(nums[1].closest(".h-num"), { xPercent: 28 }, 0)
+          .to(hero.querySelector(".h-box"), { y: 120, rotation: -6 }, 0)
+          .to(hero.querySelector(".h-facts"), { y: -80 }, 0)
+          .to(hero.querySelector(".h-statement"), { y: -40 }, 0);
+      }
     });
-    objs.forEach((o, i) => {
-      const d = OBJECTS[i];
-      tl.to(o.querySelector(".o-scroll"), {
-        x: () => ((d.x - 50) / 100) * stage.offsetWidth * 1.1,
-        y: () => -((100 - d.y) / 100) * stage.offsetHeight * 0.55 - 40,
-        rotation: (d.x < 50 ? -1 : 1) * (20 + (i % 4) * 12),
-        scale: 1 + d.s / 60,
-      }, 0);
-    });
-    tl.to(nums[0].parentElement!.parentElement, { xPercent: -28 }, 0)
-      .to(nums[1].parentElement!.parentElement, { xPercent: 28 }, 0)
-      .to(hero.querySelector(".h-box"), { y: 120, rotation: -6 }, 0)
-      .to(speed, { scale: 1.5, opacity: 0 }, 0)
-      .to(hero.querySelector(".h-facts"), { y: -80 }, 0)
-      .to(hero.querySelector(".h-statement"), { y: -40 }, 0);
 
     // Intro: hidden until the preloader leaves.
-    split = SplitText.create(stmt, { type: "lines", mask: "lines", linesClass: "h-sline" });
-    gsap.set([...nums, ...lines, and, ...split.lines], { yPercent: 115 });
+    gsap.set([...nums, ...lines, and, ...words], { yPercent: 115 });
     gsap.set(intros, { scale: 0, autoAlpha: 0 });
     gsap.set(box, { yPercent: 60, autoAlpha: 0 });
     gsap.set(cols, { autoAlpha: 0, y: 24 });
@@ -219,6 +219,10 @@ export function initHero(kit: Kit, intro: Promise<void>) {
       })
       .sort((a, b) => (b.dy) - (a.dy) || a.i - b.i);
 
+    const tops = words.map((w) => Math.round(w.parentElement!.offsetTop));
+    const uniq = [...new Set(tops)].sort((a, b) => a - b);
+    const lineIndex = tops.map((t) => uniq.indexOf(t));
+
     const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
     tl.to(nums, { yPercent: 0, duration: 1.6, stagger: 0.12 }, 0)
       .to(box, { yPercent: 0, autoAlpha: 1, duration: 1.1 }, 0.1)
@@ -235,9 +239,11 @@ export function initHero(kit: Kit, intro: Promise<void>) {
     });
     tl.to(lines, { yPercent: 0, duration: 1.1, stagger: 0.07 }, 0.4)
       .to(and, { yPercent: 0, duration: 1.1 }, 0.95)
-      .to(split?.lines ?? [], { yPercent: 0, duration: 1.1, stagger: 0.07 }, 1.05)
+      .to(words, {
+        yPercent: 0, duration: 1.1,
+        // stagger by visual line, so it reads as a masked line reveal
+        delay: (i: number) => lineIndex[i] * 0.08,
+      }, 1.05)
       .to(cols, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.08 }, 1.2);
   }));
-
-  kit.onCleanup(() => split?.revert());
 }

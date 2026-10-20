@@ -18,7 +18,7 @@ const repoLabel = () => {
 const audioBtn = (cls: string) => `
   <button class="ch-audio ${cls}" type="button" aria-pressed="false">
     <span class="ch-lbl">Oven</span> <b class="ch-audio-v">Off</b>
-    <svg class="ch-wave" viewBox="0 0 24 8" aria-hidden="true"><g><path d="M0 4 Q3 0.5 6 4 T12 4 T18 4 T24 4 T30 4 T36 4 T42 4 T48 4"/></g></svg>
+    <svg class="ch-wave" viewBox="0 0 16 8" aria-hidden="true"><g><path d="M0 4 Q3 0.5 6 4 T12 4 T18 4 T24 4 T30 4 T36 4 T42 4 T48 4"/></g></svg>
     <span class="sr-only">ambient sound</span>
   </button>`;
 
@@ -27,6 +27,7 @@ function markup() {
   const bigLinks = NAV.map((n, i) => `<li><a href="${n.href}"><span class="mm-n">0${i + 1}</span><span class="mm-t">${n.label}</span></a></li>`).join("");
   return `
   <header class="ch" data-chrome-root>
+    <div class="ch-bar" aria-hidden="true"></div>
     <a class="ch-mark" href="/" aria-label="${SITE.name}, home">
       <span class="ch-word" aria-hidden="true">OPENSLICE<i>©</i></span>
     </a>
@@ -120,7 +121,7 @@ export function initChrome() {
   let scrolled = false;
   const onScroll = () => {
     const s = window.scrollY > 40;
-    if (s !== scrolled) { scrolled = s; scrollHint.classList.toggle("is-gone", s); }
+    if (s !== scrolled) { scrolled = s; scrollHint.classList.toggle("is-gone", s); body.classList.toggle("is-scrolled", s); }
   };
   addEventListener("scroll", onScroll, { passive: true });
   let footIO: IntersectionObserver | null = null;
@@ -177,7 +178,24 @@ export function initChrome() {
   }
   mbtn.addEventListener("click", () => setMenu(true));
   $(".mm-close").addEventListener("click", () => setMenu(false));
-  mm.addEventListener("click", (e) => { if ((e.target as Element).closest("a")) setMenu(false, false); });
+  // Tapping a link keeps the menu up; the page transition covers it and we drop it underneath.
+  let dropUnderCover = false;
+  mm.addEventListener("click", (e) => {
+    const a = (e.target as Element).closest("a");
+    if (!a) return;
+    const same = a.origin === location.origin && a.pathname === location.pathname;
+    if (same || a.target === "_blank") setMenu(false, false);
+  });
+  const dropMenu = () => {
+    if (!open) return;
+    open = false;
+    tl?.kill();
+    mm.hidden = true;
+    mbtn.setAttribute("aria-expanded", "false");
+    body.classList.remove("menu-open");
+    document.removeEventListener("keydown", trap);
+    lenis?.start();
+  };
   matchMedia("(min-width: 721px)").addEventListener("change", (e) => { if (e.matches) setMenu(false, false); });
 
   /* ---------- skip link: let the browser jump, then focus main ---------- */
@@ -199,7 +217,7 @@ export function initChrome() {
   if (document.getElementById("loader") && !reducedMotion) {
     const bits = host.querySelectorAll(".ch > *");
     gsap.set(bits, { autoAlpha: 0, y: -14 });
-    loaderGone.then(() => gsap.to(bits, { autoAlpha: 1, y: 0, duration: 0.9, ease: "expo.out", stagger: 0.05, clearProps: "transform" }));
+    loaderGone.then(() => gsap.to(bits, { autoAlpha: 1, y: 0, duration: 0.9, ease: "expo.out", stagger: 0.05, clearProps: "opacity,visibility,transform" }));
   }
 
   /* ---------- route sync ---------- */
@@ -211,11 +229,18 @@ export function initChrome() {
     });
     scrolled = false;
     scrollHint.classList.remove("is-gone");
+    body.classList.remove("is-scrolled");
     syncTheme();
     watchFooter();
     cursor?.recheck();
   };
-  bus.on("route:before", () => setMenu(false, false));
-  bus.on("route:after", ({ path }) => sync(path));
+  bus.on("route:before", () => {
+    if (!open) return;
+    if (reducedMotion) setMenu(false, false); else dropUnderCover = true;
+  });
+  bus.on("route:after", ({ path }) => {
+    if (dropUnderCover) { dropUnderCover = false; dropMenu(); }
+    sync(path);
+  });
   sync(location.pathname);
 }

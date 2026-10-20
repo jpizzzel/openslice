@@ -9,12 +9,11 @@
 import type { Tool } from "../data/site";
 import { Kit, ArtOpts } from "./core";
 import { mascot as drawMascot, Who, Pose, MascotOpts } from "./mascots";
-import { miniTree as drawMiniTree, MiniTreeOpts } from "./tree";
 import { glyph as drawGlyph } from "./glyphs";
 import { poster as drawPoster } from "./posters";
 import { scene as drawScene, SceneId } from "./scenes";
 
-export type { Who, Pose, ArtOpts, SceneId, MascotOpts, MiniTreeOpts };
+export type { Who, Pose, ArtOpts, SceneId, MascotOpts };
 export type GlyphId =
   | Tool["glyph"]
   | "box" | "box-open" | "slice" | "pizza" | "peel" | "oven" | "laptop" | "keyboard"
@@ -44,15 +43,6 @@ export function poster(tool: Tool, opts: ArtOpts = {}): string {
 /** Wide illustration scenes. viewBox 0 0 800 500. */
 export function scene(id: SceneId, opts: ArtOpts = {}): string {
   return drawScene(id, opts);
-}
-
-/**
- * A little ink tree for the footer "living trunk". viewBox 0 0 120 120.
- * The stump beside it shows `years` growth rings; the crown carries years * 3
- * leaves. Deterministic for the same input.
- */
-export function miniTree(years: number, opts: MiniTreeOpts = {}): string {
-  return drawMiniTree(years, opts);
 }
 
 /**

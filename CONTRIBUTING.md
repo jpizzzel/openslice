@@ -14,6 +14,6 @@ Before you open a PR:
 4. If you touched animation, make sure it still behaves with reduced motion turned on.
 5. If you added a dependency or a big drawing, run `npm run size` and tell us what changed.
 
-A few house rules. Copy and tool info belong in `src/data/site.ts`, not in page files. A new tool should only need an entry in `TOOLS`; if you find yourself editing the tree or the ticket rail to make it show up, something's off. Each page keeps its CSS in `src/styles/pages/` and scopes it under its own root class. No new runtime dependencies unless there's a really good reason. And please, no em dashes in the copy. We have strong feelings about this.
+A few house rules. Copy and tool info belong in `src/data/site.ts`, not in page files. A new tool should only need an entry in `TOOLS`; if you find yourself editing a page to make it show up, something's off. Each page keeps its CSS in `src/styles/pages/` and scopes it under its own root class. No new runtime dependencies unless there's a really good reason. And please, no em dashes in the copy. We have strong feelings about this.
 
 By contributing you agree your work is released under the [MIT License](LICENSE).

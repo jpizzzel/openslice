@@ -15,23 +15,20 @@ We also have a habit. We find an app we'd happily pay for, rebuild it for oursel
 | Tool | What it is | Status |
 | --- | --- | --- |
 | Satsuma | Drag a file, hold Shift, drop it on a format. A file converter for Windows 10 and 11, our take on Tangerine. Jonah's. | Open beta: [tangerineforwindows-site.vercel.app](https://tangerineforwindows-site.vercel.app/) |
-| Mandarin | The same drag and hold converter, rebuilt for the Mac. Peter's, and the one that started all this. | In the oven |
-| Murmur | Hold a key, talk, let go. Dictation in the spirit of Wispr Flow. | In the oven |
-| SliceOS | The system we built to run Saturday Slices at Peter's Pizzeria: orders, prep, customers, money. | In the oven |
+| Mandarin | The same drag and hold converter, rebuilt for the Mac. Peter's, and the one that started all this. | In development |
+| Murmur | Hold a key, talk, let go. Dictation in the spirit of Wispr Flow. | In development |
+| SliceOS | The system we built to run Saturday Slices at Peter's Pizzeria: orders, prep, customers, money. | In development |
 
 Mandarin, Murmur and SliceOS are working titles, so the names might change before they ship. There are also two classified slices on the list that we're not talking about yet.
 
 ## A quick tour
 
-- Home. Our own pizza box, folded in CSS 3D. The lid flips, steam curls up and the tools pop out. Next to it is an order ticket with one line per tool, all at $0.00. Scroll and everything packs back in, the lid shuts and the box slides down onto the menu board. Hover a row on the board and that tool's poster follows your cursor.
-- Toolbox (`/toolbox`). Every tool is a kitchen ticket hanging off a rail, and a split-flap NOW SERVING sign up top tells you which one you're on.
-- Tool pages (`/toolbox/:slug`). The story, the features, a receipt with a barcode made from the slug (subtotal $0.00, subscription: none), and an "Order up!" sign once there's a link to grab. If there isn't one yet, the sign says "Still in the oven".
-- Lab (`/lab`). The test kitchen. Eight toys that don't do anything useful: Topping Rain, Sauce Spiral, Dough Stretch, Halftone Mirror, Slice Clock, Kinetic Type, Order Ticket Printer and Cheese Pull.
-- About (`/about`). Our timeline, freshman through senior and then "Forever". Each tool shows up in the year it shipped.
-- The Trunk (`/slices`). Saturday Slices, from Peter's Pizzeria in Somerville, is the trunk and every tool is a branch. The page has the shop's numbers, its story, the specials board and the Saturday rhythm. The tree is drawn from data, so it grows a branch per tool and a ring per year (a new ring closes every September 1).
-- 404. A giant 404 with a bite out of the 0, an empty greasy box and a flashlight. The page you wanted got eaten.
-- Saturday mode. The shop opens Saturdays at 7pm, and the site knows it. The countdown runs to seven and then flips to "Oven's hot", the marquee changes its tune, the footer wordmark shimmers and the two of us show up in aprons.
-- Footer. A small ink tree next to a stump that counts our rings. It gets a little fuller every year.
+- Home. The name, one sentence, and a stack of tool covers you can drag or swipe through. Below that, a plain list of every tool and a short note about us.
+- Toolbox (`/toolbox`). The same covers, bigger, with the list of tools and the details for whichever one is in front.
+- Tool pages (`/toolbox/:slug`). What it does, the features, the details, and a link to grab it once it's out.
+- Lab (`/lab`). Five small toys we made along the way. They sit still until you hover or tap.
+- About (`/about`). Who we are, a short timeline and how to reach us.
+- The Trunk (`/slices`). Saturday Slices at Peter's Pizzeria in Somerville, the thing the rest of this grew out of.
 
 ## Running the site
 
@@ -72,33 +69,29 @@ Vite and TypeScript, no framework. Animation is GSAP (with ScrollTrigger) and sm
 
 ```
 src/
-  main.ts            boot: chrome, preloader, router
+  main.ts            boot: chrome, router
   data/site.ts       all the copy and every tool, in one file
   core/              router, routes, page contract, transitions, motion, event bus
   chrome/            what sticks around between pages
     chrome.ts          header and nav
-    lid.ts             the pizza box lid art, shared by the preloader and the home box
-    preloader.ts       the lid and oven dial you see while it loads
-    footer.ts          footer with the little tree
-    countdown.ts       "Slicing next" countdown and Saturday mode
-    cursor.ts, audio.ts, sections.ts
+    footer.ts          footer
+    cursor.ts, sections.ts
   art/               SVG drawing kit
     mascots.ts         the two of us as pizza slices
-    glyphs.ts          topping and object glyphs
-    posters.ts         a generated poster per tool
+    glyphs.ts          small object glyphs
+    posters.ts         a generated cover per tool
     scenes.ts, props.ts, core.ts
-    tree.ts            the footer tree
     flatten.ts         turns heavy inline SVG into images
   pages/             one module per route, with a folder for its parts
-    home.ts, home/     box.ts, ticket.ts, hero, menu board, marquee, manifesto, duo, CTA
-    toolbox.ts         the ticket rail
+    home.ts            name, covers, tools list, about us
+    toolbox.ts         the covers and the tools list
     tool.ts            a single tool page
-    toolbox/shared.ts  helpers both of those use
-    lab.ts, lab/       registry.ts lists the experiments, one file each
-    about.ts           the timeline
+    toolbox/stack.ts   the draggable covers, shared by home and the toolbox
+    toolbox/shared.ts  small helpers for those pages
+    lab.ts, lab/       registry.ts lists the toys, one file each
+    about.ts           who we are and the timeline
     about/kit.ts       helpers shared by about, the trunk and the 404
     slices.ts          the trunk page
-    slices/tree.ts     the trunk tree and the rings, drawn from TOOLS
     notfound.ts        404
   styles/            tokens, base, chrome, and one CSS file per page in pages/
 scripts/
@@ -137,11 +130,11 @@ If you only want to change words, `src/data/site.ts` is the file. Pages read fro
 
 3. Run `npm run dev` and open `/toolbox/provolone`.
 
-That's it. You don't touch any page files. The new tool gets its own page and a ticket on the toolbox rail, a line on the home order ticket and menu board, a generated poster, a spot on the about timeline for its `year`, and a new branch on the trunk (the tree gets taller to fit it).
+That's it. You don't touch any page files. The new tool gets its own page, a generated cover in the stack, and a row in the tools list.
 
 The glyph has to be one of the values in the `Tool["glyph"]` union. `"mystery"` is fine until the tool gets a drawing of its own. A brand new glyph means adding it to that union and drawing it in `src/art/glyphs.ts`. Posters pick a layout by glyph and fall back to one picked from the slug, so you don't have to touch `src/art/posters.ts` unless you want to.
 
-When it ships, flip `status` to `"proofing"` (open beta) or `"served"` (out of the oven) and add the real links. A `"prepping"` tool is classified: it gets redacted everywhere and folded into the "+N classified" line. The labels the site shows ("Open beta", "In the oven" and so on) are in `STATUS_LABEL` in the same file.
+When it ships, flip `status` to `"proofing"` (open beta) or `"served"` (released) and add the real links. A `"prepping"` tool is unannounced: its details stay hidden and it is folded into the "+N more in progress" line. The labels the site shows ("Open beta", "In development" and so on) are in `STATUS_LABEL` in the same file.
 
 ## Deploying
 

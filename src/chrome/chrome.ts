@@ -8,7 +8,7 @@ import { glyph } from "../art";
 import { audio, initAudio } from "./audio";
 import { countdownHTML, startCountdowns } from "./countdown";
 import { initCursor } from "./cursor";
-import { NAV, activeIndex } from "./sections";
+import { NAV, activeIndex, placeFor } from "./sections";
 
 const repoLabel = () => {
   const m = SITE.repo.match(/github\.com\/[^/]+\/([^/]+)/);
@@ -28,6 +28,7 @@ function markup() {
   const bigLinks = NAV.map((n, i) => `<li><a href="${n.href}"><span class="mm-n">0${i + 1}</span><span class="mm-t">${n.label}</span></a></li>`).join("");
   return `
   <div class="ch-bar" aria-hidden="true"></div>
+  <div class="ch-veil" aria-hidden="true"><i class="ch-veil-l"></i><i class="ch-veil-d"></i></div>
   <header class="ch" data-chrome-root>
     <a class="ch-mark" href="/" aria-label="${SITE.name}, home">
       <span class="ch-word" aria-hidden="true">OPENSLICE<i>©</i></span>
@@ -79,6 +80,15 @@ export function initChrome() {
     b.classList.toggle("is-on", on);
     (b.querySelector(".ch-audio-v") as HTMLElement).dataset.v = on ? "On" : "Off";
   }));
+
+  // Saturday: the visible hint reads "Oven on"; keep the name containing what is shown
+  const satName = () => {
+    const sat = document.documentElement.classList.contains("is-saturday");
+    const name = sat ? "Oven on, background sound" : "Background sound";
+    audioBtns.forEach((b) => { if (b.getAttribute("aria-label") !== name) b.setAttribute("aria-label", name); });
+  };
+  new MutationObserver(satName).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  satName();
 
   /* ---------- nav arrow (FLIP between items) ---------- */
   const list = $(".ch-list");
@@ -140,34 +150,141 @@ export function initChrome() {
   document.addEventListener("pointerdown", (e) => { if (navOpen && !nav.contains(e.target as Node)) setNav(false); }, { passive: true });
   nav.addEventListener("keydown", (e) => { if (e.key === "Escape" && navOpen) { setNav(false); navBtn.focus(); } });
 
-  /* ---------- scroll hint + footer awareness ---------- */
+  /* ---------- scroll hint, veil, tuck, footer awareness ---------- */
   const scrollHint = $(".ch-scroll");
-  let scrolled = false, tucked = false;
+  let scrolled = false, tucked = false, autoTuck = false;
+  const applyTuck = () => {
+    // past the first screenful of type (or, off the home page, once the visitor has
+    // had a moment with the page header) fold the stacked nav up into "Menu +"
+    const t = autoTuck || window.scrollY > 120;
+    if (t === tucked) return;
+    tucked = t;
+    body.classList.toggle("nav-tucked", t);
+    navBtn.setAttribute("aria-expanded", String(navOpen || !t));
+  };
+
+  // What is under the header line? Sample the page there and switch the veil to
+  // oven dark over dark sections. Pages can say so with data-theme="dark"; anything
+  // else is judged by its painted background.
+  const darkAt = (x: number, y: number): boolean | null => {
+    // walk the paint stack top-down (not the DOM ancestry): a transparent section
+    // can overlap the dark one under it, and the dark one is what shows
+    const stack = document.elementsFromPoint(x, y);
+    let n = 0;
+    for (const el of stack) {
+      if (!view.contains(el) || el === view) continue;
+      if (++n > 14) break;
+      const theme = (el as HTMLElement).dataset?.theme;
+      if (theme) return theme === "dark";
+      const m = getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
+      if (!m) continue;
+      const [r, g, b, a = "1"] = m;
+      if (+a < 0.5) continue;
+      return 0.2126 * +r + 0.7152 * +g + 0.0722 * +b < 110;
+    }
+    return stack.length ? view.dataset.theme === "dark" : null;
+  };
+  let overDark = false, sampleRaf = 0;
+  const sample = () => {
+    sampleRaf = 0;
+    if (document.documentElement.classList.contains("is-loading")) return;
+    const y = innerWidth > 720 ? 30 : 24;
+    let dark = 0, n = 0;
+    for (const f of [0.22, 0.5, 0.78]) {
+      const d = darkAt(innerWidth * f, y);
+      if (d === null) continue;
+      n++; if (d) dark++;
+    }
+    const v = n ? dark * 2 > n : view.dataset.theme === "dark";
+    if (v !== overDark) { overDark = v; body.classList.toggle("ch-dark", v); }
+  };
+  const queueSample = () => { if (!sampleRaf) sampleRaf = requestAnimationFrame(sample); };
+
   const onScroll = () => {
     const s = window.scrollY > 40;
     if (s !== scrolled) { scrolled = s; scrollHint.classList.toggle("is-gone", s); body.classList.toggle("is-scrolled", s); }
-    // past the first screenful of type, fold the stacked nav up into "Menu"
-    const t = window.scrollY > 120;
-    if (t !== tucked) { tucked = t; body.classList.toggle("nav-tucked", t); navBtn.setAttribute("aria-expanded", String(navOpen || !t)); }
+    applyTuck();
+    queueSample();
   };
   addEventListener("scroll", onScroll, { passive: true });
+  addEventListener("resize", queueSample, { passive: true });
+
+  // the "Scroll" hint only makes sense on a page that scrolls
+  const fits = () => document.documentElement.scrollHeight <= innerHeight + 40;
+  let fitRaf = 0;
+  const checkFits = () => {
+    cancelAnimationFrame(fitRaf);
+    fitRaf = requestAnimationFrame(() => scrollHint.classList.toggle("is-none", fits()));
+  };
+  new ResizeObserver(checkFits).observe(view);
+  addEventListener("resize", checkFits, { passive: true });
+
   let footIO: IntersectionObserver | null = null;
   let peekIO: IntersectionObserver | null = null;
+  let heat: gsap.core.Tween[] = [];
+  let fitWord: (() => void) | null = null;
+  const stopHeat = () => { heat.forEach((t) => t.kill()); heat = []; };
   const watchFooter = () => {
     footIO?.disconnect();
     peekIO?.disconnect();
+    stopHeat();
+    fitWord = null;
     body.classList.remove("footer-in");
-    const f = view.querySelector(".site-footer");
+    const f = view.querySelector<HTMLElement>(".site-footer");
     if (!f) return;
+    const where = f.querySelector<HTMLElement>("[data-sf-where]");
+    if (where) where.textContent = placeFor(location.pathname, body.dataset.page);
     footIO = new IntersectionObserver(([en]) => body.classList.toggle("footer-in", en.isIntersecting), { rootMargin: "0px 0px -40px 0px" });
     footIO.observe(f);
-    // the crew pops up from behind the wordmark once most of it is in view
-    const word = f.querySelector(".sf-word");
-    if (word) {
-      peekIO = new IntersectionObserver(([en]) => f.classList.toggle("is-peek", en.intersectionRatio > 0.6), { threshold: [0, 0.6, 1] });
-      peekIO.observe(word);
+    const word = f.querySelector<HTMLElement>(".sf-word");
+    const wm = word?.querySelector<HTMLElement>(".sf-wm");
+    if (!word || !wm) return;
+    // set the wordmark so it spans the footer's content box exactly, (c) included
+    fitWord = () => {
+      const avail = word.clientWidth;
+      const w = wm.getBoundingClientRect().width;
+      const fs = parseFloat(getComputedStyle(word).fontSize);
+      if (!avail || !w || !fs) return;
+      const next = Math.floor(fs * (avail / w) * 100) / 100;
+      if (Math.abs(next - fs) > 0.25) word.style.setProperty("--sf-fit", `${next}px`);
+    };
+    fitWord();
+    document.fonts?.ready.then(() => fitWord?.());
+    // Saturday: a slow heat shimmer, bands of the wordmark drifting on offset sines
+    let band: HTMLElement[] = [];
+    if (document.documentElement.classList.contains("is-saturday") && !reducedMotion) {
+      wm.querySelector(".sf-heat")?.remove();
+      const text = wm.innerHTML;
+      const N = 9;
+      const box = document.createElement("span");
+      box.className = "sf-heat";
+      box.innerHTML = Array.from({ length: N }, (_, i) => {
+        const t = (i / N) * 100, b = 100 - ((i + 1) / N) * 100;
+        return `<span style="clip-path:inset(${t.toFixed(2)}% -4% ${Math.max(0, b - 0.4).toFixed(2)}% -4%)">${text}</span>`;
+      }).join("");
+      // the copies live inside the wordmark so they inherit every style it has
+      wm.appendChild(box);
+      wm.classList.add("is-heat");
+      band = [...box.children] as HTMLElement[];
     }
+    const heatOn = (v: boolean) => {
+      stopHeat();
+      if (!v || !band.length) return;
+      // amplitude follows the type size, so a phone gets the same gentle waver
+      const amp = Math.max(0.4, parseFloat(getComputedStyle(word).fontSize) * 0.006);
+      heat = band.map((el, i) => gsap.fromTo(el, { x: -amp, skewX: -0.4 }, {
+        x: amp, skewX: 0.4, duration: 1.7 + (i % 3) * 0.25, ease: "sine.inOut",
+        yoyo: true, repeat: -1, delay: -i * 0.33,
+      }));
+    };
+    // the crew pops up from behind the wordmark once most of it is in view
+    peekIO = new IntersectionObserver(([en]) => {
+      f.classList.toggle("is-peek", en.intersectionRatio > 0.6);
+      heatOn(en.isIntersecting);
+    }, { threshold: [0, 0.6, 1] });
+    peekIO.observe(word);
   };
+  addEventListener("resize", () => fitWord?.(), { passive: true });
 
   /* ---------- mobile overlay menu ---------- */
   const mm = $(".mm");
@@ -280,9 +397,25 @@ export function initChrome() {
     setNav(false);
     syncTheme();
     watchFooter();
+    checkFits();
+    queueSample();
     cursor?.recheck();
+    // off the home page the stack tucks away a beat after the page lands, so it
+    // never sits on top of the page's own header
+    clearTimeout(tuckTimer);
+    autoTuck = false;
+    if (path !== "/") {
+      const token = ++tuckToken;
+      loaderGone.then(() => {
+        if (token !== tuckToken) return;
+        tuckTimer = window.setTimeout(() => { autoTuck = true; applyTuck(); }, 1500);
+      });
+    }
   };
+  let tuckTimer = 0, tuckToken = 0;
   bus.on("route:before", () => {
+    clearTimeout(tuckTimer);
+    tuckToken++;
     if (!open) return;
     if (reducedMotion) setMenu(false, false); else dropUnderCover = true;
   });

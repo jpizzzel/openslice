@@ -35,6 +35,19 @@ function ensure() {
   return panel;
 }
 
+/** Long lines break once, at the space nearest the middle, so the blade hugs the type. */
+function setLabel(el: HTMLElement, text: string) {
+  const limit = innerWidth <= 720 ? 9 : 13;
+  const words = text.split(" ");
+  if (text.length <= limit || words.length < 2) { el.textContent = text; return; }
+  let best = 1, bestD = Infinity;
+  for (let i = 1; i < words.length; i++) {
+    const d = Math.abs(words.slice(0, i).join(" ").length - words.slice(i).join(" ").length);
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  el.replaceChildren(words.slice(0, best).join(" "), document.createElement("br"), words.slice(best).join(" "));
+}
+
 function announce() {
   const live = document.getElementById("route-announcer");
   if (!live) return;
@@ -51,7 +64,7 @@ export async function leave(view: HTMLElement): Promise<void> {
   const ink = p.firstElementChild!, red = p.lastElementChild!;
   const t = p.querySelector<HTMLElement>(".pt-t")!, load = p.querySelector<HTMLElement>(".pt-load")!;
   const k = p.querySelector<HTMLElement>(".pt-k")!;
-  t.textContent = dest || "OpenSlice";
+  setLabel(t, dest || "OpenSlice");
   order = (order % 999) + 1;
   k.textContent = isSaturday() ? "Fresh out the oven" : `Order no. ${String(order).padStart(3, "0")}`;
   gsap.killTweensOf([ink, red, t, load, view]);
@@ -61,15 +74,15 @@ export async function leave(view: HTMLElement): Promise<void> {
   // the peel shoves the order in from off screen left, overshoots a hair, settles
   gsap.set(load, { x: -innerWidth * 1.15, rotate: -3, y: 0 });
   gsap.timeline()
-    .to(load, { x: 0, rotate: 0, duration: 0.6, ease: "expo.out" }, 0.1)
-    .to(load, { y: 4, duration: 0.12, ease: "power2.out" }, 0.36)
-    .to(load, { y: 0, duration: 0.4, ease: "elastic.out(1, 0.5)" }, 0.48);
+    .to(load, { x: 0, rotate: 0, duration: 0.5, ease: "expo.out" }, 0.05)
+    .to(load, { y: 4, duration: 0.1, ease: "power2.out" }, 0.26)
+    .to(load, { y: 0, duration: 0.4, ease: "elastic.out(1, 0.5)" }, 0.36);
   await gsap.timeline()
     .to(view, { y: -80, duration: 0.36, ease: "power3.in" }, 0)
     .to(ink, { yPercent: 0, duration: 0.34, ease: "expo.inOut" }, 0)
     .to(red, { yPercent: 0, duration: 0.34, ease: "expo.inOut" }, 0.04)
     // hold a beat so the destination lands before the page swaps
-    .to({}, { duration: 0.08 });
+    .to({}, { duration: 0.1 });
   gsap.set(view, { autoAlpha: 0 });
 }
 
@@ -85,10 +98,10 @@ export async function enter(view: HTMLElement): Promise<void> {
     gsap.to(view, { y: 0, duration: 0.7, ease: "expo.out", delay: 0.12, clearProps: "transform" });
     await gsap.timeline()
       // the peel yanks back out, the way you pull one from under a pie
-      .to(load, { x: -innerWidth * 0.18, duration: 0.3, ease: "power3.in" }, 0)
+      .to(load, { x: -innerWidth * 0.18, duration: 0.28, ease: "power3.in" }, 0)
       .to(inner, { yPercent: -30, autoAlpha: 0, duration: 0.3, ease: "power3.in" }, 0.04)
-      .to(red, { yPercent: -100, duration: 0.4, ease: "expo.inOut" }, 0.06)
-      .to(ink, { yPercent: -100, duration: 0.4, ease: "expo.inOut" }, 0.11);
+      .to(red, { yPercent: -100, duration: 0.36, ease: "expo.inOut" }, 0.05)
+      .to(ink, { yPercent: -100, duration: 0.36, ease: "expo.inOut" }, 0.09);
     p.classList.remove("is-on");
     gsap.set(inner, { yPercent: 0, autoAlpha: 1 });
     gsap.set(view, { clearProps: "opacity,visibility" });

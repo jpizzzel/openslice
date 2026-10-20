@@ -88,7 +88,7 @@ const INIT = () => {
       for (const e of l.getEntries()) {
         if (e.hadRecentInput) continue;
         q.cls += e.value;
-        q.shifts.push({ t: Math.round(e.startTime), v: e.value, src: (e.sources || []).map((s) => desc(s.node)).filter(Boolean).slice(0, 3) });
+        if (q.shifts.length < 300) q.shifts.push({ t: Math.round(e.startTime), v: e.value, src: (e.sources || []).map((s) => desc(s.node)).filter(Boolean).slice(0, 3) });
       }
     }).observe({ type: "layout-shift", buffered: true });
   } catch {}
@@ -200,12 +200,15 @@ const FRAME_SAMPLE = async ({ ms, nativeScroll }) => {
   const lt0 = q.longTasks.length;
   const frames = [];
   const max = document.documentElement.scrollHeight - innerHeight;
+  let travel = 0, lastY = scrollY;
   await new Promise((done) => {
     let last = performance.now();
     const start = last;
     const tick = (now) => {
       frames.push(now - last);
       last = now;
+      travel += Math.abs(scrollY - lastY);
+      lastY = scrollY;
       const t = now - start;
       if (nativeScroll && max > 0) {
         const phase = t / ms; // down for 60%, back up for 40%
@@ -221,7 +224,7 @@ const FRAME_SAMPLE = async ({ ms, nativeScroll }) => {
   const avg = frames.reduce((a, b) => a + b, 0) / Math.max(1, frames.length);
   const p95 = sorted[Math.floor(sorted.length * 0.95)] || 0;
   const long = q.longTasks.slice(lt0);
-  return { frames: frames.length, avg, p95, max: sorted[sorted.length - 1] || 0, jank: frames.filter((f) => f > 50).length, longTasks: long.length, longMs: long.reduce((a, b) => a + b.d, 0) };
+  return { travel: Math.round(travel), frames: frames.length, avg, p95, max: sorted[sorted.length - 1] || 0, jank: frames.filter((f) => f > 50).length, longTasks: long.length, longMs: long.reduce((a, b) => a + b.d, 0) };
 };
 
 /* ---------------------------------------------------------------- page lifecycle */
@@ -265,7 +268,7 @@ async function auditRoute(browser, vp, route) {
     if (!resp || !resp.ok()) add(route, vp.name, "error", "navigation", `HTTP ${resp?.status()}`);
     if (!(await settle(page))) add(route, vp.name, "error", "boot", "preloader never left or #view stayed empty within 20s");
 
-    const perf = await page.evaluate(() => ({ lcp: __qa.lcp, lcpEl: __qa.lcpEl, cls: __qa.cls, shifts: __qa.shifts.slice(0, 5), lt: __qa.longTasks.length }));
+    const perf = await page.evaluate(() => ({ lcp: __qa.lcp, lcpEl: __qa.lcpEl, cls: __qa.cls, shifts: [...__qa.shifts].sort((a, b) => b.v - a.v).slice(0, 3), n: __qa.shifts.length, lt: __qa.longTasks.length }));
     Object.assign(m, { lcp: perf.lcp, lcpEl: perf.lcpEl, cls: perf.cls, bootLongTasks: perf.lt });
     if (perf.lcp > T.lcp) add(route, vp.name, "warn", "LCP", `${fmt(perf.lcp)}ms (${perf.lcpEl}); budget ${T.lcp}ms`);
     if (perf.cls > T.cls) add(route, vp.name, "warn", "CLS", `${fmt(perf.cls, 3)} at load; top shifts: ${perf.shifts.map((s) => `${fmt(s.v, 3)}@${s.t}ms ${s.src.join(",")}`).join("; ")}`);
@@ -323,11 +326,13 @@ async function auditRoute(browser, vp, route) {
       } else {
         fr = await page.evaluate(FRAME_SAMPLE, { ms: sampleMs, nativeScroll: true });
       }
-      Object.assign(m, { fAvg: fr.avg, fP95: fr.p95, fMax: fr.max, jank: fr.jank, longTasks: fr.longTasks, longMs: fr.longMs });
+      if (fr.travel < 200 && m.scrollH > 400) add(route, vp.name, "warn", "qa runner", `page barely scrolled during the frame sample (${fr.travel}px of ${m.scrollH}px); frame numbers are not representative`);
+      Object.assign(m, { travel: fr.travel, fAvg: fr.avg, fP95: fr.p95, fMax: fr.max, jank: fr.jank, longTasks: fr.longTasks, longMs: fr.longMs });
       if (fr.p95 > T.p95 || fr.avg > T.avg) add(route, vp.name, "warn", "frame time", `avg ${fmt(fr.avg, 1)}ms, p95 ${fmt(fr.p95, 1)}ms, max ${fmt(fr.max)}ms, ${fr.jank} frames >50ms while scrolling`);
       if (fr.longTasks > T.longTasks) add(route, vp.name, "warn", "long tasks", `${fr.longTasks} long tasks (${fr.longMs}ms total) during ${sampleMs}ms scroll`);
-      const cls2 = await page.evaluate(() => __qa.cls);
-      m.clsAll = cls2;
+      const after = await page.evaluate((n) => ({ cls: __qa.cls, top: __qa.shifts.slice(n).sort((a, b) => b.v - a.v).slice(0, 3) }), perf.n);
+      m.clsAll = after.cls;
+      if (after.cls - perf.cls > T.cls) add(route, vp.name, "warn", "CLS while scrolling", `+${fmt(after.cls - perf.cls, 3)} layout shift during scroll (not user-input excluded); largest: ${after.top.map((x) => `${fmt(x.v, 3)} ${x.src.join(",") || "?"}`).join("; ")}`);
     }
   } catch (e) {
     add(route, vp.name, "error", "qa runner", e.message.split("\n")[0]);
@@ -442,6 +447,27 @@ async function spaAudit(browser, vp) {
         per.push(await snap());
       }
       res.mem = { base, per, loops };
+
+      // Attribution: bounce home -> R -> home via history + popstate (the router's own path),
+      // so growth per cycle points at R's mount/cleanup (home's share shows on every row).
+      const go = async (path) => {
+        const t = await page.title();
+        await page.evaluate((p) => { history.pushState({}, "", p); dispatchEvent(new PopStateEvent("popstate")); }, path);
+        await page.waitForFunction(([p, t]) => location.pathname === p && document.title !== t && !document.querySelector(".pt.is-on"), [path, t], { timeout: 10000 });
+        await page.waitForTimeout(300);
+      };
+      res.attr = [];
+      for (const r of ROUTES.filter((r) => r !== "/")) {
+        try {
+          await go(r); await go("/");
+          const a = await snap();
+          for (let i = 0; i < loops; i++) { await go(r); await go("/"); }
+          const b = await snap();
+          res.attr.push({ route: r, heap: (b.heap - a.heap) / loops, listeners: (b.listeners - a.listeners) / loops, nodes: (b.nodes - a.nodes) / loops });
+        } catch (e) {
+          res.attr.push({ route: r, err: e.message.split("\n")[0] });
+        }
+      }
     }
   } catch (e) {
     res.fatal = e.message.split("\n")[0];
@@ -465,12 +491,12 @@ function render(spa, wall) {
   L.push("");
   L.push("## Metrics");
   L.push("");
-  L.push("| route | vp | LCP ms (element) | CLS load / total | frame avg / p95 / max ms | long tasks | title |");
-  L.push("|---|---|---|---|---|---|---|");
+  L.push("| route | vp | LCP ms (element) | CLS load / total | frame avg / p95 / max ms | long tasks | scrolled px | title |");
+  L.push("|---|---|---|---|---|---|---|---|");
   for (const r of ROUTES) for (const v of VIEWPORTS) {
     const m = metrics.find((x) => x.route === r && x.vp === v.name);
     if (!m) continue;
-    L.push(`| ${r} | ${v.name} | ${fmt(m.lcp)} (${m.lcpEl || "?"}) | ${fmt(m.cls, 3)} / ${fmt(m.clsAll, 3)} | ${fast ? "skipped" : `${fmt(m.fAvg, 1)} / ${fmt(m.fP95, 1)} / ${fmt(m.fMax)}`} | ${fast ? "-" : m.longTasks} | ${m.title ?? ""} |`);
+    L.push(`| ${r} | ${v.name} | ${fmt(m.lcp)} (${m.lcpEl || "?"}) | ${fmt(m.cls, 3)} / ${fmt(m.clsAll, 3)} | ${fast ? "skipped" : `${fmt(m.fAvg, 1)} / ${fmt(m.fP95, 1)} / ${fmt(m.fMax)}`} | ${fast ? "-" : m.longTasks} | ${fast ? "-" : m.travel} | ${m.title ?? ""} |`);
   }
   L.push("");
   L.push("_Frame times come from headless Chromium with software rendering; treat them as relative, not absolute._");
@@ -529,6 +555,14 @@ function render(spa, wall) {
       L.push(`| baseline | ${mb(base.heap)} | ${base.listeners} | ${base.nodes} | ${base.docs} |`);
       per.forEach((p, i) => L.push(`| after loop ${i + 1} | ${mb(p.heap)} | ${p.listeners} | ${p.nodes} | ${p.docs} |`));
       L.push(`| **delta** | ${mb(last.heap - base.heap)} | ${last.listeners - base.listeners} | ${last.nodes - base.nodes} | ${last.docs - base.docs} |`);
+      if (s.attr?.length) {
+        L.push("");
+        L.push(`Per route growth per home -> route -> home cycle (avg of ${n}, after GC; ~0 means clean):`);
+        L.push("");
+        L.push("| route | JS heap kB | listeners | DOM nodes |");
+        L.push("|---|---|---|---|");
+        for (const a of s.attr) L.push(a.err ? `| ${a.route} | error: ${a.err} | | |` : `| ${a.route} | ${(a.heap / 1024).toFixed(0)} | ${fmt(a.listeners, 1)} | ${fmt(a.nodes, 0)} |`);
+      }
     }
   }
   L.push("");
@@ -563,6 +597,14 @@ try {
       if (dh > T.heapMB) add("SPA navigation", vp.name, "warn", "heap growth", `+${dh.toFixed(2)}MB JS heap after ${s.mem.loops} nav loops${grows("heap") ? " (monotonic)" : ""}`);
       if (dl > T.listeners) add("SPA navigation", vp.name, "warn", "listener growth", `+${dl} event listeners after ${s.mem.loops} nav loops${grows("listeners") ? " (monotonic, likely a cleanup leak)" : ""}`);
       if (dn > T.nodes) add("SPA navigation", vp.name, "warn", "DOM node growth", `+${dn} nodes after ${s.mem.loops} nav loops${grows("nodes") ? " (monotonic, detached or leftover nodes)" : ""}`);
+      for (const a of s.attr || []) {
+        if (a.err) { add(a.route, vp.name, "warn", "leak check", a.err); continue; }
+        const bits = [];
+        if (a.nodes > 50) bits.push(`+${fmt(a.nodes)} DOM nodes`);
+        if (a.listeners >= 1) bits.push(`+${fmt(a.listeners, 1)} event listeners`);
+        if (a.heap > 200 * 1024) bits.push(`+${(a.heap / 1024).toFixed(0)}kB heap`);
+        if (bits.length) add(a.route, vp.name, "warn", "leak per visit", `${bits.join(", ")} retained per home -> ${a.route} -> home cycle (after GC)`);
+      }
     }
   }
 } catch (e) {

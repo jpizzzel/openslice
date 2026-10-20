@@ -364,6 +364,8 @@ const page: Page = {
       // hover tilt of the front poster
       const qx = gsap.quickTo(state, "mx", { duration: 0.9, ease: "power3", onUpdate: request });
       const qy = gsap.quickTo(state, "my", { duration: 0.9, ease: "power3" });
+      // quickTo tweens stay parked in the global timeline until killed
+      mo.push(() => { qx.tween.kill(); qy.tween.kill(); });
       if (finePointer) {
         listen(mo, cardsWrap, "pointermove", (e) => {
           if (drag?.moved) return;

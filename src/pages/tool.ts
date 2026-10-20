@@ -311,6 +311,8 @@ const page: Page = {
         const bx = gsap.quickTo(band, "xPercent", { duration: 0.7, ease: "power3" });
         const sx = gsap.quickTo(shadow, "x", { duration: 0.8, ease: "power3" });
         const sy = gsap.quickTo(shadow, "y", { duration: 0.8, ease: "power3" });
+        // quickTo tweens stay parked in the global timeline until killed
+        offs.push(() => [rx, ry, bx, sx, sy].forEach((q) => q.tween.kill()));
         const enter = () => { r = fig.getBoundingClientRect(); };
         const move = (e: PointerEvent) => {
           if (!r) enter();
@@ -350,6 +352,7 @@ const page: Page = {
         const qx = gsap.quickTo(np, "x", { duration: 1.1, ease: "power3" });
         const qy = gsap.quickTo(np, "y", { duration: 1.1, ease: "power3" });
         const qr = gsap.quickTo(np, "rotation", { duration: 0.9, ease: "power3" });
+        offs.push(() => [qx, qy, qr].forEach((q) => q.tween.kill()));
         const enter = (e: PointerEvent) => {
           if (getComputedStyle(np).position !== "absolute") { ox = NaN; return; }
           const r = nextEl.getBoundingClientRect();

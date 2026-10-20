@@ -2,9 +2,12 @@
 .p-about {
   --pad-l: clamp(16px, 6vw, 96px);
   --pad-r: clamp(16px, 3vw, 48px);
+  --red-ink: #b3241b; /* tomato dark enough for small text on flour */
   position: relative;
   overflow-x: clip;
 }
+/* decorative numerals and initials live in pseudo content (aria-hidden art) */
+.p-about [data-n]::before { content: attr(data-n); }
 /* clear the fixed chrome rail (logo + meta) on the left */
 @media (min-width: 721px) { .p-about { --pad-l: clamp(88px, 6vw, 96px); } }
 .p-about .kw-mask { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: 0.08em; margin-bottom: -0.08em; }
@@ -151,7 +154,7 @@
 }
 .p-about .ab-ch__text { align-self: center; display: grid; gap: 18px; max-width: 30rem; position: relative; z-index: 2; }
 .p-about .ab-ch__kicker { color: var(--muted); }
-.p-about .ab-ch__kicker span { color: var(--tomato); }
+.p-about .ab-ch__kicker span { color: var(--red-ink); }
 .p-about .ab-ch__title { font-weight: 400; font-size: clamp(2.4rem, 1rem + 3.4vw, 4.6rem); line-height: 0.9; }
 .p-about .ab-ch__title .caps-red { display: block; font-size: 1em; }
 .p-about .ab-ch__title .serif { display: block; font-size: 0.78em; line-height: 1; margin-top: 0.1em; }
@@ -204,8 +207,8 @@
   font-family: var(--f-mono); font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.02em; color: var(--muted);
 }
 .p-about .ab-time__ticks li { transition: color 0.4s var(--ease-out); }
-.p-about .ab-time__ticks li span { color: inherit; opacity: 0.6; }
-.p-about .ab-time__ticks li.is-on { color: var(--tomato); }
+.p-about .ab-time__ticks li span { color: inherit; }
+.p-about .ab-time__ticks li.is-on { color: var(--red-ink); }
 
 /* ---------- duo ---------- */
 .p-about .ab-duo { padding: clamp(96px, 10vw, 160px) 0; }
@@ -305,7 +308,7 @@
 }
 .p-about .ab-hi__side { display: grid; gap: 18px; align-self: start; max-width: 24rem; }
 .p-about .ab-hi__line { font-size: clamp(1.5rem, 1rem + 1.4vw, 2.4rem); line-height: 1.05; text-wrap: balance; }
-.p-about .ab-hi__hint { color: var(--tomato); }
+.p-about .ab-hi__hint { color: var(--red-ink); }
 .p-about .ab-hi__table { position: relative; min-height: clamp(700px, 56vw, 860px); }
 .p-about .ab-card {
   position: absolute;
@@ -320,8 +323,8 @@
 /* receipt: thermal paper, zigzag torn edges (mask), mono line items */
 .p-about .ab-rcpt {
   --zz: 9px;
-  left: 2%; top: 14%;
-  width: min(100%, 360px);
+  left: 0; top: 20%;
+  width: min(100%, 350px);
   rotate: 4deg;
   z-index: 1;
 }
@@ -355,7 +358,7 @@
 .p-about .ab-rcpt__row { display: flex; justify-content: space-between; gap: 12px; }
 .p-about .ab-rcpt__h { border-block: 1px dashed var(--ink); padding: 8px 0; text-align: center; font-weight: 700; letter-spacing: 0.3em; font-size: 12px; }
 .p-about .ab-rcpt__items { display: grid; gap: 8px; padding-bottom: 10px; border-bottom: 1px dashed var(--ink); }
-.p-about .ab-rcpt__items li { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.p-about .ab-rcpt__items li { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) auto; gap: 8px; align-items: start; }
 .p-about .ab-rcpt__items small { display: block; font-size: 10px; color: var(--ink-3); text-transform: none; letter-spacing: 0; line-height: 1.3; margin-top: 2px; }
 .p-about .ab-rcpt__total {
   display: flex; justify-content: space-between;
@@ -374,7 +377,7 @@
 /* ORDER UP: a dark kitchen ticket sign with a row of bulbs */
 .p-about .ab-order {
   right: 0; top: 0;
-  width: min(100%, 520px);
+  width: min(100%, 490px);
   rotate: -3deg;
   padding: 46px clamp(24px, 2.6vw, 38px) 30px;
   background: var(--ink);
@@ -403,6 +406,14 @@
 .p-about .ab-order a { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size 0.5s var(--ease-out), color 0.3s; }
 .p-about .ab-order a:hover, .p-about .ab-order a:focus-visible { background-size: 100% 1px; color: var(--cheese); }
 .p-about .ab-order__foot { display: flex; justify-content: space-between; margin-top: 22px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.55; }
+
+/* tablet: the counter gets the full width so the ticket and receipt sit side by side */
+@media (min-width: 721px) and (max-width: 1199px) {
+  .p-about .ab-hi { grid-template-columns: 1fr; gap: 48px; }
+  .p-about .ab-hi__side { max-width: 34rem; }
+  .p-about .ab-hi__table { min-height: 780px; }
+  .p-about .ab-rcpt { left: 4%; top: 150px; }
+}
 
 /* ---------- reduced motion ---------- */
 .p-about.is-static .ab-ch__g { opacity: 1; transform: none; }

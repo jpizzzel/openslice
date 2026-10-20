@@ -26,7 +26,7 @@ export function duoHTML() {
       <p class="label">(03) The duo</p>
       <h2 id="duo-title" class="h-duo__title caps-red"><span class="h-duo__tl"><span>Still roommates,</span></span><span class="h-duo__tl"><span>still cooking</span></span></h2>
     </div>
-    <figure class="h-duo__art" aria-hidden="true"><div class="h-duo__art-in">${scene("duo-wave")}</div></figure>
+    <figure class="h-duo__art" aria-hidden="true"><div class="h-duo__art-in">${scene("duo-laptops")}</div></figure>
     <div class="h-duo__body">
       <p class="h-duo__line serif">Freshman roommates in ${SITE.since}. Seniors now, still under one roof, still building. Whatever we make for ourselves ends up here, free.</p>
       <ul class="duo-people">${people}</ul>

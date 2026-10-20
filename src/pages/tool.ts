@@ -7,7 +7,7 @@ import { bus } from "../core/bus";
 import { SITE, STATUS_LABEL, TOOLS, type Tool } from "../data/site";
 import { glyph, mascot, poster, type Pose } from "../art/index";
 import {
-  arrowSVG, esc, footerHTML, isClassified, makers, pad, redact, replacesText, statusPill,
+  arrowSVG, esc, footerHTML, isClassified, makers, pad, redact, replacesHTML, statusPill,
 } from "./toolbox/shared";
 
 gsap.registerPlugin(SplitText);
@@ -45,10 +45,29 @@ function featuresHTML(t: Tool) {
     .join("");
 }
 
+/** A receipt barcode drawn from the slug: deterministic bars, guard bars at both ends. */
+function barcode(seed: string) {
+  let x = 0;
+  let bars = "";
+  const bar = (w: number, draw: boolean) => { if (draw) bars += `<rect x="${x}" width="${w}" height="40"/>`; x += w; };
+  bar(1, true); bar(1, false); bar(1, true); bar(2, false);
+  for (const ch of seed) {
+    const c = ch.charCodeAt(0);
+    for (let b = 0; b < 4; b++) {
+      bar(1 + ((c >> (b * 2)) & 3) % 3, true);
+      bar(1 + ((c >> b) & 1) + ((c * (b + 3)) % 2), false);
+    }
+  }
+  bar(1, true); bar(1, false); bar(1, true);
+  return `<svg viewBox="0 0 ${x} 40" preserveAspectRatio="none">${bars}</svg>`;
+}
+const barcodeText = (t: Tool, i: number) =>
+  `${pad(i + 1)} ${String(t.year).slice(2)}${[...t.slug].reduce((a, c) => a + c.charCodeAt(0), 0)} 0000`;
+
 function linksHTML(t: Tool) {
   if (!t.links.length) {
     return `
-      <p class="td-soon serif">Recipe drops soon.</p>
+      <p class="td-soon serif">Recipe drops soon. Watch the pass.</p>
       <div class="td-btns">
         <a class="td-btn" href="${SITE.repo}" target="_blank" rel="noopener" data-cursor="GitHub">
           <span>Watch the repo</span>${arrowSVG("ne")}
@@ -118,7 +137,7 @@ function template(t: Tool, i: number) {
     <dl class="td-facts">
       <div class="td-fade"><dt class="label">Made by</dt><dd>${ppl.map((p) => esc(p.name)).join("<br>")}</dd></div>
       <div class="td-fade"><dt class="label">Status</dt><dd>${esc(STATUS_LABEL[t.status])}</dd></div>
-      <div class="td-fade"><dt class="label">Replaces</dt><dd>${cls ? `<span class="rd">Classified</span>` : esc(replacesText(t))}</dd></div>
+      <div class="td-fade"><dt class="label">Replaces</dt><dd>${replacesHTML(t)}</dd></div>
       <div class="td-fade"><dt class="label">Year</dt><dd>${t.year}</dd></div>
     </dl>
   </section>
@@ -139,27 +158,38 @@ function template(t: Tool, i: number) {
     <ol class="td-feat-list">${featuresHTML(t)}</ol>
   </section>
 
-  <section class="td-credits" aria-label="Credits and links">
-    <div class="td-toss td-toss--credits"><div class="td-card td-card--credits">
-      <h2 class="td-card__h">Credits</h2>
-      <dl class="td-card__grid">
-        <div><dt class="label">Made by</dt><dd>${ppl
+  <section class="td-credits" aria-label="Receipt and links">
+    <div class="td-toss td-toss--receipt"><div class="td-card td-receipt">
+      <div class="td-receipt__head">
+        <span class="td-receipt__logo" aria-hidden="true">${glyph("receipt")}</span>
+        <p class="td-receipt__shop">${esc(SITE.name)}<span>${esc(SITE.where)}</span></p>
+      </div>
+      <h2 class="td-receipt__h">Receipt</h2>
+      <p class="td-receipt__row td-receipt__meta"><span>Order #${pad(i + 1)}</span><span>${esc(t.kind)}</span></p>
+      <dl class="td-receipt__items">
+        <div><dt>Made by</dt><dd>${ppl
           .map((p) => `<a class="u-link" href="${esc(p.site)}" target="_blank" rel="noopener">${esc(p.name)}</a>`)
           .join("<br>")}</dd></div>
-        <div><dt class="label">Platform</dt><dd>${esc(t.platform)}</dd></div>
-        <div><dt class="label">Replaces</dt><dd>${cls ? `<span class="rd">Something paid</span>` : esc(replacesText(t))}</dd></div>
-        <div><dt class="label">Year</dt><dd>${t.year}</dd></div>
-        <div><dt class="label">License</dt><dd>MIT</dd></div>
+        <div><dt>Platform</dt><dd>${esc(t.platform)}</dd></div>
+        <div><dt>Replaces</dt><dd>${replacesHTML(t)}</dd></div>
+        <div><dt>Year</dt><dd>${t.year}</dd></div>
+        <div><dt>License</dt><dd>MIT</dd></div>
       </dl>
-      <div class="td-card__mascots n${ppl.length}" aria-hidden="true">
-        ${ppl.map((p) => `<span class="td-mascot">${mascot(p.id, POSE[p.id] ?? "stand")}</span>`).join("")}
-      </div>
+      <p class="td-receipt__row td-receipt__sub"><span>Subtotal</span><span>$0.00</span></p>
+      <p class="td-receipt__row td-receipt__sub"><span>Subscription</span><span>None</span></p>
+      <p class="td-receipt__row td-receipt__total"><span>Total</span><span>$0.00</span></p>
+      <div class="td-receipt__code" aria-hidden="true">${barcode(t.slug + pad(i + 1))}<span>${barcodeText(t, i)}</span></div>
+      <p class="td-receipt__thanks">Thank you, come again</p>
       ${cls ? `<span class="td-stamp td-stamp--card" aria-hidden="true">Classified</span>` : ""}
     </div></div>
-    <div class="td-toss td-toss--links"><div class="td-card td-card--links">
-      <h2 class="td-card__h">${t.links.length ? "Grab a slice" : "Still in the oven"}</h2>
+    <div class="td-toss td-toss--order"><div class="td-card td-order">
+      <div class="td-order__cooks n${ppl.length}" aria-hidden="true">
+        ${ppl.map((p) => `<span class="td-mascot">${mascot(p.id, POSE[p.id] ?? "stand", { apron: true })}</span>`).join("")}
+      </div>
+      <p class="td-order__k"><span>Ticket #${pad(i + 1)}</span><span>${t.links.length ? "Ready" : "Firing"}</span></p>
+      <h2 class="td-order__h">${t.links.length ? "Order<br>up!" : "Still in<br>the oven"}</h2>
       ${linksHTML(t)}
-      <p class="td-card__foot label">Free forever. Open source, MIT.</p>
+      <p class="td-order__foot">Free forever. Open source, MIT.</p>
     </div></div>
   </section>
 
@@ -272,20 +302,20 @@ const page: Page = {
         scrollTrigger: { trigger: ".td-feats", start: "top 75%" },
       });
 
-      // credits: physical cards tossed onto the table
+      // receipt + order up sign: slapped down on the pass
       const mob = window.innerWidth <= 720;
       // resting tilt lives on .td-toss (CSS rotate); gsap only animates the toss on the inner card
-      gsap.fromTo(".td-card--credits", { rotation: mob ? -7 : -10, yPercent: 30, xPercent: -8 }, {
+      gsap.fromTo(".td-receipt", { rotation: mob ? -7 : -10, yPercent: 30, xPercent: -8 }, {
         rotation: 0, yPercent: 0, xPercent: 0, ease: "none",
         scrollTrigger: { trigger: ".td-credits", start: "top bottom", end: "center 60%", scrub: 0.8 },
       });
-      gsap.fromTo(".td-card--links", { rotation: mob ? 6 : 9, yPercent: 45, xPercent: 10 }, {
+      gsap.fromTo(".td-order", { rotation: mob ? 6 : 9, yPercent: 45, xPercent: 10 }, {
         rotation: 0, yPercent: 0, xPercent: 0, ease: "none",
         scrollTrigger: { trigger: ".td-credits", start: "top bottom", end: "center 55%", scrub: 0.8 },
       });
       gsap.from(".td-mascot", {
         yPercent: 75, rotation: 10, duration: 1.3, ease: "back.out(1.5)", stagger: 0.15,
-        scrollTrigger: { trigger: ".td-card--credits", start: "top 60%" },
+        scrollTrigger: { trigger: ".td-order", start: "top 70%" },
       });
 
       // next slice
@@ -388,7 +418,7 @@ const page: Page = {
       const wt = el.querySelectorAll(".td-wt");
       const stamp = el.querySelector(".td-stamp--big");
       ctx.add(() => {
-        gsap.set(chs, { yPercent: 115, rotation: 8 });
+        gsap.set(chs, { yPercent: 110 });
         gsap.set(fades, { autoAlpha: 0, y: 18 });
         gsap.set(".td-poster__art", { autoAlpha: 0, yPercent: 40, rotation: 16, scale: 0.9 });
         if (wt.length) gsap.set(wt, { autoAlpha: 0, scale: 1.8, rotation: -30 });
@@ -398,8 +428,9 @@ const page: Page = {
         if (first) await loaderGone;
         if (!alive) return;
         ctx.add(() => {
-          const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
-          tl.to(chs, { yPercent: 0, rotation: 0, duration: 1.3, stagger: 0.045 }, 0)
+          // later visits start as the transition cover peels away, not after it
+          const tl = gsap.timeline({ defaults: { ease: "expo.out" }, delay: first ? 0 : 0.2 });
+          tl.to(chs, { yPercent: 0, duration: 0.9, stagger: 0.06 }, 0)
             .to(".td-poster__art", { autoAlpha: 1, yPercent: 0, rotation: 0, scale: 1, duration: 1.6 }, 0.1)
             .to(fades, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.05 }, 0.3);
           if (wt.length) tl.to(wt, { autoAlpha: 1, scale: 1, rotation: -12, duration: 0.7, ease: "back.out(2.2)" }, 0.9);

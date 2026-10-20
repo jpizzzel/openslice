@@ -76,7 +76,7 @@
   border-top: 1px solid var(--ink); padding-top: 8px;
 }
 .p-lab__spec-foot .mono { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
-.p-lab__spec-foot em { font-size: 17px; line-height: 1; color: var(--tomato-deep); }
+.p-lab__spec-foot em { font-size: 17px; line-height: 1; color: #b3241b; }
 
 /* the notebook: ruled paper, red margin line, handwritten-feel notes */
 .p-lab__index {
@@ -212,6 +212,7 @@
   position: absolute; left: 12px; top: 11px; z-index: 3;
   font-size: 10px; opacity: .55; pointer-events: none;
 }
+.lab-tile__num::before { content: attr(data-n); }
 .lab-chip {
   position: absolute; z-index: 4;
   display: inline-flex; align-items: center; gap: 6px;

@@ -113,7 +113,7 @@ function chapterHTML(c: Chapter, i: number) {
         ${toolsHere ? `<p class="ab-ch__note label">${c.y ? "Shipped this chapter" : "Still in the dough"}: ${toolsHere}</p>` : ""}
       </div>
       <div class="ab-ch__art" aria-hidden="true">
-        <span class="ab-ch__year">${c.year}</span>
+        <span class="ab-ch__year" data-n="${c.year}"></span>
         <span class="ab-ch__m ab-ch__m--a">${mascot("jonah", c.poses[0])}</span>
         <span class="ab-ch__m ab-ch__m--b">${mascot("peter", c.poses[1])}</span>
       </div>
@@ -127,7 +127,7 @@ function personHTML(p: Person, i: number) {
   const secrets = secret.filter((t) => t.by.includes(p.id)).length;
   return `<article class="ab-person ab-person--${p.id}" aria-labelledby="ab-p-${p.id}">
     <div class="ab-person__art" aria-hidden="true">
-      <span class="ab-person__initial">${p.first[0]}</span>
+      <span class="ab-person__initial" data-n="${p.first[0]}"></span>
       <span class="ab-person__m ab-person__m--stand">${mascot(p.id, "stand")}</span>
       <span class="ab-person__m ab-person__m--wave">${mascot(p.id, "wave")}</span>
     </div>
@@ -155,8 +155,8 @@ function template() {
   return `<div class="p-about">
   <section class="ab-hero" aria-labelledby="ab-title">
     <div class="ab-hero__stage" aria-hidden="true">
-      <span class="ab-hero__num ab-hero__num--l">${String(SITE.since).slice(2)}</span>
-      <span class="ab-hero__num ab-hero__num--r">26</span>
+      <span class="ab-hero__num ab-hero__num--l" data-n="${String(SITE.since).slice(2)}"></span>
+      <span class="ab-hero__num ab-hero__num--r" data-n="26"></span>
       <span class="ab-hero__art">${scene("duo-wave")}</span>
     </div>
     <h1 class="ab-hero__title" id="ab-title">

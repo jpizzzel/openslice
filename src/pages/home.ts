@@ -1,4 +1,4 @@
-// HOME: hero burst, marquee, manifesto, menu board, the duo, CTA, footer.
+// HOME: the box hero, menu board, marquee, manifesto, the duo, CTA, footer.
 import "../styles/pages/home.css";
 import type { Page } from "../core/page";
 import { gsap, reducedMotion, finePointer, ScrollTrigger } from "../core/motion";
@@ -22,9 +22,9 @@ const page: Page = {
     root.innerHTML = `
       <div class="p-home${reducedMotion ? " is-reduced" : ""}">
         ${heroHTML()}
+        ${menuHTML()}
         ${marqueeHTML()}
         ${manifestoHTML()}
-        ${menuHTML()}
         ${duoHTML()}
         ${ctaHTML()}
         ${renderFooter ? renderFooter() : "<!-- footer -->"}
@@ -46,16 +46,17 @@ const page: Page = {
     };
 
     // First visit: wait for the preloader. After a page transition: start as the
-    // sheets begin to peel (enter() lifts them ~0.1s to 0.5s after mount), so the
-    // intro plays in view instead of under the cover.
-    const intro = (first ? loaderGone : new Promise<void>((r) => setTimeout(r, 160))).then(
+    // sheets begin to peel (route:after, then enter() lifts them), about 0.2s
+    // after mount, so the intro plays in view instead of under the cover.
+    let introTimer = 0;
+    const intro = (first ? loaderGone : new Promise<void>((r) => { introTimer = window.setTimeout(r, 200); })).then(
       () => new Promise<void>((r) => (alive ? requestAnimationFrame(() => r()) : undefined)),
     );
 
     initHero(kit, intro);
+    initMenu(kit);
     initMarquee(kit);
     initManifesto(kit);
-    initMenu(kit);
     initDuo(kit);
     initCta(kit);
 
@@ -64,6 +65,7 @@ const page: Page = {
 
     return () => {
       alive = false;
+      clearTimeout(introTimer);
       loop.kill();
       cleanups.forEach((fn) => { try { fn(); } catch (e) { console.error(e); } });
       gctx.revert();

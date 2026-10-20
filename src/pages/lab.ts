@@ -64,7 +64,7 @@ function tileHTML(exp: Experiment, i: number) {
   <article class="lab-tile" data-exp="${exp.id}" style="--ar:${exp.ar[0]} / ${exp.ar[1]}" aria-labelledby="lab-t-${exp.id}">
     <div class="lab-tile__frame">
       <div class="lab-stage lab-tone--${exp.tone}" role="group" tabindex="0" aria-label="${exp.label} Press Enter to play.">
-        <span class="lab-tile__num mono" aria-hidden="true">${n}</span>
+        <span class="lab-tile__num mono" aria-hidden="true" data-n="${n}"></span>
         <span class="lab-chip lab-tile__hint" aria-hidden="true">${finePointer ? exp.hint : "Tap to play"}</span>
       </div>
     </div>

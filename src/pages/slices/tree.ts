@@ -56,7 +56,7 @@ export function treeSVG(tools: Tool[], o: TreeOpts): string {
   // trunk half width at height y: wide at the root flare, narrow at the crown
   const half = (y: number) => {
     const t = Math.min(1, Math.max(0, (ground - y) / (ground - crown)));
-    return 7 + 31 * Math.pow(1 - t, 1.6);
+    return 12 + 40 * Math.pow(1 - t, 1.4);
   };
 
   let branches = "", leaves = "", fruits = "";
@@ -104,7 +104,7 @@ export function treeSVG(tools: Tool[], o: TreeOpts): string {
     `C${CX + half(yMid) + 2} ${yMid} ${CX + half(ground) - 12} ${ground - 70} ${CX + half(ground)} ${ground}Z`;
   let bark = "";
   for (let y = ground - 40, k = 0; y > crown + 40; y -= 46, k++) {
-    const x = CX + (k % 2 ? 6 : -10);
+    const x = CX + 16 + (k % 2 ? 7 : 0);
     bark += `M${x} ${y}q${k % 2 ? 4 : -3} -12 ${k % 2 ? 1 : 2} -22`;
   }
   const trunkLabel = SITE.trunk.name.toUpperCase();

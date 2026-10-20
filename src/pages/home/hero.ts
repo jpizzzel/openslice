@@ -22,20 +22,20 @@ interface Obj {
 
 // A fountain: tight over the pizza, opening wide around the open lid.
 const OBJECTS: Obj[] = [
-  { id: "laptop", dx: 0.02, dy: -1.66, s: 0.44, r: -6 },
-  { id: "terminal", dx: -0.66, dy: -1.5, s: 0.27, r: -12 },
-  { id: "satsuma", dx: 0.7, dy: -1.46, s: 0.3, r: 10 },
-  { id: "star", dx: -0.34, dy: -2.0, s: 0.15, r: 0 },
-  { id: "github", dx: 0.42, dy: -1.98, s: 0.16, r: 10 },
-  { id: "tangerine", dx: -0.98, dy: -1.02, s: 0.27, r: -8 },
-  { id: "voice", dx: 0.98, dy: -0.98, s: 0.25, r: 10 },
-  { id: "register", dx: -0.5, dy: -0.94, s: 0.3, r: -6 },
-  { id: "headphones", dx: 0.5, dy: -0.94, s: 0.26, r: 14 },
-  { id: "slice", dx: -0.02, dy: -0.86, s: 0.26, r: -18 },
-  { id: "keyboard", dx: -0.98, dy: -0.4, s: 0.34, r: 12 },
-  { id: "mystery", dx: 0.98, dy: -0.4, s: 0.26, r: -10 },
+  { id: "laptop", dx: 0.02, dy: -1.74, s: 0.42, r: -6 },
+  { id: "terminal", dx: -0.68, dy: -1.52, s: 0.27, r: -12 },
+  { id: "satsuma", dx: 0.72, dy: -1.5, s: 0.3, r: 10 },
+  { id: "star", dx: -0.3, dy: -2.08, s: 0.15, r: 0 },
+  { id: "github", dx: 0.4, dy: -2.06, s: 0.16, r: 10 },
   { id: "basil", dx: -1.04, dy: -1.5, s: 0.15, r: -30 },
-  { id: "pepperoni", dx: 1.04, dy: -1.66, s: 0.13, r: 0 },
+  { id: "pepperoni", dx: 1.04, dy: -1.74, s: 0.13, r: 0 },
+  { id: "tangerine", dx: -0.98, dy: -1.0, s: 0.27, r: -8 },
+  { id: "voice", dx: 1.0, dy: -1.04, s: 0.25, r: 10 },
+  { id: "keyboard", dx: -0.98, dy: -0.36, s: 0.34, r: 12 },
+  { id: "headphones", dx: 0.98, dy: -0.46, s: 0.26, r: 14 },
+  { id: "register", dx: -0.3, dy: -0.58, s: 0.28, r: -6 },
+  { id: "slice", dx: 0.3, dy: -0.62, s: 0.25, r: -18 },
+  { id: "mystery", dx: 1.02, dy: 0.06, s: 0.24, r: -10 },
 ];
 
 const OPEN = 118; // lid angle once open, in degrees around the hinge
@@ -137,7 +137,6 @@ export function initHero(kit: Kit, introReady: Promise<void>) {
     gsap.set(shadow, { autoAlpha: 0, scale: 0.6 });
     gsap.set(lidA, { rotationX: 0 });
     gsap.set(intros, { autoAlpha: 0 });
-    gsap.set(steam, { autoAlpha: 0 });
   });
 
   // ---- steam: a loop that only runs while the hero is on screen
@@ -300,7 +299,7 @@ export function initHero(kit: Kit, introReady: Promise<void>) {
     const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
     tl.to(lines, { yPercent: 0, duration: 0.9, stagger: 0.06 }, 0)
       .to(sub, { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.06 }, 0.18)
-      .to(ticket, { autoAlpha: 1, y: 0, rotation: 0, duration: 1.2, ease: "back.out(1.3)" }, 0.3)
+      .to(ticket, { autoAlpha: 1, y: 0, rotation: -2.4, duration: 1.2, ease: "back.out(1.3)" }, 0.3)
       .to(boxIn, { autoAlpha: 1, y: 0, scale: 1, duration: 0.8 }, 0.05)
       .to(shadow, { autoAlpha: 1, scale: 1, duration: 0.8 }, 0.05)
       // the lid flips open on its hinge and overshoots
@@ -308,7 +307,6 @@ export function initHero(kit: Kit, introReady: Promise<void>) {
       .to(hv, { scaleY: 1, scaleX: 1, duration: 0.9, ease: "elastic.out(1, 0.4)" }, 0.56)
       .to(lidA, { rotationX: OPEN, duration: 1.1, ease: "back.out(1.7)" }, 0.5)
       .add(() => bus.emit("sfx", { name: "pop" }), 0.55)
-      .to(steam, { autoAlpha: 1, duration: 0.6, ease: "power1.out" }, 0.9)
       .add(() => { steamTl?.play(0); }, 0.8);
     // the tools fountain out of the mouth, nearest first
     const order = intros.map((el, i) => ({ el, i, d: toMouth(i) }))

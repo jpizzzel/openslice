@@ -2,24 +2,49 @@
 // the tool's poster follow the cursor like a card tossed on the table.
 import { gsap } from "../../core/motion";
 import { poster } from "../../art";
-import { TOOLS, STATUS_LABEL, PEOPLE } from "../../data/site";
+import { STATUS_LABEL, PEOPLE, type Tool } from "../../data/site";
+import { servedTools, secretTools, redacted } from "./ticket";
 import { esc, type Kit } from "./kit";
 import { isSaturday } from "../../chrome/countdown";
 
 const names = (ids: string[]) =>
   ids.map((id) => PEOPLE.find((p) => p.id === id)?.first ?? id).join(" & ");
 
+interface Row { href: string; name: string; codename?: boolean; status: Tool["status"]; kind: string; platform: string; by: string[]; replaces?: string; color: string; secret: number; tool: Tool }
+
+/** classified tools collapse into one redacted line, so the board never repeats itself */
+function rows(): Row[] {
+  const out: Row[] = servedTools().map((t) => ({
+    href: `/toolbox/${t.slug}`, name: t.name, codename: t.codename, status: t.status, kind: t.kind,
+    platform: t.platform, by: t.by, replaces: t.replaces, color: t.color, secret: 0, tool: t,
+  }));
+  const s = secretTools();
+  if (s.length) {
+    out.push({
+      href: `/toolbox/${s[0].slug}`, name: s[0].name, status: s[0].status, kind: s[0].kind,
+      platform: s[0].platform, by: s[0].by, color: s[0].color, secret: s.length, tool: s[0],
+    });
+  }
+  return out;
+}
+
 export function menuHTML() {
-  const rows = TOOLS.map((t, i) => {
-    const was = t.replaces
-      ? `<s class="mb-was"><span class="sr-only">Instead of </span>${esc(t.replaces)}</s>`
-      : `<span class="mb-was mb-was--none">Always</span>`;
+  const list = rows();
+  const html = list.map((t, i) => {
+    const was = t.secret
+      ? `<span class="mb-was mb-was--redact">${redacted(10)}</span>`
+      : t.replaces
+        ? `<s class="mb-was"><span class="sr-only">Instead of </span>${esc(t.replaces)}</s>`
+        : `<span class="mb-was mb-was--none">Always</span>`;
+    const name = t.secret
+      ? `<span class="mb-name__in mb-name__in--secret">${esc(t.name)}</span><sup class="mb-x">x${t.secret}</sup>`
+      : `<span class="mb-name__in">${esc(t.name)}</span>${t.codename ? `<sup class="mb-wt">working title</sup>` : ""}`;
     return `
-      <li class="mb-row" style="--c:${t.color}">
-        <a class="mb-link" href="/toolbox/${t.slug}" data-i="${i}" data-cursor="Open">
+      <li class="mb-row${t.secret ? " mb-row--secret" : ""}" style="--c:${t.color}">
+        <a class="mb-link" href="${t.href}" data-i="${i}" data-cursor="Open">
           <span class="mb-no">${String(i + 1).padStart(2, "0")}</span>
           <span class="mb-main">
-            <span class="mb-name"><span class="mb-name__in">${esc(t.name)}</span>${t.codename ? `<sup class="mb-wt">working title</sup>` : ""}</span>
+            <span class="mb-name">${name}</span>
             <span class="mb-meta">
               <span class="mb-pill mb-pill--${t.status}">${STATUS_LABEL[t.status]}</span>
               <span>${esc(t.kind)}</span><span class="mb-dot">/</span><span>${esc(t.platform)}</span><span class="mb-dot">/</span><span>by ${names(t.by)}</span>
@@ -27,15 +52,15 @@ export function menuHTML() {
           </span>
           <span class="mb-lead" aria-hidden="true"></span>
           <span class="mb-price">${was}<span class="mb-now"><span class="sr-only">Price: </span>$0</span></span>
-          <span class="mb-thumb" aria-hidden="true">${poster(t)}</span>
+          <span class="mb-thumb" aria-hidden="true">${poster(t.tool)}</span>
         </a>
       </li>`;
   }).join("");
-
   return `
   <section class="h-mb" aria-labelledby="mb-title">
     <header class="h-mb__head">
-      <p class="label">(02) ${isSaturday() ? "Saturday's menu, oven's on" : "Today's menu"}</p>
+      <div class="h-mb__drop" aria-hidden="true"></div>
+      <p class="label">(01) ${isSaturday() ? "Saturday's menu, oven's on" : "Today's menu"}</p>
       <h2 id="mb-title" class="h-mb__title"><span class="h-mb__t1">The</span> <span class="h-mb__t2">Menu</span></h2>
       <p class="h-mb__note serif">Everything is made from scratch and costs nothing. <em>Seconds are encouraged.</em></p>
       <dl class="h-mb__legend">
@@ -44,9 +69,9 @@ export function menuHTML() {
         <div><dt class="label">Kitchen</dt><dd>Open source</dd></div>
       </dl>
     </header>
-    <ol class="mb-list">${rows}</ol>
+    <ol class="mb-list">${html}</ol>
     <div class="mb-float" aria-hidden="true">
-      ${TOOLS.map((t) => `<div class="mb-card" style="--c:${t.color}">${poster(t)}</div>`).join("")}
+      ${list.map((t) => `<div class="mb-card" style="--c:${t.color}">${poster(t.tool)}</div>`).join("")}
     </div>
   </section>`;
 }

@@ -45,7 +45,7 @@ export function redact(text: string, every = 3) {
     .join(" ");
 }
 
-// The persistent chrome agent provides an optional footer. Glob keeps the
+// The persistent chrome provides an optional footer. Glob keeps the
 // build green whether or not the file exists yet.
 const footerMods = import.meta.glob<{ renderFooter?: () => string }>("../../chrome/footer.ts", { eager: true });
 export function footerHTML(): string {

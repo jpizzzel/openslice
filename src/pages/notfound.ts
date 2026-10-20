@@ -17,14 +17,14 @@ function num404(id: string, lit: boolean) {
   return `<svg class="nf__num${lit ? " nf__num--lit" : ""}" viewBox="0 0 1000 420" aria-hidden="true" focusable="false">
     <defs>${lit ? h.def : ""}<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="420">
       <rect width="1000" height="420" fill="#fff"/>
-      <g fill="#000"><circle cx="652" cy="74" r="58"/><circle cx="606" cy="34" r="46"/><circle cx="690" cy="136" r="44"/><circle cx="568" cy="8" r="36"/><circle cx="700" cy="196" r="30"/></g>
+      <g fill="#000"><circle cx="410" cy="96" r="58"/><circle cx="458" cy="50" r="46"/><circle cx="368" cy="156" r="44"/><circle cx="500" cy="20" r="36"/><circle cx="350" cy="214" r="30"/></g>
     </mask></defs>
+    ${lit ? "" : `<g fill="#141210" opacity=".28"><circle cx="318" cy="52" r="5"/><circle cx="292" cy="96" r="3.5"/><circle cx="346" cy="14" r="3"/><circle cx="270" cy="150" r="4"/></g>`}
     <g fill="${fill}" font-size="520" font-weight="500" letter-spacing="-30" text-anchor="middle">
       <text x="178" y="398">4</text>
       <text x="500" y="398" mask="url(#${id})">0</text>
       <text x="822" y="398">4</text>
     </g>
-    ${lit ? "" : `<g class="nf__teeth" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round" opacity=".35"><path d="M598 82q8 -10 2 -22M650 134q10 -4 12 -16M676 196q8 -2 10 -12"/></g>`}
   </svg>`;
 }
 

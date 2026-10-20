@@ -41,22 +41,21 @@ function ticketHTML(t: Tool, i: number) {
   const cls = isClassified(t);
   return `
         <li class="tb-tk" data-i="${i}" style="--i:${i};--tone:${STATUS_TONE[t.status]}">
-          <a class="tb-tk__a" href="/toolbox/${t.slug}" data-i="${i}" data-cursor="Open" draggable="false"
-             aria-label="Ticket ${pad(i + 1)}: ${esc(t.name)}, ${esc(t.kind)}, ${esc(STATUS_LABEL[t.status])}">
+          <a class="tb-tk__a" href="/toolbox/${t.slug}" data-i="${i}" data-cursor="Open" draggable="false">
             <span class="tb-tk__shadow" aria-hidden="true"></span>
-            <span class="tb-tk__paper" aria-hidden="true">
-              <span class="tb-tk__top"><span>Tkt</span><b class="tb-tk__no">#${pad(i + 1)}</b></span>
+            <span class="tb-tk__paper">
+              <span class="tb-tk__top"><b class="tb-tk__no">#${pad(i + 1)}</b><span aria-hidden="true">Tkt</span></span>
               <span class="tb-tk__name">${esc(t.name)}</span>
               <span class="tb-tk__kind">${esc(t.kind)}</span>
-              <span class="tb-tk__status"><i></i>${esc(STATUS_LABEL[t.status])}</span>
-              <span class="tb-tk__more">
+              <span class="tb-tk__status"><i aria-hidden="true"></i>${esc(STATUS_LABEL[t.status])}</span>
+              <span class="tb-tk__more" aria-hidden="true">
                 <span class="tb-tk__kv"><span>By</span><span>${ppl}</span></span>
                 <span class="tb-tk__kv"><span>For</span><span>${esc(t.platform)}</span></span>
                 <span class="tb-tk__kv"><span>Sub</span><span>${cls ? `<span class="rd rd--bar" style="--w:5.5em"></span>` : esc(t.replaces ?? "Homemade")}</span></span>
                 <span class="tb-tk__kv"><span>Yr</span><span>${t.year}</span></span>
               </span>
-              <span class="tb-tk__qty"><span>Qty 1</span><span>$0.00</span></span>
-              <span class="tb-tk__go">Open ticket ${arrowSVG("right")}</span>
+              <span class="tb-tk__qty" aria-hidden="true"><span>Qty 1</span><span>$0.00</span></span>
+              <span class="tb-tk__go" aria-hidden="true">Open ${arrowSVG("right")}</span>
             </span>
           </a>
         </li>`;
@@ -99,7 +98,7 @@ function template() {
     </div>
 
     <nav class="tb-rail" aria-label="Order rail, all slices">
-      <span class="tb-rail__bar" aria-hidden="true"><i class="tb-rail__sheen"></i><b></b><b></b></span>
+      <span class="tb-rail__bar" aria-hidden="true"><span class="tb-rail__glint"><i class="tb-rail__sheen"></i></span><b></b><b></b></span>
       <ol class="tb-rail__list" style="--last:${N - 1}">${TOOLS.map(ticketHTML).join("")}
       </ol>
     </nav>
@@ -122,12 +121,17 @@ function template() {
       <div class="tb-ctrl">
         <button class="tb-arrow" data-dir="-1" aria-label="Previous slice">${arrowSVG("up")}</button>
         <button class="tb-arrow" data-dir="1" aria-label="Next slice">${arrowSVG("down")}</button>
-        <a class="tb-cta" href="/toolbox/${TOOLS[0].slug}" data-cursor="Open">
-          <span class="tb-cta__k">View slice</span>
-          <span class="tb-cta__name">${esc(TOOLS[0].name)}</span>
-          <svg viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z" fill="currentColor"/></svg>
-        </a>
       </div>
+    </div>
+
+    <div class="tb-pass">
+      <p class="tb-pass__k mono" aria-hidden="true">On the pass</p>
+      <p class="tb-pass__blurb serif"><span class="mv"><span class="mv__in">${esc(TOOLS[0].blurb)}</span></span></p>
+      <a class="tb-cta" href="/toolbox/${TOOLS[0].slug}" data-cursor="Open">
+        <span class="tb-cta__k">View slice</span>
+        <span class="tb-cta__name">${esc(TOOLS[0].name)}</span>
+        <svg viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z" fill="currentColor"/></svg>
+      </a>
     </div>
   </section>
   ${footerHTML()}
@@ -152,6 +156,7 @@ const page: Page = {
     const cta = el.querySelector<HTMLAnchorElement>(".tb-cta")!;
     const ctaName = cta.querySelector<HTMLElement>(".tb-cta__name")!;
     const serveSr = el.querySelector<HTMLElement>(".tb-serve__sr")!;
+    const blurbMask = el.querySelector<HTMLElement>(".tb-pass__blurb .mv")!;
     const flips = [...el.querySelectorAll<HTMLElement>(".tb-flip")];
     const pairs = new Map(
       [...el.querySelectorAll<HTMLElement>(".tb-meta__pair")].map((p) => [p.dataset.k as MetaKey, p.querySelector<HTMLElement>(".mv")!])
@@ -226,6 +231,19 @@ const page: Page = {
     };
 
     // ---------- active state (shared) ----------
+    const swapIn = (mask: HTMLElement, html: string, instant: boolean, delay = 0) => {
+      const olds = [...mask.children] as HTMLElement[];
+      const next = document.createElement("span");
+      next.className = "mv__in";
+      next.innerHTML = html;
+      mask.appendChild(next);
+      if (instant || reducedMotion) { olds.forEach((o) => o.remove()); return; }
+      ctx.add(() => {
+        gsap.killTweensOf(olds);
+        gsap.to(olds, { yPercent: -110, duration: 0.38, ease: "power3.in", delay, onComplete: () => olds.forEach((o) => o.remove()) });
+        gsap.fromTo(next, { yPercent: 110 }, { yPercent: 0, duration: 0.8, ease: "expo.out", delay: 0.12 + delay });
+      });
+    };
     const swapMeta = (t: Tool, instant: boolean) => {
       const vals = metaValues(t);
       META.forEach(([k], n) => {
@@ -261,6 +279,7 @@ const page: Page = {
       if (prev !== -1) {
         // the meta panel is only on screen in the flat layout; the pinned rail carries it on the ticket
         swapMeta(t, instant || el.classList.contains("is-pinned"));
+        swapIn(blurbMask, esc(t.blurb), instant);
         mode.kick(i, prev);
         bus.emit("sfx", { name: "tick" });
       }
@@ -279,8 +298,11 @@ const page: Page = {
       let snapTimer = 0;
       // front card geometry, cached so hover never reads layout from a tilting element
       let cx = 0, cy = 0, cw = 1, ch = 1;
-      // ticket pivots (stage coordinates), cached on refresh
-      let piv: { x: number; y0: number; y1: number }[] = [];
+      // ticket pivots (stage coordinates), cached on refresh; x follows the rail layout below
+      let piv: { y0: number; y1: number }[] = [];
+      let railX = 0, W = 0, TW = 1;
+      const G = 10;
+      const xs = tks.map(() => 0);
 
       const measure = () => {
         vw = innerWidth / 100;
@@ -289,8 +311,10 @@ const page: Page = {
         ch = cards[0].offsetHeight || 1;
         cx = cards[0].offsetLeft + cw / 2;
         cy = cards[0].offsetTop + ch / 2;
+        railX = rail.offsetLeft + railList.offsetLeft;
+        W = railList.clientWidth;
+        TW = tks[0].offsetWidth || 1;
         piv = tks.map((tk) => ({
-          x: rail.offsetLeft + railList.offsetLeft + tk.offsetLeft + tk.offsetWidth / 2,
           y0: rail.offsetTop + railList.offsetTop + tk.offsetTop,
           y1: rail.offsetTop + railList.offsetTop + tk.offsetTop + tk.offsetHeight,
         }));
@@ -310,7 +334,7 @@ const page: Page = {
       // ---- ticket pendulums: angle th (deg), angular velocity w (deg/s), pulled-forward blend a ----
       const sw = tks.map((_, i) => ({ th: REST[i], w: 0, a: i === active ? 1 : 0, push: 0 }));
       const K = 46; // stiffness, about 1.1 swings a second
-      const C = 1.5; // damping, a few lazy swings before it settles
+      const C = 2.4; // damping, a couple of lazy swings before it settles
       let lastP = 0;
       let asleep = false;
       let visible = true;
@@ -322,15 +346,24 @@ const page: Page = {
         sw.forEach((s, i) => {
           const isA = i === active ? 1 : 0;
           const rest = REST[i] * (1 - s.a);
-          const acc = -K * (s.th - rest) - C * s.w - dp * 150 * MASS[i];
+          const acc = -K * (s.th - rest) - C * s.w - dp * 100 * MASS[i];
           s.w += acc * dt + s.push;
           s.push = 0;
           s.th += s.w * dt;
           s.a += (isA - s.a) * (1 - Math.exp(-dt * 9));
           if (Math.abs(s.w) > 0.05 || Math.abs(s.th - rest) > 0.03 || Math.abs(isA - s.a) > 0.002) busy = true;
-          const pull = s.a;
+        });
+        // A crowded rail: every ticket shows a strip, the one on the pass gets its full width.
+        // Strip width s solves (N-1)s + A(TW+G-s) = W-TW, so the row always spans the rail exactly.
+        let A = 0;
+        for (let i = 0; i < N - 1; i++) A += sw[i].a;
+        const strip = Math.max(28, (W - TW - A * (TW + G)) / (N - 1 - A));
+        let x = 0;
+        sw.forEach((s, i) => {
+          xs[i] = x;
+          x += strip + s.a * (TW + G - strip);
           put(tks[i], "transform",
-            `translate3d(0,${(pull * 54).toFixed(1)}px,0) rotate(${s.th.toFixed(2)}deg) scale(${(1 + pull * 0.07).toFixed(3)})`);
+            `translate3d(${xs[i].toFixed(1)}px,${(s.a * 50).toFixed(1)}px,0) rotate(${s.th.toFixed(2)}deg) scale(${(1 + s.a * 0.03).toFixed(3)})`);
         });
         put(railSheen, "transform", `translate3d(${(state.p / (N - 1)) * 100 - 50}%,0,0)`);
         if (!busy) asleep = true;
@@ -340,6 +373,11 @@ const page: Page = {
       const request = () => { queued = true; wake(); };
       const tick = (_t: number, dms: number) => {
         if (queued) { queued = false; render(); }
+        // the rail stops swinging once the stage has scrolled off screen (pinned range plus one screen)
+        const y = window.scrollY;
+        const nowVisible = y < st.end + innerHeight && y > st.start - innerHeight;
+        if (nowVisible && !visible) wake();
+        visible = nowVisible;
         if (!visible || asleep || leaving) { lastP = state.p; return; }
         simulate(clamp(dms / 1000, 1 / 240, 1 / 30));
       };
@@ -415,10 +453,6 @@ const page: Page = {
       // one ticker for the stack and the rail: posters render on demand, tickets simulate until they rest
       gsap.ticker.add(tick);
       mo.push(() => gsap.ticker.remove(tick));
-      // the rail stops swinging when the stage is off screen
-      const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) wake(); });
-      io.observe(stage);
-      mo.push(() => io.disconnect());
 
       const st = tl.scrollTrigger!;
       const step = () => (st.end - st.start) / (N - 1);
@@ -470,7 +504,7 @@ const page: Page = {
         owns: (target) => inRange(innerHeight * 0.25) && !blocked() && (target === document.body || !!target.closest(".tb-stage")),
         // the new ticket gets yanked off the rail, the old one is shoved back up: both swing
         kick(i, prev) {
-          if (i < 0) { sw.forEach((s, n) => (s.push += (n % 2 ? -1 : 1) * 26 * MASS[n])); wake(); return; }
+          if (i < 0) { sw.forEach((s, n) => (s.push += (n % 2 ? -1 : 1) * 20 * MASS[n])); wake(); return; }
           const dir = i > prev ? 1 : -1;
           sw[i].push += 60 * dir;
           if (prev >= 0) sw[prev].push -= 40 * dir;
@@ -501,7 +535,7 @@ const page: Page = {
           let hit = false;
           piv.forEach((q, i) => {
             if (y < q.y0 - 30 || y > q.y1 + 60) return;
-            const f = clamp(1 - Math.abs(e.clientX - q.x) / 110, 0, 1);
+            const f = clamp(1 - Math.abs(e.clientX - (railX + xs[i] + TW / 2)) / 110, 0, 1);
             if (!f) return;
             // a brush low on the paper swings it more than one near the clip
             const lever = clamp((y - q.y0) / (q.y1 - q.y0), 0.25, 1);
@@ -622,7 +656,7 @@ const page: Page = {
     // Pinned stack needs room for poster | rail side by side; tablets and phones get the carousel.
     // Own media query switch instead of gsap.matchMedia: gsap never detaches its MediaQueryList
     // listeners, so every visit would leak two. Each mode runs inside its own gsap.context.
-    const mq = window.matchMedia("(min-width: 1025px) and (min-height: 600px) and (prefers-reduced-motion: no-preference)");
+    const mq = window.matchMedia("(min-width: 1200px) and (min-height: 600px) and (prefers-reduced-motion: no-preference)");
     let modeCtx: gsap.Context | null = null;
     let modeOff: Off | null = null;
     const applyMode = () => {

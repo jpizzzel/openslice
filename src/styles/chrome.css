@@ -7,7 +7,7 @@
    it sits on: ink on flour, paper on ink, always legible.
    The colors written here are the colors it actually reads as on the page
    ground (ink and tomato on flour), so contrast tooling and forced-colors see
-   the truth. On light pages filter: invert(1) turns them into white and cyan
+   the truth. On light pages filter: invert(1) on each item turns them into white and cyan
    before the blend, which is what produces the inversion. Dark pages need no
    filter: paper difference-blended over ink already reads as paper. */
 .ch {
@@ -20,7 +20,6 @@
   z-index: var(--z-chrome);
   pointer-events: none;
   color: var(--c-fg);
-  filter: invert(1);
   mix-blend-mode: difference;
   font-size: 13px;
   line-height: 1.2;
@@ -30,10 +29,13 @@ body[data-chrome="dark"] .ch {
   --c-fg: var(--paper);
   --c-mute: rgb(247 244 239 / 0.64);
   --c-accent: var(--tomato);
-  filter: none;
 }
+/* per item, not on the whole layer: a viewport-sized filter surface costs frames */
+.ch > * { filter: invert(1); }
+body[data-chrome="dark"] .ch > * { filter: none; }
 @media (forced-colors: active) {
-  .ch { filter: none; mix-blend-mode: normal; }
+  .ch { mix-blend-mode: normal; }
+  .ch > * { filter: none; }
 }
 .ch a, .ch button { pointer-events: auto; }
 .ch > * { position: absolute; }

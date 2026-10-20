@@ -4,11 +4,15 @@ import { glyph, type GlyphId } from "../../art";
 import { TOOLS } from "../../data/site";
 import { esc, type Kit } from "./kit";
 
-const roll = (word: string) =>
-  [...word].map((ch, i) => {
-    const c = ch === " " ? "&nbsp;" : esc(ch);
-    return `<span class="cta-ch" style="--i:${i}"><span class="cta-in"><span>${c}</span><span>${c}</span></span></span>`;
-  }).join("");
+// letters roll on hover; each word stays whole so it never breaks mid-word
+const roll = (phrase: string) => {
+  let i = 0;
+  return phrase.split(" ").map((word) =>
+    `<span class="cta-wd">${[...word].map((ch) => {
+      const c = esc(ch);
+      return `<span class="cta-ch" style="--i:${i++}"><span class="cta-in"><span>${c}</span><span>${c}</span></span></span>`;
+    }).join("")}</span>`).join(" ");
+};
 
 const LINKS: { href: string; k: string; word: string; sub: string; g: GlyphId }[] = [
   { href: "/slices", k: "The trunk", word: "Saturday Slices", sub: "Where it started: the pizza place we run out of our house.", g: "slice" },

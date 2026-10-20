@@ -193,11 +193,13 @@ export function boxHTML() {
         <div class="bx-f bx-wall bx-wall--l">${side("bxs-l", 0.75)}</div>
         <div class="bx-f bx-wall bx-wall--r">${side("bxs-r", 1.25)}</div>
         <div class="bx-f bx-wall bx-wall--front">${front()}</div>
-        <div class="bx-lid">
-          <div class="bx-lid__a">
-            <div class="bx-lid__b">
-              <div class="bx-f bx-lid__top">${lidTop()}</div>
-              <div class="bx-f bx-lid__under">${lidUnder()}</div>
+        <div class="bx-lidz">
+          <div class="bx-lid">
+            <div class="bx-lid__a">
+              <div class="bx-lid__b">
+                <div class="bx-f bx-lid__top">${lidTop()}</div>
+                <div class="bx-f bx-lid__under">${lidUnder()}</div>
+              </div>
             </div>
           </div>
         </div>

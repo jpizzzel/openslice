@@ -34,7 +34,7 @@ export function manifestoHTML() {
   <section class="h-mf" aria-labelledby="mf-title">
     <div class="h-mf__head">
       <h2 id="mf-title" class="label">The recipe</h2>
-      <p class="label">(01)</p>
+      <p class="label">(02)</p>
     </div>
     <p class="h-mf__text serif">${words.join(" ")}</p>
     <div class="h-mf__foot">
@@ -56,9 +56,11 @@ export function initManifesto(kit: Kit) {
     });
     items.forEach((el, i) => {
       if (el.classList.contains("mf-g")) {
-        tl.fromTo(el, { scale: 0.35, rotation: -50, opacity: 0.13 }, { scale: 1, rotation: 0, opacity: 1, duration: 1.4, ease: "back.out(2.5)" }, i * 0.5);
+        tl.fromTo(el, { scale: 0.35, rotation: -50, opacity: 0.3 }, { scale: 1, rotation: 0, opacity: 1, duration: 1.4, ease: "back.out(2.5)" }, i * 0.5);
       } else {
-        tl.fromTo(el, { opacity: 0.13 }, { opacity: 1, duration: 1 }, i * 0.5);
+        // dimmed, never faint: unlit words still clear 3:1 as large text
+        const hot = el.classList.contains("mf-w--hot");
+        tl.fromTo(el, { opacity: hot ? 0.88 : 0.5 }, { opacity: 1, duration: 1 }, i * 0.5);
       }
     });
     gsap.from(sec.querySelector(".h-mf__sig"), {

@@ -102,7 +102,7 @@ function template() {
           <span class="sl-day__g" aria-hidden="true">${glyph(d.g)}</span>
           <span class="sl-day__what"><span aria-hidden="true">1x</span> ${d.what}</span>
           <span class="sl-day__bar" aria-hidden="true"><span></span></span>
-          ${d.d === "Sat" ? `<span class="sl-day__stamp" aria-hidden="true">Pizza<br>day</span>` : ""}
+          ${d.d === "Sat" ? `<span class="sl-day__stamp" aria-hidden="true"></span>` : ""}
         </li>`,
       ).join("")}
     </ol>
@@ -447,7 +447,6 @@ const page: Page = {
       gsap.set(branches, { strokeDashoffset: 1, opacity: 0 });
       gsap.set(leaves, { scale: 0, transformOrigin: "50% 50%" });
       gsap.set(".sl-tree__tag", { autoAlpha: 0, y: 20 });
-      gsap.set(".sl-tree__list li", { autoAlpha: 0.25 });
       gsap.set(ringEls, { strokeDashoffset: 1 });
 
       const tl = gsap.timeline({
@@ -491,7 +490,6 @@ const page: Page = {
         .to(".sl-tree__tag--roots", { autoAlpha: 1, y: 0, duration: 0.12 }, 0)
         .to(".sl-tree__tag--trunk", { autoAlpha: 1, y: 0, duration: 0.12 }, 0.12)
         .to(".sl-tree__tag--branches", { autoAlpha: 1, y: 0, duration: 0.12 }, 0.3)
-        .to(".sl-tree__list li", { autoAlpha: 1, duration: 0.2, stagger: 0.1 }, 0.3)
         // growth rings draw from the pith outwards as the tree finishes
         .to(ringEls, { strokeDashoffset: 0, duration: 0.05, stagger: 0.04 }, 0.72)
         .fromTo(".sl-tree__art", { scale: 0.94 }, { scale: 1, duration: 1 }, 0);

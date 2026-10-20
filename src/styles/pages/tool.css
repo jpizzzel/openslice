@@ -67,6 +67,9 @@
   position: absolute; right: 1vw; top: calc(var(--header-h) - 2vh); z-index: 0; pointer-events: none;
   color: var(--paper); text-shadow: 0 1px 0 rgb(20 18 16 / .04);
 }
+/* on wide layouts the poster covers most of the numeral and it only reads as a smudge: tablets and
+   phones keep it, standing clear above the poster */
+@media (min-width: 1101px) { .p-tool .td-mega { display: none; } }
 
 .p-tool .td-poster {
   position: absolute; z-index: 1; right: 9vw; top: calc(var(--header-h) + 5vh);
@@ -266,18 +269,21 @@
 .p-tool .td-next__top { display: flex; gap: 18px; align-items: baseline; }
 .p-tool .td-next__top .mono { color: var(--muted); }
 .p-tool .td-next__name {
-  position: relative; z-index: 2; display: block; overflow: hidden; margin-top: 4vh;
+  position: relative; z-index: 1; display: block; overflow: hidden; margin-top: 4vh;
   font-family: var(--f-display); font-weight: 800; text-transform: uppercase;
-  font-size: min(21vw, calc(66vw / (var(--chars) * 0.5))); line-height: .8; height: .84em;
+  /* the name keeps to the first seven columns; the poster has the rest */
+  font-size: min(21vw, calc(48vw / (var(--chars) * 0.5))); line-height: .8; height: .84em;
+  width: max-content; max-width: 100%;
 }
 .p-tool .td-next__roll { display: flex; flex-direction: column; transition: transform .9s var(--ease-out); }
 .p-tool .td-next__roll > span { display: block; height: .84em; padding-top: .03em; }
 .p-tool .td-next__roll > span + span { color: var(--tomato); }
 .p-tool .td-next:hover .td-next__roll { transform: translateY(-.84em); }
-.p-tool .td-next__kind { position: relative; z-index: 2; display: block; margin-top: 18px; }
+.p-tool .td-next__kind { position: relative; z-index: 1; display: block; margin-top: 18px; }
 .p-tool .td-next__poster {
   --npw: min(22vw, 40vh);
-  position: absolute; z-index: 1; right: 8vw; top: 50%; width: var(--npw);
+  /* above the name: when it trails the cursor across, it reads as a poster held over the type */
+  position: absolute; z-index: 2; left: 62%; top: 50%; width: var(--npw);
   margin-top: calc(var(--npw) * -.625); pointer-events: none; will-change: transform;
 }
 .p-tool .td-next__tilt {
@@ -314,7 +320,7 @@
   .p-tool .td-toss--receipt { margin: 0; }
   .p-tool .td-toss--order { margin: -30px -4vw 0 10vw; width: min(560px, 70vw); justify-self: end; }
   .p-tool .td-next__name { font-size: min(18vw, calc(80vw / (var(--chars) * 0.5))); }
-  .p-tool .td-next__poster { position: relative; right: auto; top: auto; display: block; width: 36vw; margin: 4vh 4vw 0 auto; }
+  .p-tool .td-next__poster { position: relative; left: auto; right: auto; top: auto; display: block; width: 36vw; margin: 4vh 4vw 0 auto; }
   .p-tool .td-next__tilt { transform: perspective(900px) rotateY(-10deg) rotateZ(6deg); opacity: 1; }
 }
 
@@ -345,7 +351,7 @@
   .p-tool .td-order__cooks.n2 { width: 50%; }
   .p-tool .td-btn { padding: 16px 18px 14px 20px; }
   .p-tool .td-next__name { font-size: min(26vw, calc(92vw / (var(--chars) * 0.5))); }
-  .p-tool .td-next__poster { position: relative; right: auto; top: auto; display: block; width: 52vw; margin: 5vh 0 0 auto; }
+  .p-tool .td-next__poster { position: relative; left: auto; right: auto; top: auto; display: block; width: 52vw; margin: 5vh 0 0 auto; }
   .p-tool .td-next__tilt { transform: perspective(900px) rotateY(-10deg) rotateZ(6deg); opacity: 1; }
   .p-tool.td-404 { grid-template-columns: 1fr; padding-top: calc(var(--header-h) + 20px); }
   .p-tool .td-404__art { width: 46vw; }

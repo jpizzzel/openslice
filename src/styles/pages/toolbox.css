@@ -128,9 +128,13 @@
 }
 .p-toolbox .tb-tk__no { font-weight: 700; font-size: 13px; color: var(--ink); letter-spacing: 0; }
 .p-toolbox .tb-tk__name {
-  margin-top: 4px; font-family: var(--f-display); font-weight: 800; font-size: 22px; line-height: .86;
-  letter-spacing: .01em; color: var(--ink); overflow-wrap: anywhere;
+  /* never broken mid-word: the size shrinks so the longest name fits the paper (--tkw minus padding) */
+  --nm: 22px;
+  margin-top: 4px; font-family: var(--f-display); font-weight: 800; line-height: .86;
+  font-size: min(var(--nm), calc((var(--tkw, 112px) - 24px) / (var(--chars) * .5)));
+  letter-spacing: .01em; color: var(--ink); white-space: nowrap;
 }
+.p-toolbox .tb-tk__hit, .p-toolbox .tb-tk__spine, .p-toolbox .tb-rail__k { display: none; }
 .p-toolbox .tb-tk__kind { color: var(--ink-3); }
 .p-toolbox .tb-tk__status { display: flex; align-items: center; gap: 6px; color: var(--ink); }
 .p-toolbox .tb-tk__status i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--tone); box-shadow: 0 0 0 1.5px var(--ink); }
@@ -277,6 +281,52 @@
   will-change: transform;
 }
 .p-toolbox.is-pinned .tb-tk.is-active { z-index: 20; }
+.p-toolbox.is-pinned .tb-tk { --tkw: var(--tw); }
+
+/* Overlapped tickets: only a strip of each paper shows, so it reads like a ticket's spine.
+   Number on top, status dot, the name set vertically down the strip. Nothing is ever cut mid-word. */
+.p-toolbox.is-pinned .tb-tk__spine {
+  position: absolute; z-index: 2; left: 0; top: 44px; bottom: calc(14px + var(--z));
+  width: var(--step, 60px); padding-left: 11px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 9px;
+  container-type: size; pointer-events: none;
+  opacity: 0; transition: opacity .25s var(--ease-out);
+}
+.p-toolbox.is-pinned .tb-tk__spine i {
+  flex: none; width: 8px; height: 8px; margin-left: 2px; border-radius: 50%;
+  background: var(--tone); box-shadow: 0 0 0 1.5px var(--ink);
+}
+.p-toolbox.is-pinned .tb-tk__spine span {
+  writing-mode: vertical-rl; white-space: nowrap;
+  font-family: var(--f-display); font-weight: 800; line-height: .9; letter-spacing: .03em; color: var(--ink);
+  /* as big as the strip allows, and short enough to fit the paper's height */
+  font-size: max(14px, min(32px, calc(var(--step, 60px) * .42), calc((100cqh - 18px) / (var(--chars) * .5))));
+}
+.p-toolbox.is-pinned .tb-tk__top > .tb-tk__tkt,
+.p-toolbox.is-pinned .tb-tk__name, .p-toolbox.is-pinned .tb-tk__kind, .p-toolbox.is-pinned .tb-tk__status,
+.p-toolbox.is-pinned .tb-tk__more, .p-toolbox.is-pinned .tb-tk__qty {
+  transition: opacity .3s var(--ease-out) .05s;
+}
+.p-toolbox.is-pinned .tb-tk.is-strip .tb-tk__spine { opacity: 1; transition-delay: .05s; }
+.p-toolbox.is-pinned .tb-tk.is-strip :is(.tb-tk__tkt, .tb-tk__name, .tb-tk__kind, .tb-tk__status, .tb-tk__more, .tb-tk__qty) {
+  opacity: 0; transition-delay: 0s;
+}
+/* hits: a covered ticket only answers to its visible strip, so a hand sweeping along the rail
+   peeks at each ticket in turn; the peeked one rises above its neighbours and shows in full */
+.p-toolbox.is-pinned .tb-tk.is-strip, .p-toolbox.is-pinned .tb-tk.is-strip .tb-tk__a { pointer-events: none; }
+.p-toolbox.is-pinned .tb-tk.is-strip .tb-tk__hit {
+  display: block; position: absolute; z-index: 3; left: 0; top: -14px; bottom: 0; width: calc(var(--step, 60px) + 6px);
+  pointer-events: auto;
+}
+@media (hover: hover) {
+  .p-toolbox.is-pinned .tb-tk.is-strip:hover { z-index: 30; }
+  .p-toolbox.is-pinned .tb-tk.is-strip:hover .tb-tk__spine { opacity: 0; transition-delay: 0s; }
+  .p-toolbox.is-pinned .tb-tk.is-strip:hover :is(.tb-tk__tkt, .tb-tk__name, .tb-tk__kind, .tb-tk__status, .tb-tk__more, .tb-tk__qty) {
+    opacity: 1; transition-delay: .04s;
+  }
+  .p-toolbox.is-pinned .tb-tk.is-strip:hover .tb-tk__shadow { box-shadow: 0 30px 30px -16px rgb(20 18 16 / .45); }
+}
+.p-toolbox.is-pinned .tb-tk:focus-within { z-index: 30; }
 .p-toolbox.is-pinned .tb-meta {
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
 }
@@ -292,7 +342,7 @@
 @media (min-width: 1680px) {
   .p-toolbox { --sx: 41%; }
   .p-toolbox .tb-tk__paper { font-size: 11px; padding-inline: 13px; }
-  .p-toolbox .tb-tk__name { font-size: 27px; }
+  .p-toolbox .tb-tk__name { --nm: 27px; }
   .p-toolbox .tb-tk__kv { grid-template-columns: 30px 1fr; }
   .p-toolbox .tb-tk__kv > :last-child { font-size: 11.5px; }
 }
@@ -327,12 +377,12 @@
   padding: 5px 16px 36px; margin-bottom: -14px;
 }
 .p-toolbox.is-flat .tb-rail__list::-webkit-scrollbar { display: none; }
-.p-toolbox.is-flat .tb-tk { flex: none; width: 112px; transition: transform .6s var(--ease-spring); }
+.p-toolbox.is-flat .tb-tk { --tkw: 112px; flex: none; width: var(--tkw); transition: transform .6s var(--ease-spring); }
 .p-toolbox.is-flat .tb-tk:nth-child(odd) { rotate: -1.2deg; }
 .p-toolbox.is-flat .tb-tk:nth-child(even) { rotate: 1deg; }
 .p-toolbox.is-flat .tb-tk.is-active { transform: translateY(9px); }
 .p-toolbox.is-flat .tb-tk__paper { padding: 13px 10px calc(12px + var(--z)); gap: 5px; }
-.p-toolbox.is-flat .tb-tk__name { font-size: 21px; }
+.p-toolbox.is-flat .tb-tk__name { --nm: 21px; }
 .p-toolbox.is-flat .tb-tk__kind,
 .p-toolbox.is-flat .tb-tk__more,
 .p-toolbox.is-flat .tb-tk__qty,
@@ -364,11 +414,48 @@
 .p-toolbox.is-flat .tb-meta dd { font-family: var(--f-sans); }
 
 @media (min-width: 721px) {
-  .p-toolbox.is-flat { --cw: min(30vw, 380px); }
-  .p-toolbox.is-flat .tb-stage { padding-top: calc(var(--header-h) + 4vh); }
+  /* the posters give way to the viewport height so the rail always lands above the fold,
+     clear of the fixed links in the bottom corners */
+  .p-toolbox.is-flat { --cw: max(170px, min(30vw, 380px, calc((100svh - 480px) / 1.25))); }
+  .p-toolbox.is-flat .tb-stage { padding-top: calc(var(--header-h) + 8px); }
+  .p-toolbox.is-flat .tb-cards { padding-top: 3vh; padding-bottom: calc(3vh + 48px); }
   .p-toolbox.is-flat .tb-head, .p-toolbox.is-flat .tb-serve, .p-toolbox.is-flat .tb-pass { padding-left: var(--left); padding-right: 6vw; }
   .p-toolbox.is-flat .tb-rail__list { padding-left: var(--left); padding-right: 6vw; gap: 12px; }
   .p-toolbox.is-flat .tb-rail__bar { left: calc(var(--left) - 14px); right: calc(6vw - 14px); }
-  .p-toolbox.is-flat .tb-tk { width: 128px; }
+  .p-toolbox.is-flat .tb-tk { --tkw: 128px; }
   .p-toolbox.is-flat .tb-meta { margin-left: var(--left); margin-right: 6vw; grid-template-columns: repeat(5, 1fr); }
+}
+
+/* ---- phones: the rail moves to the foot of the page as the full order list ----
+   The carousel up top is for browsing posters; this is the menu: every ticket in full, one tap opens it. */
+@media (max-width: 720px) {
+  .p-toolbox.is-flat .tb-rail { order: 6; margin: 12vh 16px 0; }
+  .p-toolbox.is-flat .tb-rail__k {
+    display: grid; gap: 8px; padding-bottom: 16px; margin-bottom: 30px; border-bottom: 1px solid var(--line);
+  }
+  .p-toolbox.is-flat .tb-rail__k .mono { color: var(--muted); }
+  .p-toolbox.is-flat .tb-rail__k .serif { font-style: italic; font-size: 2.2rem; line-height: 1; }
+  .p-toolbox.is-flat .tb-rail__bar { display: none; }
+  .p-toolbox.is-flat .tb-rail__list {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 34px 12px;
+    overflow: visible; padding: 0; margin: 0;
+  }
+  .p-toolbox.is-flat .tb-tk { --tkw: calc((100vw - 44px) / 2); width: auto; position: relative; }
+  .p-toolbox.is-flat .tb-tk.is-active { transform: none; }
+  /* a bulldog clip at the top of each ticket */
+  .p-toolbox.is-flat .tb-tk::before {
+    content: ""; position: absolute; z-index: 2; left: 50%; top: -9px; width: 34px; height: 14px; margin-left: -17px;
+    border-radius: 3px 3px 2px 2px; background: linear-gradient(180deg, #57514a, #141210 70%);
+    box-shadow: 0 1px 0 rgb(255 255 255 / .18) inset, 0 4px 6px -3px rgb(20 18 16 / .5);
+  }
+  .p-toolbox.is-flat .tb-tk__paper { padding: 18px 11px calc(14px + var(--z)); gap: 6px; }
+  .p-toolbox.is-flat .tb-tk__name { --nm: 26px; }
+  .p-toolbox.is-flat .tb-tk__kind,
+  .p-toolbox.is-flat .tb-tk__qty { display: flex; }
+  .p-toolbox.is-flat .tb-tk__kind { display: block; }
+  .p-toolbox.is-flat .tb-tk__more { display: grid; }
+  .p-toolbox.is-flat .tb-tk__go { display: flex; opacity: 1; transform: none; }
+  .p-toolbox.is-flat .tb-tk__status { font-size: 10px; }
+  .p-toolbox.is-flat .tb-tk.is-active .tb-tk__go { background: #b8241a; }
+  .p-toolbox.is-flat .tb-meta { margin-top: 26px; }
 }

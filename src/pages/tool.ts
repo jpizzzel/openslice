@@ -375,6 +375,8 @@ const page: Page = {
     if (finePointer && !reducedMotion) {
       const np = el.querySelector<HTMLElement>(".td-next__poster")!;
       let ox = 0, oy = 0;
+      // how far left the poster may drift: never across the name, it keeps to its own columns
+      let minX = -Infinity;
       let lastX = 0;
       let still = 0;
       offs.push(() => window.clearTimeout(still));
@@ -387,12 +389,14 @@ const page: Page = {
           if (getComputedStyle(np).position !== "absolute") { ox = NaN; return; }
           const r = nextEl.getBoundingClientRect();
           ox = r.left + np.offsetLeft + np.offsetWidth / 2;
+          const nameR = nextEl.querySelector<HTMLElement>(".td-next__name")!.getBoundingClientRect();
+          minX = Math.min(0, nameR.right + 28 - (r.left + np.offsetLeft));
           oy = r.top + np.offsetTop + np.offsetHeight / 2;
           lastX = e.clientX;
         };
         const move = (e: PointerEvent) => {
           if (Number.isNaN(ox)) return;
-          qx((e.clientX - ox) * 0.5);
+          qx(Math.max(minX, (e.clientX - ox) * 0.5));
           qy((e.clientY - oy) * 0.5);
           qr(gsap.utils.clamp(-9, 9, (e.clientX - lastX) * 0.6));
           lastX = e.clientX;

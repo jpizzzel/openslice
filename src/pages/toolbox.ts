@@ -40,11 +40,13 @@ function ticketHTML(t: Tool, i: number) {
   const ppl = makers(t).map((p) => esc(p.first)).join(" + ");
   const cls = isClassified(t);
   return `
-        <li class="tb-tk" data-i="${i}" style="--i:${i};--tone:${STATUS_TONE[t.status]}">
+        <li class="tb-tk" data-i="${i}" style="--i:${i};--tone:${STATUS_TONE[t.status]};--chars:${t.name.length}">
           <a class="tb-tk__a" href="/toolbox/${t.slug}" data-i="${i}" data-cursor="Open" draggable="false">
             <span class="tb-tk__shadow" aria-hidden="true"></span>
             <span class="tb-tk__paper">
-              <span class="tb-tk__top"><b class="tb-tk__no">#${pad(i + 1)}</b><span aria-hidden="true">Tkt</span></span>
+              <span class="tb-tk__hit" aria-hidden="true"></span>
+              <span class="tb-tk__spine" aria-hidden="true"><i></i><span>${esc(t.name)}</span></span>
+              <span class="tb-tk__top"><b class="tb-tk__no">#${pad(i + 1)}</b><span class="tb-tk__tkt" aria-hidden="true">Tkt</span></span>
               <span class="tb-tk__name">${esc(t.name)}</span>
               <span class="tb-tk__kind">${esc(t.kind)}</span>
               <span class="tb-tk__status"><i aria-hidden="true"></i>${esc(STATUS_LABEL[t.status])}</span>
@@ -98,6 +100,7 @@ function template() {
     </div>
 
     <nav class="tb-rail" aria-label="Order rail, all slices">
+      <p class="tb-rail__k" aria-hidden="true"><span class="mono">The whole rail</span><span class="serif">Every order, one tap away.</span></p>
       <span class="tb-rail__bar" aria-hidden="true"><span class="tb-rail__glint"><i class="tb-rail__sheen"></i></span><b></b><b></b></span>
       <ol class="tb-rail__list" style="--last:${N - 1}">${TOOLS.map(ticketHTML).join("")}
       </ol>
@@ -268,7 +271,11 @@ const page: Page = {
       active = i;
       const t = TOOLS[i];
       tkLinks.forEach((a, n) => (n === i ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
-      tks.forEach((tk, n) => tk.classList.toggle("is-active", n === i));
+      tks.forEach((tk, n) => {
+        tk.classList.toggle("is-active", n === i);
+        // on the pinned rail every ticket but the active one and the last is overlapped: it shows its spine
+        tk.classList.toggle("is-strip", n !== i && n < N - 1);
+      });
       cards.forEach((c, n) => c.classList.toggle("is-active", n === i));
       cta.href = `/toolbox/${t.slug}`;
       cta.setAttribute("aria-label", `View slice: ${t.name}`);
@@ -314,6 +321,8 @@ const page: Page = {
         railX = rail.offsetLeft + railList.offsetLeft;
         W = railList.clientWidth;
         TW = tks[0].offsetWidth || 1;
+        // the narrowest strip a covered ticket ever shows (one ticket pulled forward), so its spine always fits
+        railList.style.setProperty("--step", `${Math.max(28, (W - 2 * TW - G) / (N - 2)).toFixed(1)}px`);
         piv = tks.map((tk) => ({
           y0: rail.offsetTop + railList.offsetTop + tk.offsetTop,
           y1: rail.offsetTop + railList.offsetTop + tk.offsetTop + tk.offsetHeight,
@@ -594,6 +603,7 @@ const page: Page = {
         window.clearTimeout(autoTimer);
         mode = { go() {}, owns: () => false, kick() {} };
         el.classList.remove("is-pinned", "is-dragging");
+        railList.style.removeProperty("--step");
         last.clear();
         [...cards, ...tks, ...shades, ...sheens, ...sheenBands, cta, table, railSheen].forEach((n) => n.removeAttribute("style"));
         cards.forEach((c, i) => c.style.setProperty("--c", TOOLS[i].color));
@@ -640,7 +650,8 @@ const page: Page = {
           cardsWrap.scrollTo({ left: i * stepX, behavior: reducedMotion ? "auto" : "smooth" });
         },
         // only when focus is inside the carousel controls; elsewhere arrows keep scrolling the page
-        owns: (target) => !!target.closest(".tb-cards, .tb-ctrl, .tb-rail"),
+        // (on phones the rail is a plain list of links at the foot of the page)
+        owns: (target) => !!target.closest(".tb-cards, .tb-ctrl") || (!listMq.matches && !!target.closest(".tb-rail")),
         kick: (i) => { if (i >= 0) chipIntoView(i); },
       };
       return () => {
@@ -657,6 +668,8 @@ const page: Page = {
     // Own media query switch instead of gsap.matchMedia: gsap never detaches its MediaQueryList
     // listeners, so every visit would leak two. Each mode runs inside its own gsap.context.
     const mq = window.matchMedia("(min-width: 1200px) and (min-height: 600px) and (prefers-reduced-motion: no-preference)");
+    // read on demand only, never listened to
+    const listMq = window.matchMedia("(max-width: 720px)");
     let modeCtx: gsap.Context | null = null;
     let modeOff: Off | null = null;
     const applyMode = () => {
@@ -679,7 +692,8 @@ const page: Page = {
       if (card && Number(card.dataset.i) !== active) { e.preventDefault(); mode.go(Number(card.dataset.i)); return; }
       // a ticket that is not up yet gets pulled; the ticket on the pass opens the slice
       const tk = target.closest<HTMLElement>(".tb-tk__a");
-      if (tk && Number(tk.dataset.i) !== active) {
+      // on phones the rail is the full order list at the end of the page: every ticket opens its slice
+      if (tk && Number(tk.dataset.i) !== active && !(el.classList.contains("is-flat") && listMq.matches)) {
         e.preventDefault();
         mode.go(Number(tk.dataset.i));
         bus.emit("sfx", { name: "pop" });

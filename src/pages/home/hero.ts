@@ -18,22 +18,22 @@ interface Obj {
 
 // A fountain: tight above the box, opening wide toward the top.
 const OBJECTS: Obj[] = [
-  { id: "laptop", x: 50, y: 15, s: 25, r: -7 },
-  { id: "terminal", x: 22, y: 8, s: 12, r: -10 },
-  { id: "squiggle", x: 80, y: 9, s: 10, r: 24 },
-  { id: "star", x: 6, y: 25, s: 7, r: 0 },
-  { id: "satsuma", x: 20, y: 31, s: 15, r: -12 },
-  { id: "tangerine", x: 82, y: 28, s: 14, r: 10 },
-  { id: "headphones", x: 97, y: 44, s: 13, r: 14 },
-  { id: "cursor", x: 63, y: 34, s: 7, r: -14 },
-  { id: "voice", x: 38, y: 43, s: 12, r: 8 },
-  { id: "coffee", x: 4, y: 47, s: 11, r: -8 },
-  { id: "register", x: 70, y: 50, s: 15, r: -6 },
-  { id: "keyboard", x: 22, y: 57, s: 19, r: 14 },
-  { id: "mystery", x: 51, y: 59, s: 11, r: 12 },
-  { id: "slice", x: 86, y: 66, s: 12, r: -22 },
-  { id: "basil", x: 33, y: 70, s: 8, r: -32 },
-  { id: "pepperoni", x: 67, y: 72, s: 8, r: 0 },
+  { id: "laptop", x: 50, y: 13, s: 38, r: -7 },
+  { id: "terminal", x: 17, y: 9, s: 19, r: -10 },
+  { id: "squiggle", x: 84, y: 7, s: 15, r: 24 },
+  { id: "star", x: 3, y: 29, s: 11, r: 0 },
+  { id: "satsuma", x: 23, y: 33, s: 24, r: -12 },
+  { id: "tangerine", x: 82, y: 29, s: 22, r: 10 },
+  { id: "headphones", x: 97, y: 47, s: 20, r: 14 },
+  { id: "cursor", x: 61, y: 37, s: 11, r: -14 },
+  { id: "voice", x: 42, y: 49, s: 19, r: 8 },
+  { id: "coffee", x: 2, y: 55, s: 18, r: -8 },
+  { id: "register", x: 74, y: 59, s: 24, r: -6 },
+  { id: "keyboard", x: 19, y: 69, s: 30, r: 14 },
+  { id: "mystery", x: 50, y: 73, s: 19, r: 12 },
+  { id: "slice", x: 93, y: 77, s: 20, r: -22 },
+  { id: "basil", x: 32, y: 89, s: 14, r: -32 },
+  { id: "pepperoni", x: 67, y: 90, s: 12, r: 0 },
 ];
 
 const statement = `Building free tools for students, engineers and small businesses out of our kitchen since ${SITE.since}.`;
@@ -143,7 +143,7 @@ export function initHero(kit: Kit, intro: Promise<void>) {
     sp: 0.7 + ((i * 37) % 10) / 18,
     amp: 6 + ((i * 13) % 9),
     rot: 2 + ((i * 7) % 5),
-    depth: 0.4 + o.s / 18,
+    depth: 0.3 + o.s / 28,
   }));
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
   if (kit.fine) {

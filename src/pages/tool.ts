@@ -191,8 +191,8 @@ const page: Page = {
       if (reducedMotion) return;
 
       // hero parallax
-      gsap.to(".td-poster", {
-        yPercent: -14, rotation: 4, ease: "none",
+      gsap.fromTo(".td-poster", { rotation: window.innerWidth <= 720 ? 5 : 6 }, {
+        yPercent: -14, rotation: 11, ease: "none",
         scrollTrigger: { trigger: ".td-hero", start: "top top", end: "bottom top", scrub: 0.6 },
       });
       gsap.to(".td-mega", {
@@ -210,8 +210,8 @@ const page: Page = {
             scrollTrigger: { trigger: story, start: "top 78%", toggleActions: "play none none reverse" },
           }),
       });
-      gsap.from(".td-glyph", {
-        rotation: -40, scale: 0.6, autoAlpha: 0, duration: 1.2, ease: "back.out(1.7)",
+      gsap.fromTo(".td-glyph", { rotation: -50, scale: 0.6, autoAlpha: 0 }, {
+        rotation: -8, scale: 1, autoAlpha: 1, duration: 1.2, ease: "back.out(1.7)",
         scrollTrigger: { trigger: ".td-story", start: "top 75%" },
       });
 
@@ -228,12 +228,13 @@ const page: Page = {
       });
 
       // credits: physical cards tossed onto the table
-      gsap.fromTo(".td-card--credits", { rotation: -9, yPercent: 30, xPercent: -8 }, {
-        rotation: 0, yPercent: 0, xPercent: 0, ease: "none",
+      const mob = window.innerWidth <= 720;
+      gsap.fromTo(".td-card--credits", { rotation: -15, yPercent: 30, xPercent: -8 }, {
+        rotation: mob ? -3 : -5, yPercent: 0, xPercent: 0, ease: "none",
         scrollTrigger: { trigger: ".td-credits", start: "top bottom", end: "center 60%", scrub: 0.8 },
       });
-      gsap.fromTo(".td-card--links", { rotation: 9, yPercent: 45, xPercent: 10 }, {
-        rotation: 0, yPercent: 0, xPercent: 0, ease: "none",
+      gsap.fromTo(".td-card--links", { rotation: 12, yPercent: 45, xPercent: 10 }, {
+        rotation: mob ? 2 : 3, yPercent: 0, xPercent: 0, ease: "none",
         scrollTrigger: { trigger: ".td-credits", start: "top bottom", end: "center 55%", scrub: 0.8 },
       });
       gsap.from(".td-mascot", {
@@ -282,7 +283,7 @@ const page: Page = {
         gsap.set(fades, { autoAlpha: 0, y: 18 });
         gsap.set(".td-poster__art", { autoAlpha: 0, yPercent: 40, rotation: 16, scale: 0.9 });
         if (wt.length) gsap.set(wt, { autoAlpha: 0, scale: 1.8, rotation: -30 });
-        if (stamp) gsap.set(stamp, { autoAlpha: 0, scale: 2.2 });
+        if (stamp) gsap.set(stamp, { xPercent: -50, yPercent: -50, rotation: -16, autoAlpha: 0, scale: 2.2 });
       });
       (async () => {
         if (first) await loaderGone;
@@ -292,7 +293,7 @@ const page: Page = {
           tl.to(chs, { yPercent: 0, rotation: 0, duration: 1.3, stagger: 0.045 }, 0)
             .to(".td-poster__art", { autoAlpha: 1, yPercent: 0, rotation: 0, scale: 1, duration: 1.6 }, 0.1)
             .to(fades, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.05 }, 0.3);
-          if (wt.length) tl.to(wt, { autoAlpha: 1, scale: 1, rotation: 0, duration: 0.7, ease: "back.out(2.2)" }, 0.9);
+          if (wt.length) tl.to(wt, { autoAlpha: 1, scale: 1, rotation: -12, duration: 0.7, ease: "back.out(2.2)" }, 0.9);
           if (stamp) tl.to(stamp, { autoAlpha: 1, scale: 1, duration: 0.5, ease: "back.out(2.5)", onStart: () => bus.emit("sfx", { name: "pop" }) }, 1.1);
         });
       })();

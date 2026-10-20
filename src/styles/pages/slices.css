@@ -87,7 +87,7 @@
 .p-slices .sl-tree__pin {
   position: relative;
   height: 100vh;
-  padding: calc(var(--header-h) * 0.55) var(--pad-r) 28px var(--pad-l);
+  padding: calc(var(--header-h) + 8px) var(--pad-r) 28px var(--pad-l);
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 6fr) minmax(0, 3fr);
   grid-template-rows: auto 1fr auto;

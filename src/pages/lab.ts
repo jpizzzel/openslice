@@ -33,7 +33,7 @@ interface Tile {
 function tileHTML(exp: Experiment, i: number) {
   const n = pad(i + 1);
   return `
-  <article class="lab-tile lab-tone--${exp.tone}" data-exp="${exp.id}" style="--ar:${exp.ar[0]} / ${exp.ar[1]}" aria-labelledby="lab-t-${exp.id}">
+  <article class="lab-tile" data-exp="${exp.id}" style="--ar:${exp.ar[0]} / ${exp.ar[1]}" aria-labelledby="lab-t-${exp.id}">
     <div class="lab-tile__frame">
       <div class="lab-stage lab-tone--${exp.tone}" role="group" aria-label="${exp.label}">
         <span class="lab-tile__num mono" aria-hidden="true">${n}</span>
@@ -54,7 +54,7 @@ function tileHTML(exp: Experiment, i: number) {
 const page: Page = {
   title: "Lab",
   section: "lab",
-  async mount({ root, first }) {
+  mount({ root, first }) {
     const total = EXPERIMENTS.length;
     root.innerHTML = `
     <div class="p-lab">
@@ -375,41 +375,48 @@ const page: Page = {
     });
 
     /* ------------------------------------------------------------ intro */
-    if (first) await loaderGone;
-
+    let alive = true;
     if (!reducedMotion) {
+      // hide now so nothing flashes while the preloader leaves
+      tiles.forEach((t, i) => gsap.set(t.el, { opacity: 0, y: 70, rotation: i % 2 ? 2.2 : -2.2, transformOrigin: "50% 100%" }));
       const masks = pageEl.querySelectorAll(".p-lab__mask > *");
       const meta = pageEl.querySelectorAll(".p-lab__meta > div, .p-lab__index li, .p-lab__about, .p-lab__countlab");
-      const counter = { v: 0 };
-      tweens.push(
-        gsap.timeline({ delay: 0.1 })
-          .from(masks, { yPercent: 110, duration: 1.1, ease: "expo.out", stagger: 0.08 }, 0)
-          .from(meta, { opacity: 0, y: 14, duration: 0.8, ease: "expo.out", stagger: 0.035 }, 0.2)
-          .from(countEl, { yPercent: 30, opacity: 0, duration: 1.2, ease: "expo.out" }, 0)
-          .to(counter, {
-            v: total, duration: 1.4, ease: "expo.out",
-            onUpdate: () => { countEl.textContent = pad(Math.round(counter.v)); },
-          }, 0.1),
-      );
-
-      // tiles rise with a slight tilt as they scroll in
-      tiles.forEach((t, i) => gsap.set(t.el, { opacity: 0, y: 70, rotation: i % 2 ? 2.2 : -2.2, transformOrigin: "50% 100%" }));
-      ScrollTrigger.batch(tiles.map((t) => t.el), {
-        start: "top 94%",
-        once: true,
-        onEnter: (batch) => {
-          tweens.push(gsap.to(batch, {
-            opacity: 1, y: 0, rotation: 0, duration: 1.2, ease: "expo.out", stagger: 0.09,
-            onComplete() { gsap.set(batch, { clearProps: "transform,opacity" }); },
-          }));
-        },
-      });
-      ScrollTrigger.refresh();
+      gsap.set(masks, { yPercent: 110 });
+      gsap.set(meta, { opacity: 0, y: 14 });
+      gsap.set(countEl, { yPercent: 30, opacity: 0 });
+      const intro = () => {
+        if (!alive) return;
+        const counter = { v: 0 };
+        tweens.push(
+          gsap.timeline({ delay: 0.1 })
+            .to(masks, { yPercent: 0, duration: 1.1, ease: "expo.out", stagger: 0.08 }, 0)
+            .to(meta, { opacity: 1, y: 0, duration: 0.8, ease: "expo.out", stagger: 0.035 }, 0.2)
+            .to(countEl, { yPercent: 0, opacity: 1, duration: 1.2, ease: "expo.out" }, 0)
+            .to(counter, {
+              v: total, duration: 1.4, ease: "expo.out",
+              onUpdate: () => { countEl.textContent = pad(Math.round(counter.v)); },
+            }, 0.1),
+        );
+        // tiles rise with a slight tilt as they scroll in
+        ScrollTrigger.batch(tiles.map((t) => t.el), {
+          start: "top 94%",
+          once: true,
+          onEnter: (batch) => {
+            tweens.push(gsap.to(batch, {
+              opacity: 1, y: 0, rotation: 0, duration: 1.2, ease: "expo.out", stagger: 0.09,
+              onComplete() { gsap.set(batch, { clearProps: "transform,opacity" }); },
+            }));
+          },
+        });
+        ScrollTrigger.refresh();
+      };
+      (first ? loaderGone : Promise.resolve()).then(intro);
     } else {
       countEl.textContent = pad(total);
     }
 
     return () => {
+      alive = false;
       if (modal) {
         modal.remove();
         modal = null;

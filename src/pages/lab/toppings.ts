@@ -75,7 +75,7 @@ export const toppings: Experiment = {
       host, env, heavy: true, label: toppings.label,
       resize(w, h, pw, ph) {
         sc = clamp(Math.min(w, h * 0.8) / 380, 0.6, 2.2);
-        floor = h * 0.74; x0 = w * 0.1; x1 = w * 0.9;
+        floor = h * 0.76; x0 = w * 0.07; x1 = w * 0.93;
         if (pw) {
           const kx = w / pw, ky = h / ph, kr = Math.min(kx, ky);
           for (const b of bodies) { b.x *= kx; b.y *= ky; b.r *= kr; }
@@ -84,15 +84,15 @@ export const toppings: Experiment = {
         if (!seeded) {
           seeded = true;
           // a starting pile so the first frame is already a composition
-          for (let i = 0; i < 46; i++) add(x0 + 30 * sc + R() * (x1 - x0 - 60 * sc), floor - 20 - R() * h * 0.5);
-          for (let i = 0; i < 160; i++) step(1 / 60);
+          for (let i = 0; i < 84; i++) add(x0 + 30 * sc + R() * (x1 - x0 - 60 * sc), floor - 20 - R() * h * 0.5);
+          for (let i = 0; i < 240; i++) step(1 / 60);
         }
       },
       frame(dt, t) {
         if (dt > 0) {
           spawn -= dt;
           if (spawn <= 0 && !env.reduced) {
-            spawn = bodies.length < 80 ? 0.22 : 0.8;
+            spawn = bodies.length < 95 ? 0.14 : 0.45;
             add(x0 + R() * (x1 - x0), -30 * sc, (R() - 0.5) * 40);
           }
           const n = 2;

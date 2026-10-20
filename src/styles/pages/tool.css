@@ -4,7 +4,7 @@
   --right: max(var(--gutter), 5vw);
   --tc: var(--tomato);
   --card-gray: #dcd7cf;
-  position: relative; color: var(--ink);
+  position: relative; color: var(--ink); overflow-x: clip;
   padding: 0 var(--right) 0 var(--left);
 }
 
@@ -35,8 +35,8 @@
   font-family: var(--f-display); font-weight: 800; text-transform: uppercase; letter-spacing: .05em; line-height: 1;
   background: rgb(247 244 239 / .78); mix-blend-mode: multiply; border-radius: 4px;
 }
-.p-tool .td-stamp--big { left: 50%; top: 44%; translate: -50% -50%; rotate: -16deg; font-size: clamp(2.4rem, 4.4vw, 4.6rem); }
-.p-tool .td-stamp--card { right: 34px; top: 40px; rotate: 9deg; font-size: 1.6rem; }
+.p-tool .td-stamp--big { left: 50%; top: 44%; transform: translate(-50%, -50%) rotate(-16deg); font-size: clamp(2.4rem, 4.4vw, 4.6rem); }
+.p-tool .td-stamp--card { left: 46px; bottom: 34px; rotate: -7deg; font-size: 1.5rem; }
 
 /* ---- hero ---- */
 .p-tool .td-hero {
@@ -79,8 +79,8 @@
 .p-tool .td-name__mask { display: block; overflow: hidden; padding: .06em 0 .02em; }
 .p-tool .td-ch { display: inline-block; transform-origin: 0 100%; }
 .p-tool .td-wt {
-  flex: none; margin: .9em 0 0 14px; padding: 6px 9px 5px; rotate: -12deg;
-  border: 1.5px solid var(--ink); border-radius: 3px;
+  flex: none; margin: .9em 0 0 14px; padding: 6px 9px 5px;
+  border: 1.5px solid var(--ink); border-radius: 3px; transform: rotate(-12deg);
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; line-height: 1.15;
   color: var(--ink); background: var(--cheese);
 }
@@ -105,7 +105,7 @@
 
 /* ---- story ---- */
 .p-tool .td-story { padding: 24vh 0 18vh; }
-.p-tool .td-glyph { width: 96px; margin-top: 26px; rotate: -8deg; }
+.p-tool .td-glyph { width: 96px; margin-top: 26px; transform: rotate(-8deg); }
 .p-tool .td-story__text {
   font-size: clamp(2.1rem, 1rem + 2.9vw, 4.6rem); line-height: 1.02; letter-spacing: -0.015em; max-width: 19em;
   text-wrap: pretty;
@@ -232,6 +232,7 @@
   .p-tool .td-hero { padding-top: calc(var(--header-h) + 4px); }
   .p-tool .td-top { gap: 10px 14px; }
   .p-tool .td-plat { width: 100%; }
+  .p-tool .td-feats { padding-bottom: 12vh; }
   .p-tool .td-mega { top: calc(var(--header-h) + 60px); right: -4vw; font-size: 62vw; }
   .p-tool .td-poster { position: relative; right: auto; top: auto; width: 66vw; margin: 7vh auto 0; rotate: 5deg; }
   .p-tool .td-title { padding-top: 6vh; margin-top: 0; }
@@ -249,7 +250,7 @@
   .p-tool .td-card__grid { max-width: none; gap: 22px 18px; }
   .p-tool .td-card__mascots { width: 40%; bottom: -40px; }
   .p-tool .td-card__mascots.n2 { width: 52%; }
-  .p-tool .td-stamp--card { right: 18px; top: 26px; font-size: 1.1rem; }
+  .p-tool .td-stamp--card { left: 22px; bottom: 30px; font-size: 1.1rem; }
   .p-tool .td-card--links { margin: -24px 6px 0; rotate: 2deg; padding: 32px 22px 28px; }
   .p-tool .td-btn { padding: 16px 18px 14px 20px; }
   .p-tool .td-next { padding: 10vh 0 12vh; }

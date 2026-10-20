@@ -230,7 +230,6 @@ html.has-cursor :is(input, textarea, select, [contenteditable]) { cursor: text !
   transition: transform 0.45s var(--ease-out), background-color 0.25s;
 }
 .cursor[data-state="ring"] .cursor-d { transform: scale(1); background-color: transparent; }
-.cursor[data-state="pill"] .cursor-d { transform: scale(0); }
 .cursor.is-down .cursor-d { transform: scale(0.14); }
 .cursor.is-down[data-state="ring"] .cursor-d { transform: scale(0.82); }
 .cursor-p {
@@ -239,12 +238,15 @@ html.has-cursor :is(input, textarea, select, [contenteditable]) { cursor: text !
   border-radius: 999px;
   background: #fff; color: #000;
   font-size: 12px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap;
-  transform: translate(-50%, -50%) scale(0.2);
+  /* sits just off the pointer's lower right so it never hides what you're reading */
+  transform: translate(14px, 14px) scale(0.2);
+  transform-origin: 0 0;
   opacity: 0;
   transition: transform 0.5s var(--ease-spring), opacity 0.2s;
 }
-.cursor[data-state="pill"] .cursor-p { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-.cursor.is-down[data-state="pill"] .cursor-p { transform: translate(-50%, -50%) scale(0.92); }
+.cursor[data-state="pill"] .cursor-p { transform: translate(14px, 14px) scale(1); opacity: 1; }
+.cursor.is-down[data-state="pill"] .cursor-p { transform: translate(14px, 14px) scale(0.92); }
+.cursor[data-state="pill"] .cursor-d { transform: scale(0.16); }
 
 /* =========================================================================
    Preloader

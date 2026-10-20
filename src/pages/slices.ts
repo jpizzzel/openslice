@@ -26,7 +26,7 @@ function template() {
   return `<div class="p-trunk">
   <section class="tr-intro" aria-labelledby="tr-title" data-reveal>
     <h1 class="tr-h1" id="tr-title">${esc(T.name)}</h1>
-    <p class="tr-lede">${esc(T.pizzeria)} is a student-run pizzeria in ${esc(T.where)}, started with friends in ${T.started.toLowerCase()} (${T.est}). ${esc(T.name)} is its night: ${esc(T.hours.replace(/^Saturdays, /, "every Saturday, "))}.</p>
+    <p class="tr-lede">${esc(T.pizzeria)} is a student-run pizzeria in ${esc(T.where)}, started with friends in ${T.started.toLowerCase()} (${T.est}). ${esc(T.name)} is its night: ${esc(T.hours)}.</p>
     <ul class="tr-links">
       <li><a class="tr-btn" href="${T.href}" ${ext}>${esc(T.site)}</a></li>
       <li><a class="tr-btn tr-btn--ghost" href="${T.instagram.href}" ${ext}>Instagram ${esc(T.instagram.handle)}</a></li>
@@ -43,7 +43,7 @@ function template() {
   <section class="tr-sec" aria-labelledby="tr-story-h">
     <h2 class="tr-h2" id="tr-story-h" data-reveal>How it started</h2>
     <div class="tr-copy" data-reveal>
-      <p>${esc(T.origin)} Now a crew of ${T.crew} students runs the kitchen every Saturday night.</p>
+      <p>${esc(T.origin)} Now a crew of ${T.crew} students runs the kitchen on Saturday nights.</p>
       <p class="tr-note">${esc(T.tufts)}</p>
     </div>
   </section>

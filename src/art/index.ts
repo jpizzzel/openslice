@@ -5,8 +5,9 @@
 // so callers size it with CSS. Interactive parts carry data-part="..." hooks.
 import type { Tool } from "../data/site";
 
-export type Who = "jonah" | "peter";
-export type Pose = "stand" | "wave" | "push" | "point" | "sit" | "carry";
+import type { Who, Pose } from "./mascots";
+export type { Who, Pose };
+export { mascot } from "./mascots";
 export type GlyphId =
   | Tool["glyph"]
   | "box" | "box-open" | "slice" | "pizza" | "peel" | "oven" | "laptop" | "keyboard"
@@ -18,16 +19,6 @@ export interface ArtOpts {
   /** accessible label; when omitted the svg is aria-hidden */
   label?: string;
   className?: string;
-}
-
-/** The two mascots: Jonah and Peter drawn as pizza slice characters. */
-export function mascot(who: Who, pose: Pose = "stand", opts: ArtOpts = {}): string {
-  const fill = who === "jonah" ? "#ffc93c" : "#ffb02e";
-  return svg("0 0 200 300", `
-    <path d="M100 20 L170 230 Q100 250 30 230 Z" fill="${fill}" stroke="#141210" stroke-width="5" stroke-linejoin="round"/>
-    <circle cx="80" cy="140" r="6" fill="#141210"/><circle cx="120" cy="140" r="6" fill="#141210"/>
-    <path d="M80 170 Q100 185 120 170" stroke="#141210" stroke-width="5" fill="none" stroke-linecap="round"/>
-    <text x="100" y="290" text-anchor="middle" font-size="22" font-family="sans-serif">${who}:${pose}</text>`, opts);
 }
 
 /** Small object/topping/icon drawings. */

@@ -7,7 +7,7 @@ export function initCursor() {
   const el = document.createElement("div");
   el.className = "cursor";
   el.setAttribute("aria-hidden", "true");
-  el.innerHTML = `<div class="cursor-b"><span class="cursor-l"></span></div>`;
+  el.innerHTML = `<div class="cursor-d"></div><div class="cursor-p"><span class="cursor-l"></span></div>`;
   document.body.appendChild(el);
   document.documentElement.classList.add("has-cursor");
   const label = el.querySelector(".cursor-l") as HTMLElement;

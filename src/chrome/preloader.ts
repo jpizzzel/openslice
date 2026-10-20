@@ -35,6 +35,7 @@ export function runPreloader() {
   const step = () => {
     const el = performance.now() - t0;
     // time-eased creep capped by real milestones, so it never looks stuck or fake-fast
+    if (el >= MAX) bump(94); // slow network: stop pretending, sit near the top
     const f = min ? Math.min(1, el / min) : 1;
     let goal = Math.min(94, Math.max(target * (0.5 + 0.5 * f), 70 * f));
     if (routeReady && el >= min) goal = 100;

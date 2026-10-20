@@ -2,6 +2,7 @@
 // scroll hint, trunk link, mobile overlay menu, custom cursor.
 import { bus } from "../core/bus";
 import { gsap, lenis, reducedMotion } from "../core/motion";
+import { loaderGone } from "../core/ready";
 import { SITE } from "../data/site";
 import { glyph } from "../art";
 import { audio, initAudio } from "./audio";
@@ -17,7 +18,7 @@ const repoLabel = () => {
 const audioBtn = (cls: string) => `
   <button class="ch-audio ${cls}" type="button" aria-pressed="false">
     <span class="ch-lbl">Oven</span> <b class="ch-audio-v">Off</b>
-    <svg class="ch-wave" viewBox="0 0 24 8" aria-hidden="true"><path d="M0 4 Q3 4 6 4 T12 4 T18 4 T24 4"/></svg>
+    <svg class="ch-wave" viewBox="0 0 24 8" aria-hidden="true"><g><path d="M0 4 Q3 0.5 6 4 T12 4 T18 4 T24 4 T30 4 T36 4 T42 4 T48 4"/></g></svg>
     <span class="sr-only">ambient sound</span>
   </button>`;
 
@@ -193,6 +194,13 @@ export function initChrome() {
     e.preventDefault();
     if (lenis) lenis.scrollTo(0, { duration: 1.6 }); else scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
   });
+
+  /* ---------- intro after the preloader ---------- */
+  if (document.getElementById("loader") && !reducedMotion) {
+    const bits = host.querySelectorAll(".ch > *");
+    gsap.set(bits, { autoAlpha: 0, y: -14 });
+    loaderGone.then(() => gsap.to(bits, { autoAlpha: 1, y: 0, duration: 0.9, ease: "expo.out", stagger: 0.05, clearProps: "transform" }));
+  }
 
   /* ---------- route sync ---------- */
   const sync = (path: string) => {

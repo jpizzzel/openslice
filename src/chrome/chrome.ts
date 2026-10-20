@@ -87,7 +87,8 @@ export function initChrome() {
     const name = sat ? "Oven on, background sound" : "Background sound";
     audioBtns.forEach((b) => { if (b.getAttribute("aria-label") !== name) b.setAttribute("aria-label", name); });
   };
-  new MutationObserver(satName).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  // also the moment the preloader lets go (html.is-loading drops): tone the chrome
+  new MutationObserver(() => { satName(); queueSample(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
   satName();
 
   /* ---------- nav arrow (FLIP between items) ---------- */
@@ -132,7 +133,8 @@ export function initChrome() {
 
   /* ---------- theme: readable on flour and dark pages ---------- */
   const syncTheme = () => { body.dataset.chrome = view.dataset.theme === "dark" ? "dark" : "light"; };
-  new MutationObserver(syncTheme).observe(view, { attributes: true, attributeFilter: ["data-theme"] });
+  // (queueSample is defined further down; observers only fire after init)
+  new MutationObserver(() => { syncTheme(); queueSample(); }).observe(view, { attributes: true, attributeFilter: ["data-theme"] });
   syncTheme();
 
   /* ---------- tucked nav: mouse hover, or tap/click the "Menu" button ---------- */
@@ -163,10 +165,11 @@ export function initChrome() {
     navBtn.setAttribute("aria-expanded", String(navOpen || !t));
   };
 
-  // What is under the header line? Sample the page there and switch the veil to
-  // oven dark over dark sections. Pages can say so with data-theme="dark"; anything
-  // else is judged by its painted background.
-  const darkAt = (x: number, y: number): boolean | null => {
+  // What is under each part of the chrome? Sample the page there and tone the items
+  // to match: ink over flour, paper over oven dark, paper over tomato. Pages can say
+  // so with data-theme="dark"; anything else is judged by its painted background.
+  type Tone = "light" | "dark" | "red";
+  const toneAt = (x: number, y: number): Tone | null => {
     // walk the paint stack top-down (not the DOM ancestry): a transparent section
     // can overlap the dark one under it, and the dark one is what shows
     const stack = document.elementsFromPoint(x, y);
@@ -175,28 +178,51 @@ export function initChrome() {
       if (!view.contains(el) || el === view) continue;
       if (++n > 14) break;
       const theme = (el as HTMLElement).dataset?.theme;
-      if (theme) return theme === "dark";
+      if (theme) return theme === "dark" ? "dark" : "light";
       const m = getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
       if (!m) continue;
       const [r, g, b, a = "1"] = m;
       if (+a < 0.5) continue;
-      return 0.2126 * +r + 0.7152 * +g + 0.0722 * +b < 110;
+      if (+r > 200 && +g < 90 && +b < 90) return "red";
+      return 0.2126 * +r + 0.7152 * +g + 0.0722 * +b < 110 ? "dark" : "light";
     }
-    return stack.length ? view.dataset.theme === "dark" : null;
+    return stack.length ? (view.dataset.theme === "dark" ? "dark" : "light") : null;
   };
-  let overDark = false, sampleRaf = 0;
+  const fallback = (): Tone => (view.dataset.theme === "dark" ? "dark" : "light");
+  /** the most common tone across a row of samples; a three-way split goes to the middle one */
+  const toneRow = (y: number, xs: number[]): Tone => {
+    const got = xs.map((f) => toneAt(innerWidth * f, y)).filter(Boolean) as Tone[];
+    if (!got.length) return fallback();
+    const count = (t: Tone) => got.filter((g) => g === t).length;
+    const best = (["light", "dark", "red"] as Tone[]).sort((p, q) => count(q) - count(p))[0];
+    return count(best) * 2 > got.length ? best : got[Math.floor(got.length / 2)];
+  };
+  const setTone = (els: (Element | null)[], t: Tone) => els.forEach((el) => {
+    if (!el) return;
+    if (t === "light") el.removeAttribute("data-tone"); else if (el.getAttribute("data-tone") !== t) el.setAttribute("data-tone", t);
+  });
+  const veil = $(".ch-veil");
+  const topEls = [...host.querySelectorAll(".ch-nav, .ch-audio-d, .ch-cd, .ch-src, .ch-mbtn")];
+  const railEls = [...host.querySelectorAll(".ch-mark, .ch-meta")];
+  const scrollEl = $(".ch-scroll"), trunkEl = $(".ch-trunk");
+  let topTone: Tone | "" = "", sampleRaf = 0;
   const sample = () => {
     sampleRaf = 0;
     if (document.documentElement.classList.contains("is-loading")) return;
-    const y = innerWidth > 720 ? 30 : 24;
-    let dark = 0, n = 0;
-    for (const f of [0.22, 0.5, 0.78]) {
-      const d = darkAt(innerWidth * f, y);
-      if (d === null) continue;
-      n++; if (d) dark++;
+    const wide = innerWidth > 720;
+    const top = toneRow(wide ? 30 : 24, [0.22, 0.5, 0.78]);
+    if (top !== topTone) {
+      topTone = top;
+      body.classList.toggle("ch-dark", top === "dark");
+      body.classList.toggle("ch-red", top === "red");
+      setTone([veil], top);
     }
-    const v = n ? dark * 2 > n : view.dataset.theme === "dark";
-    if (v !== overDark) { overDark = v; body.classList.toggle("ch-dark", v); }
+    setTone(topEls, top);
+    if (!wide) { setTone(railEls, top); return; }
+    // the spine runs down past the veil: judge it by what is under its lower half
+    setTone(railEls, toneAt(30, 130) ?? fallback());
+    setTone([scrollEl], toneAt(34, innerHeight - 24) ?? fallback());
+    setTone([trunkEl], toneAt(innerWidth - 90, innerHeight - 24) ?? fallback());
   };
   const queueSample = () => { if (!sampleRaf) sampleRaf = requestAnimationFrame(sample); };
 
@@ -324,7 +350,7 @@ export function initChrome() {
       else tl
         .fromTo(mm, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.6, ease: "expo.inOut" })
         .fromTo(big, { yPercent: 110 }, { yPercent: 0, duration: 0.8, ease: "expo.out", stagger: 0.05 }, 0.25)
-        .fromTo(".mm-slice", { rotate: -40, scale: 0.6, autoAlpha: 0 }, { rotate: 0, scale: 1, autoAlpha: 1, duration: 0.9, ease: "back.out(1.6)" }, 0.35)
+        .fromTo(".mm-slice", { rotate: -52, scale: 0.6, autoAlpha: 0 }, { rotate: -12, scale: 1, autoAlpha: 1, duration: 0.9, ease: "back.out(1.6)" }, 0.35)
         .fromTo(".mm-foot > *, .mm-top > *", { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.04, ease: "power3.out" }, 0.4);
       (mm.querySelector(".mm-list a") as HTMLElement).focus({ preventScroll: true });
     } else {

@@ -95,7 +95,8 @@
 .p-slices .sl-tree__pin {
   position: relative;
   height: 100vh;
-  padding: calc(var(--header-h) + 8px) var(--pad-r) 28px var(--pad-l);
+  /* the pinned heading stays clear of the fixed header */
+  padding: calc(var(--header-h) + 24px) var(--pad-r) 28px var(--pad-l);
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 6fr) minmax(0, 3fr);
   grid-template-rows: auto 1fr auto;
@@ -170,7 +171,17 @@
 .p-slices .sl-rings__art svg { width: 100%; height: auto; display: block; }
 .p-slices .sl-rings figcaption { display: grid; gap: 4px; }
 .p-slices .sl-rings strong { font-family: var(--f-display); text-transform: uppercase; font-weight: 700; font-size: clamp(1.6rem, 1rem + 1vw, 2.2rem); line-height: 0.9; color: var(--tomato); }
+.p-slices .sl-rings__next { font-family: var(--f-display); text-transform: uppercase; font-weight: 600; font-size: clamp(1.05rem, 0.8rem + 0.5vw, 1.35rem); line-height: 1; color: var(--ink); margin-top: -2px; }
 .p-slices .sl-rings__cap { font-family: var(--f-serif); font-style: italic; font-size: 1.05rem; line-height: 1.1; text-wrap: balance; }
+/* small laptops / tablets landscape: give the branch list more room and drop
+   the ring footnote so nothing reaches the fixed chrome link bottom right */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .p-slices .sl-tree__pin { grid-template-columns: minmax(0, 2.5fr) minmax(0, 5.5fr) minmax(0, 4fr); }
+  .p-slices .sl-tree__list a { grid-template-columns: 24px minmax(0, 1fr) auto; }
+  .p-slices .sl-tree__lstatus { white-space: nowrap; }
+  .p-slices .sl-rings { grid-template-columns: 84px minmax(0, 1fr); }
+  .p-slices .sl-rings__cap { display: none; }
+}
 @media (min-width: 900px) and (max-height: 820px) { .p-slices .sl-tree__list a { padding: 8px 0; } .p-slices .sl-rings { margin-top: 4px; } }
 .p-slices .sl-tree__list ol { display: grid; border-top: 1px solid var(--line); }
 .p-slices .sl-tree__list a {

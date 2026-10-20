@@ -2,9 +2,9 @@ import "../styles/pages/slices.css";
 import type { Page } from "../core/page";
 import { gsap, ScrollTrigger, reducedMotion, finePointer } from "../core/motion";
 import { bus } from "../core/bus";
-import { SITE, STATUS_LABEL, TOOLS, type Tool } from "../data/site";
+import { SITE, STATUS_LABEL, TOOLS, rings as ringsNow, type Tool } from "../data/site";
 import { glyph, poster, type GlyphId } from "../art";
-import { ringCount, ringsSVG, treeSVG } from "./slices/tree";
+import { ringsSVG, treeSVG } from "./slices/tree";
 import { esc, footerHTML, responsive, whenReady } from "./about/kit";
 
 const DAYS: { d: string; long: string; what: string; g: GlyphId }[] = [
@@ -20,7 +20,15 @@ const DAYS: { d: string; long: string; what: string; g: GlyphId }[] = [
 const bySlug = new Map(TOOLS.map((t) => [t.slug, t]));
 const toolName = (t: Tool) => (t.status === "prepping" ? "Classified" : t.name);
 const sliceos = TOOLS.find((t) => t.slug === "sliceos");
-const rings = ringCount(SITE.since);
+const rings = ringsNow();
+const ord = (n: number) => {
+  const t = n % 100, o = n % 10;
+  return `${n}${t > 10 && t < 14 ? "th" : o === 1 ? "st" : o === 2 ? "nd" : o === 3 ? "rd" : "th"}`;
+};
+/** worded like the footer: "3 rings, a 4th on the way." */
+const ringsLine = rings.full
+  ? `<strong>${rings.full} ring${rings.full === 1 ? "" : "s"},</strong><span class="sl-rings__next">a ${ord(rings.growing)} on the way.</span>`
+  : `<strong>Ring one</strong><span class="sl-rings__next">is on the way.</span>`;
 
 function template() {
   return `<div class="p-slices">
@@ -79,8 +87,8 @@ function template() {
           <span class="sl-rings__art">${ringsSVG(SITE.since)}</span>
           <figcaption>
             <span class="label">Growth rings</span>
-            <strong>${rings.full} ring${rings.full === 1 ? "" : "s"}</strong>
-            <span class="sl-rings__cap">One per year since fall ${SITE.since}, counted from today. The red one is still growing.</span>
+            ${ringsLine}
+            <span class="sl-rings__cap">One per year since fall ${SITE.since}. The red one is still growing.</span>
           </figcaption>
         </figure>
       </nav>

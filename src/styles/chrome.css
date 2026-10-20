@@ -2,40 +2,40 @@
    Persistent chrome, cursor, preloader, page transition, footer.
    ========================================================================= */
 
-/* The chrome floats over flour, tomato and ink sections alike. Rather than
-   guessing what is underneath, it is difference-blended so it inverts whatever
-   it sits on: ink on flour, paper on ink, always legible.
-   The colors written here are the colors it actually reads as on the page
-   ground (ink and tomato on flour), so contrast tooling and forced-colors see
-   the truth. On light pages filter: invert(1) on each item turns them into white and cyan
-   before the blend, which is what produces the inversion. Dark pages need no
-   filter: paper difference-blended over ink already reads as paper. */
+/* The chrome floats over flour, tomato and oven dark sections alike. chrome.ts
+   samples what is painted under each group of items and sets data-tone on it:
+   none (flour) reads ink, "dark" reads paper, "red" reads paper on tomato.
+   Real colors, no blending, so contrast tooling and forced-colors see the truth.
+   The tone vars are registered so a change is a quick color fade, not a snap. */
+@property --c-fg { syntax: "<color>"; inherits: true; initial-value: #141210; }
+@property --c-mute { syntax: "<color>"; inherits: true; initial-value: rgb(20 18 16 / 0.64); }
+@property --c-accent { syntax: "<color>"; inherits: true; initial-value: #f2362a; }
 .ch {
-  --c-fg: var(--ink);
-  /* ~5.4:1 on flour; blended, it lands the same over ink sections */
-  --c-mute: rgb(20 18 16 / 0.64);
-  --c-accent: var(--tomato);
   position: fixed;
   inset: 0;
   z-index: var(--z-chrome);
   pointer-events: none;
-  color: var(--c-fg);
-  mix-blend-mode: difference;
   font-size: 13px;
   line-height: 1.2;
   letter-spacing: -0.012em;
 }
-body[data-chrome="dark"] .ch {
+.ch > * {
+  --c-fg: var(--ink);
+  /* ~5.4:1 on flour */
+  --c-mute: rgb(20 18 16 / 0.64);
+  --c-accent: var(--tomato);
+  color: var(--c-fg);
+  transition: --c-fg 0.28s var(--ease-out), --c-mute 0.28s var(--ease-out), --c-accent 0.28s var(--ease-out);
+}
+.ch > [data-tone="dark"] {
   --c-fg: var(--paper);
-  --c-mute: rgb(247 244 239 / 0.64);
+  --c-mute: rgb(247 244 239 / 0.68);
   --c-accent: var(--tomato);
 }
-/* per item, not on the whole layer: a viewport-sized filter surface costs frames */
-.ch > * { filter: invert(1); }
-body[data-chrome="dark"] .ch > * { filter: none; }
-@media (forced-colors: active) {
-  .ch { mix-blend-mode: normal; }
-  .ch > * { filter: none; }
+.ch > [data-tone="red"] {
+  --c-fg: var(--paper);
+  --c-mute: rgb(247 244 239 / 0.86);
+  --c-accent: var(--ink);
 }
 .ch a, .ch button { pointer-events: auto; }
 .ch > * { position: absolute; }
@@ -185,24 +185,25 @@ body.footer-in .ch-trunk, body.footer-in .ch-scroll { opacity: 0; pointer-events
 
 .ch-mbtn, .ch-bar { display: none; }
 
-/* --- veil: once the page scrolls under the header, a flour wash (or an oven dark
-   one over dark sections) fades in behind it so the header never runs through
-   headings. It sits under the blended layer, so the blend reads it as ground:
-   ink over the flour wash, paper over the dark one. Two stacked layers crossfade;
-   opacity only. --- */
+/* --- veil: once the page scrolls under the header, an opaque band in the tone of
+   what is underneath (flour, oven dark or tomato) slides in behind it so the
+   header never runs through headings: solid for the first 64px, then a fade.
+   The color fades between tones (registered property); the shape never moves. --- */
+@property --veil { syntax: "<color>"; inherits: false; initial-value: #efebe4; }
 .ch-veil {
-  position: fixed; left: 0; right: 0; top: 0; height: 104px;
+  position: fixed; left: 0; right: 0; top: 0; height: calc(var(--header-h) + 24px);
   z-index: calc(var(--z-chrome) - 1);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s var(--ease-out);
+  --veil: var(--flour);
+  background: var(--veil);
+  -webkit-mask: linear-gradient(#000 0 64px, rgb(0 0 0 / 0.86) 50%, transparent);
+  mask: linear-gradient(#000 0 64px, rgb(0 0 0 / 0.86) 50%, transparent);
+  transition: opacity 0.3s var(--ease-out), --veil 0.28s var(--ease-out);
 }
-.ch-veil i { position: absolute; inset: 0; transition: opacity 0.35s var(--ease-out); }
-.ch-veil-l { background: linear-gradient(to bottom, var(--flour) 0%, rgb(239 235 228 / 0.94) 38%, rgb(239 235 228 / 0.6) 66%, rgb(239 235 228 / 0) 100%); }
-.ch-veil-d { opacity: 0; background: linear-gradient(to bottom, var(--oven) 0%, rgb(14 13 12 / 0.92) 38%, rgb(14 13 12 / 0.55) 66%, rgb(14 13 12 / 0) 100%); }
+.ch-veil[data-tone="dark"] { --veil: var(--oven); }
+.ch-veil[data-tone="red"] { --veil: var(--tomato); }
 body.is-scrolled .ch-veil { opacity: 1; }
-body.ch-dark .ch-veil-l { opacity: 0; }
-body.ch-dark .ch-veil-d { opacity: 1; }
 body.menu-open .ch-veil, html.is-loading .ch-veil { opacity: 0; }
 
 
@@ -225,10 +226,11 @@ body.menu-open .ch-veil, html.is-loading .ch-veil { opacity: 0; }
     background: var(--bg);
     box-shadow: 0 1px 0 var(--line);
     transform: translateY(-101%);
-    transition: transform 0.6s var(--ease-out);
+    transition: transform 0.6s var(--ease-out), background-color 0.28s var(--ease-out);
     pointer-events: none;
   }
-  body[data-chrome="dark"] .ch-bar, body.ch-dark .ch-bar { background: var(--oven); box-shadow: 0 1px 0 rgb(247 244 239 / 0.1); }
+  body.ch-dark .ch-bar { background: var(--oven); box-shadow: 0 1px 0 rgb(247 244 239 / 0.1); }
+  body.ch-red .ch-bar { background: var(--tomato); box-shadow: 0 1px 0 rgb(20 18 16 / 0.16); }
   .ch-veil { display: none; }
   body.is-scrolled .ch-bar { transform: none; }
   .ch-word { writing-mode: horizontal-tb; transform: none; font-size: 21px; line-height: 1; }
@@ -264,7 +266,8 @@ html.menu-lock { overflow: hidden; }
 .mm-mark { font-weight: 800; font-size: 21px; letter-spacing: -0.045em; }
 .mm-mark i { font-style: normal; font-size: 0.5em; vertical-align: 0.8em; font-weight: 500; }
 .mm-close { font-weight: 600; padding: 6px 2px 6px 14px; }
-.mm-list { margin-top: auto; padding-bottom: 6vh; position: relative; z-index: 1; }
+/* centered between the top bar and the foot, so neither half of the sheet sits empty */
+.mm-list { margin: auto 0; padding: 4vh 0; position: relative; z-index: 1; }
 .mm-list li { overflow: hidden; border-top: 1px solid rgb(20 18 16 / 0.18); }
 .mm-list li:last-child { border-bottom: 1px solid rgb(20 18 16 / 0.18); }
 .mm-list a { display: flex; align-items: baseline; gap: 12px; padding: 1.2vh 0 0.2vh; }
@@ -278,7 +281,7 @@ html.menu-lock { overflow: hidden; }
 }
 .mm-list a[aria-current="page"] .mm-t { color: var(--ink); }
 .mm-list a[aria-current="page"] .mm-t::before { content: "\2192\00a0"; font-weight: 400; }
-.mm-slice { position: absolute; right: -6vw; top: 9vh; width: 46vw; pointer-events: none; }
+.mm-slice { position: absolute; right: 16px; top: calc(56px + 2vh); width: 38vw; pointer-events: none; transform: rotate(-12deg); }
 .mm-slice svg { width: 100%; height: auto; }
 .mm-foot {
   display: grid; grid-template-columns: 1fr auto; gap: 14px 10px; align-items: end;
@@ -289,7 +292,9 @@ html.menu-lock { overflow: hidden; }
 .mm :focus-visible { outline-color: var(--ink); }
 
 /* =========================================================================
-   Custom cursor (fine pointers only). Difference blend reads on any ground.
+   Custom cursor (fine pointers only). Two layers moving as one: the dot is
+   difference-blended so it reads on any ground; the labelled pill is a plain
+   ink pill with paper type, so it stays legible over color and illustration.
    ========================================================================= */
 html.has-cursor, html.has-cursor * { cursor: none !important; }
 html.has-cursor :is(input, textarea, select, [contenteditable]) { cursor: text !important; }
@@ -301,6 +306,7 @@ html.has-cursor :is(input, textarea, select, [contenteditable]) { cursor: text !
   transition: opacity 0.3s;
   will-change: transform;
 }
+.cursor--pill { mix-blend-mode: normal; z-index: 111; }
 .cursor.is-on { opacity: 1; }
 .cursor[data-state="hide"] { opacity: 0; }
 .cursor-d {
@@ -318,7 +324,9 @@ html.has-cursor :is(input, textarea, select, [contenteditable]) { cursor: text !
   position: absolute; left: 0; top: 0;
   padding: 9px 15px 10px;
   border-radius: 999px;
-  background: #fff; color: #000;
+  background: var(--ink); color: var(--paper);
+  /* a hairline of paper keeps the pill's edge on oven dark sections */
+  box-shadow: 0 0 0 1px rgb(247 244 239 / 0.28), 0 6px 18px -6px rgb(20 18 16 / 0.45);
   font-size: 12px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap;
   /* sits just off the pointer's lower right so it never hides what you're reading */
   transform: translate(14px, 14px) scale(0.2);
@@ -347,7 +355,7 @@ html.is-loading #loader { animation: none; }
 html.is-loading { overflow: hidden; }
 /* the small rows wait for the webfont; the wordmark paints at once (it is the LCP)
    with a metric-matched fallback, so a late swap barely moves it */
-#loader:not(.is-type) :is(.ld-row, .ld-pr) { visibility: hidden; }
+#loader:not(.is-type) :is(.ld-row, .ld-art text, .ld-wall span) { visibility: hidden; }
 .ld-clip, .ld-paper { position: absolute; inset: 0; will-change: transform; }
 .ld-clip { overflow: hidden; }
 .ld-paper {
@@ -369,53 +377,43 @@ html.is-loading { overflow: hidden; }
   descent-override: 32%;
   line-gap-override: 0%;
 }
-/* The lid: a fixed box (never sized by its text, so a font swap moves nothing),
-   double ruled like a printed pizza box, with tiny box print riding the rule. */
+/* The lid: the same printed lid as the home hero's box (src/chrome/lid.ts, put in
+   by preloader.ts). The box is fixed (never sized by its text, so a font swap moves
+   nothing) and drawn in CSS as well, so the very first frame already reads as the
+   board. The wordmark is real text set over the art where the lid prints it:
+   centered, baseline at 70%, 79.5% wide, tomato with an ink copy a hair out of
+   register. */
 .ld-lid {
+  --L: min(68vw, 64vh);
   position: relative;
-  display: grid; place-items: center;
-  width: min(68vw, 66vh); height: min(68vw, 66vh);
+  width: var(--L); height: var(--L);
   margin: auto;
-  border: 2px solid var(--ink);
-  border-radius: 6px;
+  border-radius: 1.75%;
+  background: #fbf8f2;
+  box-shadow:
+    inset 0 0 0 calc(var(--L) * 0.01) var(--ink),
+    inset 0 0 0 calc(var(--L) * 0.07) #fbf8f2,
+    inset 0 0 0 calc(var(--L) * 0.078) var(--tomato),
+    0 calc(var(--L) * 0.06) calc(var(--L) * 0.1) calc(var(--L) * -0.05) rgb(20 18 16 / 0.35);
+  rotate: -3deg;
 }
-.ld-lid::before {
-  content: ""; position: absolute; inset: 7px;
-  border: 1px solid var(--ink); border-radius: 3px;
-  pointer-events: none;
-}
-.ld-pr {
-  position: absolute; z-index: 1;
-  padding: 0 10px;
-  background: var(--flour);
-  font-family: var(--f-mono); font-size: 10px; line-height: 1; letter-spacing: 0.16em; text-transform: uppercase;
-  white-space: nowrap;
-}
-.ld-pr-t { top: -5px; left: 50%; transform: translateX(-50%); }
-.ld-pr-b { bottom: -5px; left: 50%; transform: translateX(-50%); }
-.ld-pr-l { left: -5px; top: 50%; writing-mode: vertical-rl; transform: translateY(-50%) rotate(180deg); padding: 10px 0; }
-.ld-pr-r { right: -5px; top: 50%; writing-mode: vertical-rl; transform: translateY(-50%); padding: 10px 0; }
-.ld-stamp {
-  position: absolute; right: -4.5%; top: -5.5%;
-  width: 19%; height: auto; padding: 0;
-  background: none;
-  transform: rotate(-14deg);
-  fill: none; stroke: var(--tomato); stroke-width: 2;
-}
-.ld-stamp text { fill: var(--tomato); stroke: none; font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.06em; font-weight: 700; }
-.ld-stamp .ld-stamp-c { font-family: var(--f-display); font-size: 24px; font-weight: 800; letter-spacing: 0.02em; }
+.ld-art, .ld-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ld-word {
-  display: flex; flex-direction: column; align-items: stretch; text-align: center;
+  position: absolute; left: 0; right: 0; bottom: 30%;
+  display: flex; justify-content: center; align-items: flex-end;
   font-family: "Big Shoulders Display Variable", "Big Shoulders Fallback", Impact, sans-serif;
   font-weight: 800;
-  color: var(--ink);
+  color: var(--tomato);
   text-transform: uppercase;
-  font-size: min(25.5vw, 28.5vh);
-  line-height: 0.84;
+  font-size: calc(var(--L) * 0.226);
+  line-height: 0.8;
   letter-spacing: -0.012em;
+  text-shadow: 0.032em 0.032em 0 var(--ink);
+  white-space: nowrap;
+  transform: scaleY(1.1);
+  transform-origin: 50% 100%;
 }
-.ld-ln { display: block; padding: 0.04em 0.02em 0; }
-.ld-ln + .ld-ln { color: var(--tomato); }
+.ld-ln { display: block; padding: 0.04em 0 0; }
 .ld-ln > span { display: inline-block; }
 .ld-bot { font-variant-numeric: tabular-nums; }
 .ld-temp { display: inline-flex; align-items: center; gap: 10px; }
@@ -442,9 +440,21 @@ html.is-loading { overflow: hidden; }
 .ld-wall {
   position: absolute; top: 0; left: 0; bottom: 0;
   width: 64vw;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3vh;
   background: var(--ink);
   transform: translate3d(-101vw, 0, 0);
   will-change: transform;
+}
+/* printed on the wall, so its moment on screen is the box's back panel, not a void */
+.ld-wall-w {
+  font-family: var(--f-display); font-weight: 800; text-transform: uppercase;
+  font-size: min(11vw, 22vh); line-height: 0.8; letter-spacing: -0.01em;
+  color: var(--tomato);
+}
+.ld-wall-w sup { font-size: 0.16em; vertical-align: top; margin-left: 0.2em; color: var(--paper); }
+.ld-wall-r {
+  width: 78%; height: 2px;
+  background: repeating-linear-gradient(90deg, rgb(247 244 239 / 0.5) 0 8px, transparent 8px 14px);
 }
 .ld-wall span {
   position: absolute; left: 22px; bottom: 18px;
@@ -463,10 +473,7 @@ html.is-loading { overflow: hidden; }
 .ld-m2 { right: -7%; z-index: 1; }
 .ld-m1 { right: 44%; bottom: 17vh; }
 @media (max-width: 720px) {
-  .ld-lid { width: calc(100vw - 32px); height: auto; padding: 8vw 0 9vw; }
-  .ld-word { font-size: 43vw; }
-  .ld-stamp { width: 25%; right: -3%; top: auto; bottom: -7%; transform: rotate(12deg); }
-  .ld-pr-l, .ld-pr-r { display: none; }
+  .ld-lid { --L: min(100vw - 40px, 62vh); }
   .ld-bar { display: none; }
   .ld-top span:last-child, .ld-bot > span:last-child { display: none; }
   .ld-wall { width: 80vw; }
@@ -480,8 +487,25 @@ html.is-loading { overflow: hidden; }
 .pt.is-on { visibility: visible; pointer-events: auto; }
 .pt-ink, .pt-red { position: absolute; inset: 0; will-change: transform; } /* gsap owns their transform */
 .pt-ink { background: var(--ink); }
-.pt-red { background: var(--tomato); color: var(--paper); overflow: hidden; }
-.pt-in { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.pt-red { background: var(--tomato); color: var(--paper); }
+/* the tomato sheet is a torn-off ticket: serrated top and bottom edges, so the ink
+   sheet chasing it reads as the next sheet in the pad, not a stray black band */
+.pt-red::before, .pt-red::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 12px;
+  background: var(--tomato);
+  pointer-events: none;
+}
+.pt-red::before {
+  bottom: calc(100% - 1px);
+  -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 24px 100%;
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 24px 100%;
+}
+.pt-red::after {
+  top: calc(100% - 1px);
+  -webkit-mask: conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% / 24px 100%;
+  mask: conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% / 24px 100%;
+}
+.pt-in { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .pt-meta {
   position: absolute; left: 18px; right: 18px; bottom: 18px;
   display: flex; justify-content: space-between; gap: 16px;

@@ -111,7 +111,8 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-columns: minmax(0, 1fr);
-  padding-top: calc(var(--header-h) + 8px);
+  /* keep the pinned heading clear of the fixed header */
+  padding-top: calc(var(--header-h) + 24px);
   overflow: hidden;
   background: var(--flour);
 }
@@ -133,6 +134,12 @@
 .p-about .ab-odo__win { display: block; height: 1em; overflow: hidden; }
 .p-about .ab-odo__col { display: flex; flex-direction: column; will-change: transform; }
 .p-about .ab-odo__col > span { display: block; height: 1em; text-align: center; }
+.p-about .ab-time__view {
+  min-height: 0;
+  /* chapters fade out as they slide under the left chrome rail instead of being chopped */
+  -webkit-mask-image: linear-gradient(90deg, transparent 40px, #000 var(--pad-l));
+  mask-image: linear-gradient(90deg, transparent 40px, #000 var(--pad-l));
+}
 .p-about .ab-time__track {
   display: flex;
   height: 100%;
@@ -211,7 +218,7 @@
 .p-about .ab-time__ticks li.is-on { color: var(--red-ink); }
 
 /* ---------- duo ---------- */
-.p-about .ab-duo { padding: clamp(96px, 10vw, 160px) 0; }
+.p-about .ab-duo { padding: clamp(80px, 10vh, 140px) 0; }
 .p-about .ab-duo__grid { padding: 0 var(--pad-r) 0 var(--pad-l); }
 .p-about .ab-duo__pair {
   --gap: clamp(56px, 8vw, 150px);
@@ -278,7 +285,7 @@
 .p-about .ab-person__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); align-self: center; flex: none; }
 
 /* ---------- how ---------- */
-.p-about .ab-how { padding: clamp(96px, 10vw, 160px) 0; }
+.p-about .ab-how { padding: clamp(80px, 10vh, 140px) 0; }
 .p-about .ab-how__list { padding: 0 var(--pad-r) 0 var(--pad-l); counter-reset: none; }
 .p-about .ab-how__item {
   display: grid;
@@ -301,17 +308,24 @@
 /* ---------- come say hi: an ORDER UP ticket and a paper receipt ---------- */
 .p-about .ab-hi {
   display: grid;
-  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
-  gap: var(--gutter);
-  padding: clamp(96px, 10vw, 160px) var(--pad-r) clamp(96px, 10vw, 160px) var(--pad-l);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  padding: clamp(80px, 10vh, 140px) var(--pad-r) clamp(80px, 10vh, 140px) var(--pad-l);
   align-items: center;
 }
-.p-about .ab-hi__side { display: grid; gap: 18px; align-self: start; max-width: 24rem; }
+.p-about .ab-hi__side { grid-column: 1 / 5; display: grid; gap: 18px; max-width: 24rem; }
 .p-about .ab-hi__line { font-size: clamp(1.5rem, 1rem + 1.4vw, 2.4rem); line-height: 1.05; text-wrap: balance; }
 .p-about .ab-hi__hint { color: var(--red-ink); }
-.p-about .ab-hi__table { position: relative; min-height: clamp(700px, 56vw, 860px); }
+.p-about .ab-hi__table {
+  grid-column: 6 / -1;
+  position: relative;
+  /* both cards share one cell, so the table is exactly as tall as the pile */
+  display: grid;
+  grid-template: minmax(0, auto) / minmax(0, 1fr);
+}
 .p-about .ab-card {
-  position: absolute;
+  grid-area: 1 / 1;
+  position: relative;
   touch-action: pan-y;
   cursor: grab;
   user-select: none;
@@ -323,7 +337,8 @@
 /* receipt: thermal paper, zigzag torn edges (mask), mono line items */
 .p-about .ab-rcpt {
   --zz: 9px;
-  left: 0; top: 20%;
+  justify-self: start; align-self: start;
+  margin-top: clamp(96px, 9vw, 150px);
   width: min(100%, 350px);
   rotate: 4deg;
   z-index: 1;
@@ -376,7 +391,7 @@
 
 /* ORDER UP: a dark kitchen ticket sign with a row of bulbs */
 .p-about .ab-order {
-  right: 0; top: 0;
+  justify-self: end; align-self: start;
   width: min(100%, 490px);
   rotate: -3deg;
   padding: 46px clamp(24px, 2.6vw, 38px) 30px;
@@ -409,10 +424,19 @@
 
 /* tablet: the counter gets the full width so the ticket and receipt sit side by side */
 @media (min-width: 721px) and (max-width: 1199px) {
-  .p-about .ab-hi { grid-template-columns: 1fr; gap: 48px; }
-  .p-about .ab-hi__side { max-width: 34rem; }
-  .p-about .ab-hi__table { min-height: 780px; }
-  .p-about .ab-rcpt { left: 4%; top: 150px; }
+  .p-about .ab-hi { row-gap: 48px; }
+  .p-about .ab-hi__side { grid-column: 1 / -1; max-width: 34rem; }
+  .p-about .ab-hi__table { grid-column: 1 / -1; }
+  .p-about .ab-rcpt { margin-left: 4%; margin-top: 150px; }
+}
+/* narrow tablet: no room to fan both cards side by side, so the receipt is
+   tossed below the ticket, overlapping just its foot */
+@media (min-width: 721px) and (max-width: 999px) {
+  .p-about .ab-hi__table { grid-template: auto auto / minmax(0, 1fr); }
+  .p-about .ab-order { grid-area: 1 / 1; margin-right: 4%; }
+  .p-about .ab-rcpt { grid-area: 2 / 1; margin: -28px 0 0 6%; z-index: 3; }
+  .p-about .ab-hero__lede { grid-column: 1 / 10; grid-row: 3; margin-bottom: 28px; }
+  .p-about .ab-hero__meta { grid-column: 1 / -1; grid-row: 4; }
 }
 
 /* ---------- reduced motion ---------- */
@@ -422,6 +446,7 @@
 @media (max-width: 899px), (prefers-reduced-motion: reduce) {
   .p-about .ab-time__pin { position: relative; height: auto; overflow: visible; display: block; padding-top: 72px; }
   .p-about .ab-time__odo { display: none; }
+  .p-about .ab-time__view { -webkit-mask-image: none; mask-image: none; }
   .p-about .ab-time__track { display: grid; width: auto; padding: 0 var(--pad-r) 0 var(--pad-l); gap: 0; margin-top: 28px; }
   .p-about .ab-ch { width: auto; height: auto; padding: 0; }
   .p-about .ab-ch__in { grid-template-columns: 1fr; grid-template-rows: auto; border-left: 0; border-top: 1px solid var(--line); padding: 32px 0 44px; gap: 22px; }
@@ -446,8 +471,9 @@
   .p-about .ab-person__meta > div { grid-template-columns: 84px 1fr; }
   .p-about .ab-how__item { grid-template-columns: 1fr; gap: 6px; }
   .p-about .ab-hi { grid-template-columns: 1fr; gap: 40px; }
-  .p-about .ab-hi__table { min-height: 0; display: grid; gap: 28px; justify-items: center; }
-  .p-about .ab-card { position: relative; inset: auto; }
+  .p-about .ab-hi__side, .p-about .ab-hi__table { grid-column: 1; }
+  .p-about .ab-hi__table { grid-template: none; gap: 28px; justify-items: center; }
+  .p-about .ab-card { grid-area: auto; justify-self: center; margin: 0; }
   .p-about .ab-order { order: -1; rotate: -2deg; width: 100%; }
   .p-about .ab-rcpt { rotate: 2.5deg; width: min(92%, 360px); }
 }

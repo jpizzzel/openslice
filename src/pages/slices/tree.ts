@@ -7,7 +7,7 @@
 // Hooks kept for slices.ts: [data-part="branch"] paths (pathLength=1, with
 // data-slug), two [data-part="leaf"] groups per branch in branch order, and a
 // [data-part="fruit"] group per tool (data-slug) hanging from its tip.
-import { SITE, type Tool } from "../../data/site";
+import { SITE, rings, type Tool } from "../../data/site";
 import { glyph, halftone } from "../../art";
 
 const INK = "#141210";
@@ -145,15 +145,9 @@ export function treeSVG(tools: Tool[], o: TreeOpts): string {
 
 /* ------------------------------------------------------------ growth rings */
 
-/** full years since fall of `since` (rings close each Sept 1), plus the year in progress */
-export function ringCount(since: number, now = new Date()) {
-  let full = 0;
-  while (new Date(since + full + 1, 8, 1) <= now) full++;
-  return { full, start: since };
-}
-
+/** cross section of the trunk; the ring count comes from rings() in site.ts (same as the footer) */
 export function ringsSVG(since: number, now = new Date()) {
-  const { full } = ringCount(since, now);
+  const { full } = rings(now);
   const total = full + 1; // the outermost ring is still growing
   const c = 110, rMax = 90, rMin = 12;
   const ht = halftone(2, INK, 4);

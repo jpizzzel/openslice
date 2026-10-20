@@ -181,7 +181,7 @@ function template() {
         <h2 id="ab-time-h" class="ab-time__h"><span class="caps-red">The story</span> <em class="serif">so far</em></h2>
         <p class="ab-time__odo" aria-hidden="true">${[0, 1, 2, 3].map(() => `<span class="ab-odo__win"><span class="ab-odo__col">${"0123456789X".split("").map((d) => `<span>${d}</span>`).join("")}</span></span>`).join("")}</p>
       </header>
-      <ol class="ab-time__track">${CHAPTERS.map(chapterHTML).join("")}</ol>
+      <div class="ab-time__view"><ol class="ab-time__track">${CHAPTERS.map(chapterHTML).join("")}</ol></div>
       <div class="ab-time__rail" aria-hidden="true">
         <span class="ab-time__line"><span class="ab-time__fill"></span></span>
         <span class="ab-time__rider">${glyph("slice")}</span>

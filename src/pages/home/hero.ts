@@ -11,31 +11,24 @@ import { ticketHTML } from "./ticket";
 
 interface Obj {
   id: GlyphId;
-  /** center, relative to the box mouth, in box widths */
+  /** center, relative to the box, in box widths */
   dx: number;
-  dy: number;
+  /** where it rests: its bottom edge, below the box center, in box widths */
+  by: number;
   /** width, in box widths */
   s: number;
   /** resting rotation */
   r: number;
 }
 
-// A fountain: tight over the pizza, opening wide around the open lid.
+// A still life: the kit behind each tool, set down on the table around the box,
+// all on the same tabletop (the box's shadow), nearer ones a touch lower.
 const OBJECTS: Obj[] = [
-  { id: "laptop", dx: 0.02, dy: -1.74, s: 0.42, r: -6 },
-  { id: "terminal", dx: -0.68, dy: -1.52, s: 0.27, r: -12 },
-  { id: "satsuma", dx: 0.72, dy: -1.5, s: 0.3, r: 10 },
-  { id: "star", dx: -0.3, dy: -2.08, s: 0.15, r: 0 },
-  { id: "github", dx: 0.4, dy: -2.06, s: 0.16, r: 10 },
-  { id: "basil", dx: -1.04, dy: -1.5, s: 0.15, r: -30 },
-  { id: "pepperoni", dx: 1.04, dy: -1.74, s: 0.13, r: 0 },
-  { id: "tangerine", dx: -0.98, dy: -1.0, s: 0.27, r: -8 },
-  { id: "voice", dx: 1.0, dy: -1.04, s: 0.25, r: 10 },
-  { id: "keyboard", dx: -0.98, dy: -0.36, s: 0.34, r: 12 },
-  { id: "headphones", dx: 0.98, dy: -0.46, s: 0.26, r: 14 },
-  { id: "register", dx: -0.3, dy: -0.58, s: 0.28, r: -6 },
-  { id: "slice", dx: 0.3, dy: -0.62, s: 0.25, r: -18 },
-  { id: "mystery", dx: 1.02, dy: 0.06, s: 0.24, r: -10 },
+  { id: "keyboard", dx: -1.0, by: 0.34, s: 0.4, r: -4 },
+  { id: "voice", dx: -0.64, by: 0.5, s: 0.2, r: -6 },
+  { id: "mystery", dx: 0.62, by: 0.5, s: 0.22, r: 6 },
+  { id: "register", dx: 0.88, by: 0.32, s: 0.32, r: 3 },
+  { id: "tangerine", dx: 1.02, by: 0.52, s: 0.2, r: 8 },
 ];
 
 const OPEN = 118; // lid angle once open, in degrees around the hinge
@@ -44,8 +37,8 @@ const intro = `Making free tools for students, engineers and small businesses, o
 export function heroHTML() {
   const objs = OBJECTS.map(
     (o, i) => `
-      <div class="o" style="--dx:${o.dx};--dy:${o.dy};--s:${o.s};--r:${o.r}deg" data-i="${i}">
-        <div class="o-scroll"><div class="o-intro"><div class="o-float"><div class="o-wig">${glyph(o.id)}</div></div></div></div>
+      <div class="o o--${o.id}" style="--dx:${o.dx};--by:${o.by};--s:${o.s};--r:${o.r}deg" data-i="${i}">
+        <div class="o-scroll"><div class="o-intro"><i class="o-sh"></i><div class="o-float"><div class="o-wig">${glyph(o.id)}</div></div></div></div>
       </div>`,
   ).join("");
 
@@ -158,13 +151,13 @@ export function initHero(kit: Kit, introReady: Promise<void>) {
     });
   });
 
-  // ---- idle float + subtle mouse parallax (max 12px)
+  // ---- idle: they rest on the table, so no bobbing. Only a little mouse
+  // parallax by depth (max ~10px) and a slow breath of tilt.
   const seeds = OBJECTS.map((o, i) => ({
     ph: i * 1.7 + o.dx * 2,
-    sp: 0.7 + ((i * 37) % 10) / 18,
-    amp: 4 + ((i * 13) % 6),
-    rot: 2 + ((i * 7) % 4),
-    depth: 0.45 + Math.min(0.55, o.s * 1.4),
+    sp: 0.5 + ((i * 37) % 10) / 30,
+    rot: 0.8 + ((i * 7) % 3) * 0.4,
+    depth: 0.35 + o.by * 0.9,
   }));
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
   type Q = ReturnType<typeof gsap.quickTo>;
@@ -191,10 +184,10 @@ export function initHero(kit: Kit, introReady: Promise<void>) {
     for (let i = 0; i < floats.length; i++) {
       const s = seeds[i];
       const t = time * s.sp + s.ph;
-      const x = Math.cos(t * 0.6) * s.amp * 0.4 - mouse.x * 12 * s.depth;
-      const y = Math.sin(t) * s.amp - mouse.y * 10 * s.depth;
-      const r = Math.sin(t * 0.8) * s.rot + mouse.x * 3 * s.depth;
-      floats[i].style.transform = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) rotate(${r.toFixed(2)}deg)`;
+      const x = -mouse.x * 10 * s.depth;
+      const r = Math.sin(t) * s.rot + mouse.x * 2 * s.depth;
+      // tilt about the bottom edge, so it rocks on the table instead of hovering
+      floats[i].style.transform = `translate3d(${x.toFixed(2)}px,0,0) rotate(${r.toFixed(2)}deg)`;
     }
   });
 
@@ -312,10 +305,14 @@ export function initHero(kit: Kit, introReady: Promise<void>) {
     const order = intros.map((el, i) => ({ el, i, d: toMouth(i) }))
       .sort((a, b) => Math.hypot(a.d.x, a.d.y) - Math.hypot(b.d.x, b.d.y));
     order.forEach(({ el, i, d }, n) => {
-      const at = 0.66 + n * 0.035;
+      const at = 0.66 + n * 0.07;
+      // up out of the mouth, then down onto the table with a little bounce
       tl.fromTo(el, { x: d.x, autoAlpha: 0, scale: 0.2, rotation: (i % 2 ? 1 : -1) * 120 },
-        { x: 0, autoAlpha: 1, scale: 1, rotation: 0, duration: 0.95, ease: "back.out(1.6)" }, at)
-        .fromTo(el, { y: d.y }, { y: 0, duration: 0.95, ease: "back.out(1.6)" }, at);
+        { x: 0, autoAlpha: 1, scale: 1, rotation: 0, duration: 0.9, ease: "power3.out" }, at)
+        .fromTo(el, { y: d.y }, { keyframes: [
+          { y: Math.min(d.y, 0) - 70, duration: 0.42, ease: "power2.out" },
+          { y: 0, duration: 0.6, ease: "bounce.out" },
+        ] }, at);
     });
     tl.add(() => { ready = true; }, 1.5);
   }));

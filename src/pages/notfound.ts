@@ -114,15 +114,38 @@ const page: Page = {
     const sec0 = el.querySelector<HTMLElement>(".nf")!;
     const torch = el.querySelector<HTMLElement>(".nf__torch")!;
     const torchIn = el.querySelector<HTMLElement>(".nf__torch-in")!;
+    const num = el.querySelector<SVGElement>(".nf__num")!;
+    const lines = [...el.querySelectorAll<HTMLElement>(".nf__li")];
     let W = 1, H = 1, TR = 1;
+    // where the flashlight searches on its own: over the 404, never across the
+    // headline (its circle stays 24px clear of the h1 text)
+    const zone = { x0: 0, x1: 0, y0: 0, y1: 0 };
     const fit = () => {
       W = sec0.clientWidth; H = sec0.clientHeight; TR = torch.offsetWidth / 2;
       torchIn.style.width = `${W}px`; torchIn.style.height = `${H}px`;
+      const n = { l: num.getBoundingClientRect(), s: sec0.getBoundingClientRect() };
+      const nt = n.l.top - n.s.top, nb = n.l.bottom - n.s.top, nh = nb - nt;
+      // the h1 is the offsetParent of its lines; offsets ignore the intro transforms
+      const h1 = el.querySelector<HTMLElement>(".nf__h")!;
+      let hx1 = 0, hy0 = H;
+      lines.forEach((li) => {
+        hx1 = Math.max(hx1, li.offsetLeft + li.offsetWidth);
+        hy0 = Math.min(hy0, (li.parentElement as HTMLElement).offsetTop);
+      });
+      hx1 += h1.offsetLeft; hy0 += h1.offsetTop;
+      const gap = 24;
+      const yTop = Math.max(TR * 0.6, nt + nh * 0.12), yBot = Math.min(H - TR, nb - nh * 0.06);
+      const right = { x0: hx1 + gap + TR, x1: W - TR * 0.7, y0: yTop, y1: yBot };
+      const above = { x0: TR * 0.6, x1: W - TR * 0.6, y0: yTop, y1: hy0 - gap - TR };
+      Object.assign(zone, right.x1 - right.x0 > TR * 1.2 ? right : above);
+      if (zone.x1 < zone.x0) zone.x0 = zone.x1 = (zone.x0 + zone.x1) / 2;
+      if (zone.y1 < zone.y0) zone.y0 = zone.y1 = Math.min(zone.y0, zone.y1);
     };
     const ro = new ResizeObserver(fit);
     ro.observe(sec0);
     fit();
-    const beam = { x: W * 0.62, y: H * 0.45, tx: W * 0.62, ty: H * 0.45, user: 0 };
+    const beam = { x: (zone.x0 + zone.x1) / 2, y: (zone.y0 + zone.y1) / 2, tx: 0, ty: 0, user: 0 };
+    beam.tx = beam.x; beam.ty = beam.y;
     const tx = gsap.quickSetter(torch, "x", "px"), ty = gsap.quickSetter(torch, "y", "px");
     const ix = gsap.quickSetter(torchIn, "x", "px"), iy = gsap.quickSetter(torchIn, "y", "px");
     const sweep = (time: number, dms: number) => {
@@ -130,8 +153,8 @@ const page: Page = {
       if (beam.user > 0) beam.user -= dt;
       else {
         // nobody is holding the flashlight: it searches on its own
-        beam.tx = W * (0.5 + 0.34 * Math.sin(time * 0.5));
-        beam.ty = H * (0.48 + 0.22 * Math.sin(time * 0.83 + 1.3));
+        beam.tx = zone.x0 + (zone.x1 - zone.x0) * (0.5 + 0.5 * Math.sin(time * 0.5));
+        beam.ty = zone.y0 + (zone.y1 - zone.y0) * (0.5 + 0.5 * Math.sin(time * 0.83 + 1.3));
       }
       const k = 1 - Math.exp(-dt * (beam.user > 0 ? 9 : 2.2));
       beam.x += (beam.tx - beam.x) * k; beam.y += (beam.ty - beam.y) * k;

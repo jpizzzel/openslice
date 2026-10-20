@@ -7,7 +7,7 @@
   --red-size: clamp(1.5rem, 0.7rem + 1.45vw, 2.65rem);
   /* tomato as text: a hair deeper than the token so it clears 3:1 on flour */
   --tomato-text: #f2362a;
-  --sec-pad: clamp(96px, 10vw, 160px);
+  --sec-pad: clamp(80px, 10vh, 140px);
   position: relative;
 }
 .p-home .caps-red, .p-home .mf-w--hot, .p-home .h-cta__title em { color: var(--tomato-text); }
@@ -107,6 +107,7 @@
   background: var(--ink);
   color: var(--paper);
   font-weight: 600;
+  white-space: nowrap;
   transition: background-color 0.4s var(--ease-out), translate 0.5s var(--ease-spring);
 }
 .p-home .h-go .h-ul { background: none; }
@@ -298,15 +299,30 @@
 
 .p-home .o {
   position: absolute;
+  /* bottom-anchored: every object stands on the same tabletop as the box */
   left: calc(50% + var(--dx) * var(--bw) * var(--spread));
-  top: calc(50% + var(--dy) * var(--bw));
+  top: calc(50% + var(--by) * var(--bw));
   width: calc(var(--s) * var(--bw));
-  translate: -50% -50%;
+  translate: -50% -100%;
   rotate: var(--r);
   pointer-events: auto;
 }
 .p-home .o > div, .p-home .o > div > div, .p-home .o-wig { will-change: transform; }
-.p-home .o svg { width: 100%; height: auto; overflow: visible; }
+.p-home .o-intro { position: relative; }
+.p-home .o-float, .p-home .o-wig { transform-origin: 50% 100%; }
+.p-home .o svg { display: block; width: 100%; height: auto; overflow: visible; }
+/* each one casts a little halftone contact shadow, like the box does */
+.p-home .o-sh {
+  position: absolute;
+  left: -14%; right: -14%; bottom: -9%;
+  height: 26%;
+  background-image: radial-gradient(circle, var(--ink) 1px, transparent 1.5px);
+  background-size: 4px 4px;
+  -webkit-mask: radial-gradient(closest-side, #000 30%, transparent);
+  mask: radial-gradient(closest-side, #000 30%, transparent);
+  opacity: 0.45;
+  rotate: calc(var(--r) * -1);
+}
 
 /* ───────────────────────── MARQUEE ───────────────────────── */
 .p-home .h-mq {
@@ -443,8 +459,10 @@
 .p-home .h-mb__drop {
   position: absolute;
   right: clamp(0px, 2vw, 48px);
-  top: calc(var(--sec-pad) * -0.78);
-  width: clamp(130px, 12vw, 220px);
+  /* inside the board's top right corner: when the scrub ends (board top at 22%)
+     the box sits clear of the header and inside the gutter */
+  top: calc(var(--sec-pad) * -0.3);
+  width: clamp(110px, 9vw, 170px);
   aspect-ratio: 1;
   pointer-events: none;
 }
@@ -609,17 +627,20 @@
   row-gap: clamp(32px, 4vw, 72px);
   align-items: start;
 }
-.p-home .h-duo__head { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); align-items: end; }
-.p-home .h-duo__head .label { grid-column: 1 / 4; }
+/* the art takes the left half from the heading's top line down, and rides along
+   (sticky) while the right column reads, so neither half leaves a hole */
+.p-home .h-duo__head { grid-column: 8 / 13; grid-row: 1; display: grid; gap: clamp(14px, 1.4vw, 24px); }
 .p-home .h-duo__title {
-  grid-column: 7 / 13;
-  font-size: clamp(2.6rem, 1rem + 5vw, 7.4rem);
+  font-size: clamp(2.6rem, 0.6rem + 4.3vw, 6.4rem);
   line-height: 0.86;
   margin: 0;
 }
 .p-home .h-duo__tl { display: block; overflow: clip; padding-bottom: 0.03em; }
 .p-home .h-duo__tl > span { display: inline-block; }
-.p-home .h-duo__art { grid-column: 1 / 8; grid-row: 2 / 4; align-self: end; margin: 0; }
+.p-home .h-duo__art {
+  grid-column: 1 / 8; grid-row: 1 / 4; align-self: start; margin: 0;
+  position: sticky; top: calc(var(--header-h) * 0.6);
+}
 .p-home .h-duo__art-in { will-change: transform; }
 .p-home .h-duo__art svg { width: 100%; height: auto; }
 .p-home .h-duo__body { grid-column: 8 / 13; grid-row: 2; display: grid; gap: clamp(28px, 3vw, 48px); }
@@ -733,6 +754,24 @@
 /* ───────────────────────── reduced motion ───────────────────────── */
 .p-home.is-reduced .bx-curl { opacity: 0.6; }
 
+/* ───────────────────────── narrow desktop hero, 1024 to 1279 ───────────────────────── */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  /* the copy runs a little into the stage so the lede keeps a real measure; the
+     ticket is lifted out of the grid and set down at the copy's lower right, at
+     the table's left edge; the kit gathers around the box */
+  .p-home .h-copy {
+    top: calc(var(--header-h) + 72px);
+    width: calc(64vw - var(--hl));
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .p-home .h-intro { min-width: 30ch; max-width: 30ch; }
+  .p-home .h-tk { position: absolute; right: -64px; bottom: 0; width: 280px; }
+  .p-home .h-tk .tk { scale: 0.76; }
+  .p-home .h-stage { left: 60vw; }
+  .p-home .o--keyboard { display: none; }
+  .p-home .o--voice { --dx: -0.6; }
+}
+
 /* ───────────────────────── rail clearance, 721 to 1199 ───────────────────────── */
 @media (min-width: 721px) and (max-width: 1199px) {
   .p-home { --hl: max(88px, calc(72px + var(--gutter))); }
@@ -825,7 +864,8 @@
 
   .p-home .h-duo { grid-template-columns: 1fr; }
   .p-home .h-duo__head { grid-template-columns: 1fr; row-gap: 16px; }
-  .p-home .h-duo__head > *, .p-home .h-duo__art, .p-home .h-duo__body, .p-home .h-duo__count { grid-column: 1 !important; grid-row: auto; }
+  .p-home .h-duo__head > *, .p-home .h-duo__head, .p-home .h-duo__art, .p-home .h-duo__body, .p-home .h-duo__count { grid-column: 1 !important; grid-row: auto; }
+  .p-home .h-duo__art { position: relative; top: auto; }
   .p-home .h-duo__num { font-size: 52vw; }
   .p-home .duo-p__meta { flex-direction: column; gap: 2px; }
 

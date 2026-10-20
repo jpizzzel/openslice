@@ -134,7 +134,8 @@
 @media (max-height: 700px) { .p-lab__index { display: none; } }
 
 .p-lab__about {
-  margin-top: auto;
+  /* sits right under the notebook (26px column gap + 6px) */
+  margin-top: 6px;
   max-width: 18em;
   font-size: 19px;
   line-height: 1.08;

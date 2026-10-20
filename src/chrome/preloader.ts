@@ -9,6 +9,7 @@ import { markLoaderGone } from "../core/ready";
 import { mascot } from "../art";
 import { bus } from "../core/bus";
 import { isSaturday } from "./countdown";
+import { lidArt } from "./lid";
 
 const MIN = 1200, MAX = 3000;
 
@@ -22,6 +23,9 @@ export function runPreloader() {
     return { async done() { markLoaderGone(); } };
   }
   document.documentElement.classList.add("is-loading");
+  // the hero box's own lid, printed around the real-text wordmark
+  const art = root.querySelector<HTMLElement>(".ld-art");
+  if (art) art.innerHTML = lidArt({ idp: "ldl", word: false, fit: "xMidYMid meet" });
   let seen = false;
   try { seen = sessionStorage.getItem("os-seen") === "1"; sessionStorage.setItem("os-seen", "1"); } catch { /* ignore */ }
   const min = reducedMotion ? 0 : seen ? 700 : MIN;
@@ -132,12 +136,13 @@ export function runPreloader() {
     });
     // the wall slides in with the crew already shoving, they brace, then heave it across
     const brace = crewW * 0.95;
-    tl.to(s, { p: brace, duration: 0.62, ease: "power3.out" })
-      .to(s, { p: brace - 16, duration: 0.16, ease: "power2.out" })
-      .to(s, { p: W + crewW + 40, duration: 1.05, ease: "power3.in" });
+    // quick: the ink wall is on screen for well under a second
+    tl.to(s, { p: brace, duration: 0.45, ease: "power3.out" })
+      .to(s, { p: brace - 14, duration: 0.12, ease: "power2.out" })
+      .to(s, { p: W + crewW + 40, duration: 0.78, ease: "power2.in" });
     // strain: little shoves and bobs while walking
     ms.forEach((m, i) => {
-      gsap.fromTo(m, { y: 0, rotate: 0 }, { y: -10 - i * 4, rotate: i ? 2 : -2, duration: 0.18, ease: "sine.inOut", yoyo: true, repeat: 11, delay: 0.1 + i * 0.09 });
+      gsap.fromTo(m, { y: 0, rotate: 0 }, { y: -10 - i * 4, rotate: i ? 2 : -2, duration: 0.16, ease: "sine.inOut", yoyo: true, repeat: 8, delay: 0.08 + i * 0.08 });
     });
     await tl;
     if (!marked) markLoaderGone();

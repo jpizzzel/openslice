@@ -203,3 +203,14 @@ export const SITE = {
     "Every slice open source",
   ],
 };
+
+/**
+ * The trunk's growth rings. A ring closes every Sept 1 after the fall of
+ * SITE.since; `full` counts the closed ones and `growing` is the number of the
+ * ring still in progress (always full + 1). One source for the footer and /slices.
+ */
+export function rings(now = new Date()) {
+  let full = 0;
+  while (new Date(SITE.since + full + 1, 8, 1) <= now) full++;
+  return { full, growing: full + 1 };
+}

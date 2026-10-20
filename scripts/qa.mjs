@@ -168,16 +168,18 @@ const STATIC_CHECKS = () => {
   return out;
 };
 
-const OVERFLOW_CHECK = () => {
-  const vw = window.innerWidth;
+// vw is the configured viewport width: under mobile emulation innerWidth grows to fit
+// overflowing content (the page zooms out), which would hide the problem.
+const OVERFLOW_CHECK = (vw) => {
   const sw = document.documentElement.scrollWidth;
   const bw = document.body.scrollWidth;
-  const res = { vw, sw, bw, y: Math.round(scrollY), culprits: [] };
-  if (Math.max(sw, bw) <= vw) return res;
+  const res = { vw, sw, bw, iw: innerWidth, y: Math.round(scrollY), culprits: [] };
+  if (Math.max(sw, bw, innerWidth) <= vw) return res;
   const desc = window.__qa.desc;
-  // Outermost elements sticking out on the right (or left), whose parent does not.
-  const out = (r) => r.right > vw + 1 || r.left < -1;
+  // Outermost elements sticking out on the right, whose parent does not.
+  const out = (r) => r.right > vw + 1;
   for (const el of document.body.querySelectorAll("*")) {
+    if (el.ownerSVGElement) continue; // report the <svg>, not its shapes
     const r = el.getBoundingClientRect();
     if (!r.width || !out(r)) continue;
     const p = el.parentElement;
@@ -298,12 +300,12 @@ async function auditRoute(browser, vp, route) {
     for (const f of [0, 0.25, 0.5, 0.75, 1]) {
       await page.evaluate((y) => { window.scrollTo(0, y); }, Math.round(H * f));
       await page.waitForTimeout(500);
-      const o = await page.evaluate(OVERFLOW_CHECK);
-      if (Math.max(o.sw, o.bw) > o.vw) {
+      const o = await page.evaluate(OVERFLOW_CHECK, vp.ctx.viewport.width);
+      if (Math.max(o.sw, o.bw, o.iw) > o.vw) {
         const key = o.culprits.join("|");
         if (!seenOverflow.has(key)) {
           seenOverflow.add(key);
-          add(route, vp.name, "error", "horizontal overflow", `scrollWidth ${Math.max(o.sw, o.bw)} > ${o.vw} at y=${o.y}: ${o.culprits.join(", ") || "(culprit not found)"}`);
+          add(route, vp.name, "error", "horizontal overflow", `scrollWidth ${Math.max(o.sw, o.bw, o.iw)} > ${o.vw} at y=${o.y}: ${o.culprits.join(", ") || "(culprit not found)"}`);
         }
       }
     }

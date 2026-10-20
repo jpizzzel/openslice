@@ -1,0 +1,79 @@
+// Inline SVG art that carries <text> is laid out again, repainted and re-rastered
+// by the browser on every frame in which any ancestor's transform changes (glyph
+// size tracks the on-screen scale). For halftone-heavy posters that ride on
+// scroll or pointer driven transforms that is the most expensive thing on the page.
+// flattenSvg() swaps such an svg for an <img> of the very same markup: an image is
+// laid out and rastered once, then only moved by the compositor. The poster fonts
+// are embedded as data URLs (an svg image cannot see the page's @font-face rules),
+// and the swap waits for the image to decode, so nothing flashes or reflows.
+import monoUrl from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url";
+import displayUrl from "@fontsource-variable/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2?url";
+import serifUrl from "@fontsource/instrument-serif/files/instrument-serif-latin-400-normal.woff2?url";
+import serifItalicUrl from "@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2?url";
+
+// Same family names and descriptors as src/styles/fonts.css.
+const FACES = [
+  { use: /JetBrains Mono/, url: monoUrl, face: `font-family:"JetBrains Mono Variable";font-style:normal;font-weight:100 800` },
+  { use: /Big Shoulders/, url: displayUrl, face: `font-family:"Big Shoulders Display Variable";font-style:normal;font-weight:100 900` },
+  { use: /Instrument Serif/, url: serifUrl, face: `font-family:"Instrument Serif";font-style:normal;font-weight:400` },
+  { use: /Instrument Serif[^>]*font-style="italic"|font-style="italic"[^>]*Instrument Serif/, url: serifItalicUrl, face: `font-family:"Instrument Serif";font-style:italic;font-weight:400` },
+];
+
+const fontData = new Map<string, Promise<string>>();
+const asDataUrl = (url: string) => {
+  let p = fontData.get(url);
+  if (!p) {
+    p = fetch(url)
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+      .then((b) => new Promise<string>((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result));
+        fr.onerror = () => rej(fr.error);
+        fr.readAsDataURL(b);
+      }));
+    p.catch(() => fontData.delete(url)); // let a later page try again
+    fontData.set(url, p);
+  }
+  return p;
+};
+
+/**
+ * Replace each svg with an equivalent <img> once it has decoded. Returns a cleanup
+ * that cancels pending swaps and releases the image urls. If anything fails the
+ * inline svg simply stays.
+ */
+export function flattenSvgs(svgs: Iterable<SVGSVGElement>): () => void {
+  let dead = false;
+  const urls: string[] = [];
+  for (const svg of svgs) {
+    const xml = new XMLSerializer().serializeToString(svg);
+    const faces = FACES.filter((f) => f.use.test(xml));
+    Promise.all(faces.map((f) => asDataUrl(f.url).then((d) => `@font-face{${f.face};src:url(${d}) format("woff2")}`)))
+      .then(async (css) => {
+        if (dead || !svg.isConnected) return;
+        const src = css.length ? xml.replace(/^<svg\b[^>]*>/, (m) => `${m}<style>${css.join("")}</style>`) : xml;
+        const url = URL.createObjectURL(new Blob([src], { type: "image/svg+xml" }));
+        urls.push(url);
+        const img = new Image();
+        const label = svg.getAttribute("aria-label");
+        img.alt = label ?? "";
+        if (!label) img.setAttribute("aria-hidden", "true");
+        const cls = svg.getAttribute("class");
+        if (cls) img.setAttribute("class", cls);
+        img.draggable = false;
+        img.decoding = "sync";
+        // the svg rules on every poster host are width/height 100%
+        img.style.cssText = "width:100%;height:100%;pointer-events:none";
+        img.src = url;
+        await img.decode();
+        if (dead || !svg.isConnected) return;
+        svg.replaceWith(img);
+      })
+      .catch(() => {});
+  }
+  return () => {
+    dead = true;
+    urls.forEach((u) => URL.revokeObjectURL(u));
+    urls.length = 0;
+  };
+}

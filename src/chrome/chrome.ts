@@ -426,22 +426,12 @@ export function initChrome() {
     checkFits();
     queueSample();
     cursor?.recheck();
-    // off the home page the stack tucks away a beat after the page lands, so it
-    // never sits on top of the page's own header
-    clearTimeout(tuckTimer);
-    autoTuck = false;
-    if (path !== "/") {
-      const token = ++tuckToken;
-      loaderGone.then(() => {
-        if (token !== tuckToken) return;
-        tuckTimer = window.setTimeout(() => { autoTuck = true; applyTuck(); }, 1500);
-      });
-    }
+    // off the home page the stack is tucked from the first frame (the swap happens
+    // under the transition cover), so it never sits on top of the page's own header
+    autoTuck = path !== "/";
+    applyTuck();
   };
-  let tuckTimer = 0, tuckToken = 0;
   bus.on("route:before", () => {
-    clearTimeout(tuckTimer);
-    tuckToken++;
     if (!open) return;
     if (reducedMotion) setMenu(false, false); else dropUnderCover = true;
   });

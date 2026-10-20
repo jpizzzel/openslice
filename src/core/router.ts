@@ -116,11 +116,15 @@ export async function navigate(to: string, push = true) {
   if (push) history.pushState({}, "", target);
   else if (path !== url.pathname) history.replaceState(history.state, "", target);
   try { await render(path, url.search, url.hash); } finally { busy = false; }
-  if (queued) {
-    const q = queued; queued = null;
-    // a history step queued mid-transition: follow wherever the address bar is now
-    navigate(q.push ? q.path : location.href, q.push);
-  }
+  drain();
+}
+
+/** Run the navigation that arrived while a render was in flight. */
+function drain() {
+  if (!queued) return;
+  const q = queued; queued = null;
+  // a history step queued mid-transition: follow wherever the address bar is now
+  navigate(q.push ? q.path : location.href, q.push);
 }
 
 /** Links the router leaves to the browser. */
@@ -150,5 +154,10 @@ export function initRouter() {
   const url = new URL(location.href);
   const path = tidy(url.pathname);
   if (path !== url.pathname) history.replaceState(history.state, "", path + url.search + url.hash);
-  return render(path, url.search, url.hash);
+  // the first render is a navigation too: a back/forward step or a link activated
+  // under the preloader waits for it instead of mounting a second page alongside
+  busy = true;
+  const done = render(path, url.search, url.hash);
+  done.finally(() => { busy = false; drain(); }).catch(() => {});
+  return done;
 }

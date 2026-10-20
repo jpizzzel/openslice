@@ -111,6 +111,7 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100svh;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-columns: minmax(0, 1fr);

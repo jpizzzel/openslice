@@ -10,10 +10,7 @@ import { manifestoHTML, initManifesto } from "./home/manifesto";
 import { menuHTML, initMenu } from "./home/menu";
 import { duoHTML, initDuo } from "./home/duo";
 import { ctaHTML, initCta } from "./home/cta";
-
-// The footer is owned by the chrome; use it when it exists.
-const footerMod = import.meta.glob<{ renderFooter?: () => string }>("../chrome/footer.ts", { eager: true });
-const renderFooter = Object.values(footerMod)[0]?.renderFooter;
+import { renderFooter } from "../chrome/footer";
 
 const page: Page = {
   title: "",
@@ -27,7 +24,7 @@ const page: Page = {
         ${manifestoHTML()}
         ${duoHTML()}
         ${ctaHTML()}
-        ${renderFooter ? renderFooter() : "<!-- footer -->"}
+        ${renderFooter()}
       </div>`;
 
     const el = root.querySelector<HTMLElement>(".p-home")!;

@@ -484,6 +484,8 @@ const page: Page = {
         document.documentElement.classList.remove("lab-lock");
       }
       tweens.forEach((t) => t.kill());
+      // a dialog caught mid-close: its finish() never runs once the tweens are killed
+      document.querySelectorAll(".p-lab-modal").forEach((m) => m.remove());
       kills.forEach((k) => k());
       tiles.forEach((t) => t.toy?.destroy());
       loop.destroy();

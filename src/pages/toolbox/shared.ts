@@ -1,10 +1,13 @@
 // Shared helpers for the toolbox index and tool detail pages.
 import { PEOPLE, STATUS_LABEL, type Person, type Status, type Tool } from "../../data/site";
+import { esc } from "../../art/core";
+import { renderFooter } from "../../chrome/footer";
+
+export { esc };
+/** the shared site footer (rendered by the chrome) */
+export const footerHTML = renderFooter;
 
 export const pad = (n: number) => String(n).padStart(2, "0");
-
-const ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-export const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ESC[c]);
 
 export const makers = (t: Tool): Person[] =>
   t.by.map((id) => PEOPLE.find((p) => p.id === id)).filter((p): p is Person => !!p);
@@ -43,18 +46,6 @@ export function redact(text: string, every = 3) {
         : esc(w)
     )
     .join(" ");
-}
-
-// The persistent chrome provides an optional footer. Glob keeps the
-// build green whether or not the file exists yet.
-const footerMods = import.meta.glob<{ renderFooter?: () => string }>("../../chrome/footer.ts", { eager: true });
-export function footerHTML(): string {
-  const mod = Object.values(footerMods)[0];
-  try {
-    return mod?.renderFooter ? mod.renderFooter() : "<!-- footer -->";
-  } catch {
-    return "<!-- footer -->";
-  }
 }
 
 export const arrowSVG = (dir: "up" | "down" | "left" | "right" | "ne") => {

@@ -40,10 +40,12 @@
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
+  /* page roots are isolated (z auto) under all of these; the lab dialog sits at 75,
+     the mobile menu at 79, the grain at 70 */
   --z-chrome: 50;
-  --z-cursor: 90;
   --z-transition: 80;
   --z-loader: 100;
+  --z-cursor: 110;
 }
 
 @media (max-width: 720px) {

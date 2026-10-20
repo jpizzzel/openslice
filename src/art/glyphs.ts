@@ -485,8 +485,6 @@ const DRAW: Record<BaseGlyph, (k: Kit) => string> = {
   },
 };
 
-export const GLYPH_IDS = Object.keys(DRAW) as BaseGlyph[];
-
 /** glyph markup in a 100 x 100 box, for embedding inside other drawings */
 export function glyphBody(k: Kit, id: string): string {
   const f = DRAW[id as BaseGlyph] ?? DRAW.star;

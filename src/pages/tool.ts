@@ -65,10 +65,13 @@ function barcode(seed: string) {
 const barcodeText = (t: Tool, i: number) =>
   `${pad(i + 1)} ${String(t.year).slice(2)}${[...t.slug].reduce((a, c) => a + c.charCodeAt(0), 0)} 0000`;
 
+/** links to show, or a served tool that lives in the repo: either way the order is up */
+const isReady = (t: Tool) => t.links.length > 0 || t.status === "served";
+
 function linksHTML(t: Tool) {
   if (!t.links.length) {
     return `
-      <p class="td-soon serif">Recipe drops soon. Watch the pass.</p>
+      <p class="td-soon serif">${t.status === "served" ? "Grab it from the repo." : "Recipe drops soon. Watch the pass."}</p>
       <div class="td-btns">
         <a class="td-btn" href="${SITE.repo}" target="_blank" rel="noopener" data-cursor="GitHub">
           <span>Watch the repo</span>${arrowSVG("ne")}
@@ -102,7 +105,8 @@ function template(t: Tool, i: number) {
   const next = TOOLS[(i + 1) % N];
   const ppl = makers(t);
   const cls = isClassified(t);
-  const chars = [...t.name.toUpperCase()].map((c) => `<span class="td-ch">${esc(c)}</span>`).join("");
+  // spaces as no-break spaces: an inline-block span would swallow a plain one
+  const chars = [...t.name.toUpperCase()].map((c) => `<span class="td-ch">${c === " " ? "&nbsp;" : esc(c)}</span>`).join("");
   return `
 <article class="p-tool${cls ? " is-classified" : ""}" style="--tc:${t.color}">
   <section class="td-hero">
@@ -187,8 +191,8 @@ function template(t: Tool, i: number) {
       <div class="td-order__cooks n${ppl.length}" aria-hidden="true">
         ${ppl.map((p) => `<span class="td-mascot">${mascot(p.id, POSE[p.id] ?? "stand", { apron: true })}</span>`).join("")}
       </div>
-      <p class="td-order__k"><span>Ticket #${pad(i + 1)}</span><span>${t.links.length ? "Ready" : "Firing"}</span></p>
-      <h2 class="td-order__h">${t.links.length ? "Order<br>up!" : "Still in<br>the oven"}</h2>
+      <p class="td-order__k"><span>Ticket #${pad(i + 1)}</span><span>${isReady(t) ? "Ready" : "Firing"}</span></p>
+      <h2 class="td-order__h">${isReady(t) ? "Order<br>up!" : "Still in<br>the oven"}</h2>
       ${linksHTML(t)}
       <p class="td-order__foot">Free forever. Open source, MIT.</p>
     </div></div>

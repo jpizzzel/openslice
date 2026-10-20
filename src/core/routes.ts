@@ -31,7 +31,10 @@ export function match(pathname: string) {
     const m = pathname.match(r.pattern);
     if (m) {
       const params: Record<string, string> = {};
-      r.keys.forEach((k, i) => (params[k] = decodeURIComponent(m[i + 1])));
+      r.keys.forEach((k, i) => {
+        // a malformed escape (/toolbox/%E0) is just an unknown slug, not a crash
+        try { params[k] = decodeURIComponent(m[i + 1]); } catch { params[k] = m[i + 1]; }
+      });
       return { route: r, params };
     }
   }

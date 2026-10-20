@@ -1,24 +1,18 @@
 // Small helpers shared by the about, trunk and 404 pages.
 import { gsap, ScrollTrigger, reducedMotion } from "../../core/motion";
 import { loaderGone } from "../../core/ready";
+import { esc } from "../../art/core";
+import { renderFooter } from "../../chrome/footer";
 
-// The footer is owned by the chrome team. Glob it so this module builds
-// whether or not src/chrome/footer.ts exists yet.
-const footerMods = import.meta.glob<{ renderFooter?: () => string }>("../../chrome/footer.ts", { eager: true });
-
-export function footerHTML(): string {
-  const fn = Object.values(footerMods)[0]?.renderFooter;
-  return typeof fn === "function" ? fn() : "<!-- footer -->";
-}
+export { esc };
+/** the shared site footer (rendered by the chrome) */
+export const footerHTML = renderFooter;
 
 /** Run `fn` once the preloader is gone (first paint) or right away. Never blocks mount. */
 export function whenReady(first: boolean, alive: () => boolean, fn: () => void) {
   if (first) loaderGone.then(() => alive() && fn());
   else fn();
 }
-
-export const esc = (s: string) =>
-  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /** Split text into masked words for line reveals. Returns HTML. */
 export function words(text: string, cls = "") {

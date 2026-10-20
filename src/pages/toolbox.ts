@@ -107,7 +107,7 @@ function template() {
       </ol>
     </nav>
 
-    <dl class="tb-meta" aria-live="polite">
+    <dl class="tb-meta">
       ${META.map(([k, label]) => `
       <div class="tb-meta__pair" data-k="${k}">
         <dt class="label">${label}</dt>
@@ -306,6 +306,8 @@ const page: Page = {
       let auto = false;
       let autoTimer = 0;
       let snapTimer = 0;
+      // assigned below; the trigger's onUpdate can fire while it is still being created
+      let scheduleSnap = () => {};
       // front card geometry, cached so hover never reads layout from a tilting element
       let cx = 0, cy = 0, cw = 1, ch = 1;
       // ticket pivots (stage coordinates), cached on refresh; x follows the rail layout below
@@ -325,7 +327,7 @@ const page: Page = {
         W = railList.clientWidth;
         TW = tks[0].offsetWidth || 1;
         // the narrowest strip a covered ticket ever shows (one ticket pulled forward), so its spine always fits
-        railList.style.setProperty("--step", `${Math.max(28, (W - 2 * TW - G) / (N - 2)).toFixed(1)}px`);
+        railList.style.setProperty("--step", `${Math.max(28, (W - 2 * TW - G) / Math.max(1, N - 2)).toFixed(1)}px`);
         piv = tks.map((tk) => ({
           y0: rail.offsetTop + railList.offsetTop + tk.offsetTop,
           y1: rail.offsetTop + railList.offsetTop + tk.offsetTop + tk.offsetHeight,
@@ -498,7 +500,7 @@ const page: Page = {
         const target = st.start + idx * step();
         if (Math.abs(target - y) > 1.5) scrollToY(target, 0.75);
       };
-      const scheduleSnap = () => {
+      scheduleSnap = () => {
         window.clearTimeout(snapTimer);
         if (!auto && !blocked()) snapTimer = window.setTimeout(doSnap, 150);
       };

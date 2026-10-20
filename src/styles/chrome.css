@@ -100,6 +100,10 @@ body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(
 body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(4) { transition-delay: 0s; }
 .ch-lw { pointer-events: auto; }
 body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-lw { opacity: 0; transition: opacity 0.3s 0.1s; }
+/* without hover the folded area can never unfold on its own: let taps reach the page under it */
+@media (hover: none) {
+  body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-lw { pointer-events: none; }
+}
 body.nav-tucked .ch-nav-lbl { color: var(--c-fg); }
 body.nav-tucked .ch-nav-lbl i { opacity: 1; transform: none; }
 body.nav-tucked.nav-open .ch-nav-lbl i, body.nav-tucked .ch-nav:focus-within .ch-nav-lbl i { transform: rotate(45deg); }
@@ -305,14 +309,14 @@ html.menu-lock { overflow: hidden; }
 html.has-cursor, html.has-cursor * { cursor: none !important; }
 html.has-cursor :is(input, textarea, select, [contenteditable]) { cursor: text !important; }
 .cursor {
-  position: fixed; left: 0; top: 0; z-index: 110;
+  position: fixed; left: 0; top: 0; z-index: var(--z-cursor);
   pointer-events: none;
   mix-blend-mode: difference;
   opacity: 0;
   transition: opacity 0.3s;
   will-change: transform;
 }
-.cursor--pill { mix-blend-mode: normal; z-index: 111; }
+.cursor--pill { mix-blend-mode: normal; z-index: calc(var(--z-cursor) + 1); }
 .cursor.is-on { opacity: 1; }
 .cursor[data-state="hide"] { opacity: 0; }
 .cursor-d {

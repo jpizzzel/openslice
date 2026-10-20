@@ -95,11 +95,13 @@
 .p-slices .sl-tree__pin {
   position: relative;
   height: 100vh;
+  height: 100svh;
   /* the pinned heading stays clear of the fixed header */
   padding: calc(var(--header-h) + 24px) var(--pad-r) 28px var(--pad-l);
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 6fr) minmax(0, 3fr);
-  grid-template-rows: auto 1fr auto;
+  /* minmax: the tree sizes to the room left, never the room it would like */
+  grid-template-rows: auto minmax(0, 1fr) auto;
   column-gap: var(--gutter);
   background: var(--flour);
   overflow: hidden;
@@ -116,6 +118,8 @@
   place-items: center;
 }
 .p-slices .sl-tree__art { width: 100%; height: 100%; display: grid; place-items: center; will-change: transform; padding-left: 18%; }
+/* one fixed cell each, so the percentage heights resolve against the stage and the tree never outgrows it */
+.p-slices .sl-tree__stage, .p-slices .sl-tree__art { grid-template: minmax(0, 1fr) / minmax(0, 1fr); }
 .p-slices .sl-tree__fl { font-family: var(--f-mono); }
 .p-slices .sl-tree__art > svg { width: auto; height: 100%; max-width: 100%; max-height: 74vh; overflow: visible; }
 .p-slices .sl-tree__art [data-part="fruit"] { transition: filter 0.3s; }
@@ -183,6 +187,13 @@
   .p-slices .sl-rings__cap { display: none; }
 }
 @media (min-width: 900px) and (max-height: 820px) { .p-slices .sl-tree__list a { padding: 8px 0; } .p-slices .sl-rings { margin-top: 4px; } }
+/* short laptop screens: the pinned list grows with every tool, so tighten it further */
+@media (min-width: 900px) and (max-height: 760px) {
+  .p-slices .sl-tree__list a { padding: 5px 0; }
+  .p-slices .sl-tree__lname { font-size: clamp(1.2rem, 0.9rem + 0.6vw, 1.6rem); }
+  /* the ring count is in the footer too; the branches come first */
+  .p-slices .sl-rings { display: none; }
+}
 .p-slices .sl-tree__list ol { display: grid; border-top: 1px solid var(--line); }
 .p-slices .sl-tree__list a {
   display: grid; grid-template-columns: 28px 1fr auto; align-items: baseline; gap: 10px;

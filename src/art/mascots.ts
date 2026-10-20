@@ -6,7 +6,6 @@ import { pepperoni, olive, basilLeaf, sneaker, pizzaBox, cmdKey } from "./props"
 
 export type Who = "jonah" | "peter";
 export type Pose = "stand" | "wave" | "push" | "point" | "sit" | "carry";
-export const POSES: Pose[] = ["stand", "wave", "push", "point", "sit", "carry"];
 
 type EyeKind = "open" | "lid" | "happy" | "squint" | "wide" | "wink";
 type BrowKind = "flat" | "up" | "angry" | "quirk";

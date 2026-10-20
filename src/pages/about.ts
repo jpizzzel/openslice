@@ -89,9 +89,13 @@ const PRINCIPLES: [string, string][] = [
 
 const released = TOOLS.filter((t) => t.status !== "prepping");
 const secret = TOOLS.filter((t) => t.status === "prepping");
+// a tool dated before the first chapter or after the last one shows in the nearest
+const years = CHAPTERS.flatMap((c) => (c.y ? [c.y] : []));
+const chapterYear = (y: number) => Math.min(Math.max(y, Math.min(...years)), Math.max(...years));
+const toolsIn = (c: Chapter) => (c.y ? released.filter((t) => chapterYear(t.year) === c.y) : secret);
 
 function chapterGlyphs(c: Chapter) {
-  const tools = c.y ? released.filter((t) => t.year === c.y) : secret;
+  const tools = toolsIn(c);
   const toolG = tools.map(
     (t) => `<li class="ab-ch__g ab-ch__g--tool" style="--c:${t.color}">
       <span class="ab-ch__gart">${glyph(t.glyph)}</span>
@@ -103,7 +107,7 @@ function chapterGlyphs(c: Chapter) {
 }
 
 function chapterHTML(c: Chapter, i: number) {
-  const toolsHere = (c.y ? released.filter((t) => t.year === c.y) : secret).length;
+  const toolsHere = toolsIn(c).length;
   return `<li class="ab-ch ab-ch--${c.id}" data-i="${i}">
     <article class="ab-ch__in" aria-labelledby="ab-ch-${c.id}">
       <div class="ab-ch__text">

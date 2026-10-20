@@ -1,5 +1,8 @@
 /* ============ TOOLBOX index ============ */
 .p-toolbox {
+  /* the pinned stage layers its parts up to z 250: keep them inside the page,
+     under the chrome, grain, menu, transition and cursor */
+  isolation: isolate;
   /* clear the 64px chrome rail; never tighter than 88px */
   --left: max(88px, calc(64px + 3.2vw));
   --cw: min(25vw, 40vh);

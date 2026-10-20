@@ -8,7 +8,6 @@ export const CHEESE = "#ffc93c";
 export const CRUST = "#e9b46a";
 export const BASIL = "#2f7d4f";
 export const PAPER = "#f7f4ef";
-export const FLOUR = "#efebe4";
 export const GRAY = "#8a837a";
 
 export const F_MONO = `'JetBrains Mono Variable','JetBrains Mono',ui-monospace,monospace`;
@@ -72,7 +71,7 @@ export class Kit {
 }
 
 export function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
 export function svg(viewBox: string, body: string, opts: ArtOpts = {}, extra = ""): string {

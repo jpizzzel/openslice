@@ -158,7 +158,8 @@ export function sfx(name: Sfx) {
 function apply() {
   if (on) {
     if (!ctx && !build()) return;
-    ctx!.resume();
+    // resume() rejects when the browser still wants a gesture; the next one wakes it
+    ctx!.resume().catch(() => {});
     const t = ctx!.currentTime;
     master.gain.cancelScheduledValues(t);
     master.gain.setTargetAtTime(1, t, 0.05);
@@ -175,7 +176,7 @@ function apply() {
     bed.gain.linearRampToValueAtTime(0, t + 0.6);
     master.gain.setTargetAtTime(0, t + 0.5, 0.08);
     const c = ctx;
-    setTimeout(() => { if (!on) c.suspend(); }, 1100);
+    setTimeout(() => { if (!on) c.suspend().catch(() => {}); }, 1100);
   }
 }
 
@@ -208,7 +209,6 @@ export function initAudio() {
   }
   document.addEventListener("visibilitychange", () => {
     if (!ctx || !on) return;
-    if (document.hidden) ctx.suspend();
-    else ctx.resume();
+    (document.hidden ? ctx.suspend() : ctx.resume()).catch(() => {});
   });
 }

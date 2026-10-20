@@ -5,7 +5,7 @@ import { flattenSvgs } from "../../art/flatten";
 import { PEOPLE, SITE } from "../../data/site";
 import { esc, type Kit } from "./kit";
 
-export const yearsTogether = () => Math.max(1, new Date().getFullYear() - SITE.since);
+const yearsTogether = () => Math.max(1, new Date().getFullYear() - SITE.since);
 
 export function duoHTML() {
   const years = yearsTogether();

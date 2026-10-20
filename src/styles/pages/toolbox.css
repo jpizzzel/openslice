@@ -24,7 +24,8 @@
 .p-toolbox .tb-ctrl { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; }
 .p-toolbox .tb-hint { font-size: var(--t-sm); color: var(--muted); }
 
-.p-toolbox .tb-info { display: grid; gap: 22px; align-content: start; }
+.p-toolbox .tb-info { min-width: 0; }
+.p-toolbox .tb-info .cv-panel { display: grid; gap: 22px; align-content: start; }
 .p-toolbox .tb-info__name { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.025em; line-height: 1.1; }
 .p-toolbox .tb-info__blurb { margin-top: 8px; font-size: 1rem; line-height: 1.45; color: var(--ink-2); max-width: 40ch; }
 .p-toolbox .tb-dl { margin-top: 22px; border-top: 1px solid var(--line); }
@@ -68,7 +69,7 @@
   .p-toolbox .tb-stack .cv { --cw: min(25vw, 42svh, 440px); --cv-y: 54%; min-height: 0; }
   .p-toolbox .tb-stack .cv-stage { height: 100%; min-height: calc(var(--cw) * 1.4); }
   .p-toolbox .tb-info { grid-column: 3; grid-row: 2; align-self: end; }
-  .p-toolbox .tb-info__body { min-height: 19em; display: flex; flex-direction: column; justify-content: flex-end; }
+  .p-toolbox .tb-info .cv-panel { align-content: end; }
 }
 
 /* ---- tablet: stack and details side by side ---- */

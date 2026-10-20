@@ -4,7 +4,7 @@ import "../styles/pages/toolbox.css";
 import type { Page } from "../core/page";
 import { gsap, finePointer } from "../core/motion";
 import { TOOLS, type Tool } from "../data/site";
-import { stackHTML, ctrlHTML, mountStack } from "./toolbox/stack";
+import { stackHTML, ctrlHTML, mountStack, panelsHTML, showPanel } from "./toolbox/stack";
 import { arrowSVG, esc, footerHTML, isClassified, makers, replacesText, rise, statusText } from "./toolbox/shared";
 
 const N = TOOLS.length;
@@ -18,13 +18,15 @@ function infoHTML(t: Tool) {
     ["Replaces", esc(replacesText(t))],
   ];
   return `
-    <p class="tb-info__name">${esc(t.name)}</p>
-    <p class="tb-info__blurb">${esc(t.blurb)}</p>
-    <dl class="tb-dl">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
+    <div class="tb-info__body">
+      <p class="tb-info__name">${esc(t.name)}</p>
+      <p class="tb-info__blurb">${esc(t.blurb)}</p>
+      <dl class="tb-dl">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
+    </div>
+    <a class="tb-open" href="/toolbox/${t.slug}"><span>Open ${esc(t.name)}</span>${arrowSVG("right")}</a>`;
 }
 
 function template() {
-  const t0 = TOOLS[0];
   return `
 <div class="p-toolbox">
   <section class="tb" aria-labelledby="tb-h1">
@@ -42,8 +44,7 @@ function template() {
     </div>
 
     <div class="tb-info" data-now>
-      <div class="tb-info__body" aria-live="off">${infoHTML(t0)}</div>
-      <a class="tb-open" href="/toolbox/${t0.slug}"><span>Open ${esc(t0.name)}</span>${arrowSVG("right")}</a>
+      ${panelsHTML(TOOLS, infoHTML)}
     </div>
 
     <nav class="tb-list" aria-label="All tools" data-now>
@@ -66,9 +67,7 @@ const page: Page = {
     let alive = true;
     const offs: (() => void)[] = [];
 
-    const body = el.querySelector<HTMLElement>(".tb-info__body")!;
-    const open = el.querySelector<HTMLAnchorElement>(".tb-open")!;
-    const openLabel = open.querySelector("span")!;
+    const info = el.querySelector<HTMLElement>(".tb-info")!;
     const list = el.querySelector<HTMLElement>(".tb-list")!;
     const links = [...list.querySelectorAll<HTMLAnchorElement>("a")];
 
@@ -77,13 +76,9 @@ const page: Page = {
       controls: el.querySelector<HTMLElement>(".cv-ctrl"),
       keyScopes: [list, el.querySelector<HTMLElement>(".tb-info")!],
       pageKeys: true,
-      onChange: (i, instant) => {
+      onChange: (i) => {
         links.forEach((a, n) => (n === i ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
-        if (instant) return;
-        const t = TOOLS[i];
-        body.innerHTML = infoHTML(t);
-        open.href = `/toolbox/${t.slug}`;
-        openLabel.textContent = `Open ${t.name}`;
+        showPanel(info, i);
       },
     });
 

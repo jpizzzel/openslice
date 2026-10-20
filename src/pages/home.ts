@@ -4,7 +4,7 @@ import type { Page } from "../core/page";
 import { gsap } from "../core/motion";
 import { SITE, TOOLS, type Tool } from "../data/site";
 import { mascot } from "../art/index";
-import { stackHTML, ctrlHTML, mountStack } from "./toolbox/stack";
+import { stackHTML, ctrlHTML, mountStack, panelsHTML, showPanel } from "./toolbox/stack";
 import { arrowSVG, esc, footerHTML, isClassified, rise, statusText } from "./toolbox/shared";
 
 const N = TOOLS.length;
@@ -12,8 +12,13 @@ const listed = TOOLS.filter((t) => !isClassified(t));
 const hidden = N - listed.length;
 
 const nowHTML = (t: Tool) => `
-  <p class="hm-now__name">${esc(t.name)}<span class="hm-now__kind">${esc(t.kind)}</span></p>
-  <p class="hm-now__blurb">${esc(t.blurb)}</p>`;
+  <div class="hm-now">
+    <div class="hm-now__txt">
+      <p class="hm-now__name">${esc(t.name)}<span class="hm-now__kind">${esc(t.kind)}</span></p>
+      <p class="hm-now__blurb">${esc(t.blurb)}</p>
+    </div>
+    <a class="hm-open" href="/toolbox/${t.slug}"><span>Open ${esc(t.name)}</span>${arrowSVG("right")}</a>
+  </div>`;
 
 function rowHTML(t: Tool) {
   return `
@@ -29,7 +34,6 @@ function rowHTML(t: Tool) {
 }
 
 function template() {
-  const t0 = TOOLS[0];
   return `
 <div class="p-home">
   <section class="hm-hero" aria-labelledby="hm-h1">
@@ -41,10 +45,7 @@ function template() {
       ${stackHTML(TOOLS, "Tool covers")}
       <div class="hm-cap">
         ${ctrlHTML(N)}
-        <div class="hm-now">
-          <div class="hm-now__txt">${nowHTML(t0)}</div>
-          <a class="hm-open" href="/toolbox/${t0.slug}"><span>Open ${esc(t0.name)}</span>${arrowSVG("right")}</a>
-        </div>
+        ${panelsHTML(TOOLS, nowHTML)}
       </div>
     </div>
   </section>
@@ -89,20 +90,12 @@ const page: Page = {
     const ctx = gsap.context(() => {}, el);
     let alive = true;
 
-    const txt = el.querySelector<HTMLElement>(".hm-now__txt")!;
-    const open = el.querySelector<HTMLAnchorElement>(".hm-open")!;
-    const openLabel = open.querySelector("span")!;
+    const cap = el.querySelector<HTMLElement>(".hm-cap")!;
     const stack = mountStack(el.querySelector<HTMLElement>(".cv")!, {
       tools: TOOLS,
       controls: el.querySelector<HTMLElement>(".cv-ctrl"),
       keyScopes: [el.querySelector<HTMLElement>(".hm-cap")!],
-      onChange: (i, instant) => {
-        if (instant) return;
-        const t = TOOLS[i];
-        txt.innerHTML = nowHTML(t);
-        open.href = `/toolbox/${t.slug}`;
-        openLabel.textContent = `Open ${t.name}`;
-      },
+      onChange: (i) => showPanel(cap, i),
     });
 
     rise(ctx, [...el.querySelectorAll("[data-now]")], [...el.querySelectorAll("[data-later]")], first, () => alive);

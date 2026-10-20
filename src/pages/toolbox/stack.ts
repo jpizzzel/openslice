@@ -59,6 +59,28 @@ export function ctrlHTML(n: number) {
   </div>`;
 }
 
+/**
+ * One panel per tool, all stacked in the same grid cell so the block is always as tall
+ * as its tallest panel: switching tools never moves anything around it.
+ * Show one with `showPanel`.
+ */
+export function panelsHTML(tools: Tool[], render: (t: Tool, i: number) => string, cls = "") {
+  return `
+  <div class="cv-panels ${cls}">${tools.map((t, i) => `
+    <div class="cv-panel${i === 0 ? " is-on" : ""}" data-i="${i}"${i === 0 ? "" : " inert aria-hidden=\"true\""}>${render(t, i)}</div>`).join("")}
+  </div>`;
+}
+
+export function showPanel(host: HTMLElement, i: number) {
+  host.querySelectorAll<HTMLElement>(".cv-panel").forEach((p) => {
+    const on = Number(p.dataset.i) === i;
+    p.classList.toggle("is-on", on);
+    p.inert = !on;
+    if (on) p.removeAttribute("aria-hidden");
+    else p.setAttribute("aria-hidden", "true");
+  });
+}
+
 /** small deterministic per-card jitter so the pile looks set down by hand */
 const jitter = (i: number) => (((i * 37) % 7) - 3) * 0.7;
 
@@ -86,6 +108,7 @@ export function mountStack(cv: HTMLElement, opts: StackOptions): Stack {
 
   const state = { p: 0, mx: 0, my: 0 };
   let active = -1;
+  let target = 0; // where the stack is heading; taps and keys step from here
   let cw = 1;
   let tween: gsap.core.Tween | null = null;
   let raf = 0;
@@ -163,12 +186,15 @@ export function mountStack(cv: HTMLElement, opts: StackOptions): Stack {
     if (hadFocus) cards[i].focus({ preventScroll: true });
     live.textContent = `${tools[i].name}, ${i + 1} of ${N}`;
     if (idxEl) idxEl.textContent = String(i + 1);
-    btns.forEach((b) => { b.disabled = Number(b.dataset.dir) < 0 ? i === 0 : i === N - 1; });
     opts.onChange?.(i, instant);
   };
 
+  const syncBtns = () => btns.forEach((b) => { b.disabled = Number(b.dataset.dir) < 0 ? target === 0 : target === N - 1; });
+
   const go = (i: number) => {
     i = clamp(i, 0, N - 1);
+    target = i;
+    syncBtns();
     tween?.kill();
     tween = null;
     if (reducedMotion) {
@@ -217,6 +243,7 @@ export function mountStack(cv: HTMLElement, opts: StackOptions): Stack {
     if (p < 0) p = p * 0.3;
     else if (p > N - 1) p = N - 1 + (p - (N - 1)) * 0.3;
     state.p = p;
+    target = clamp(Math.round(p), 0, N - 1);
     request();
   });
   const end = (e: PointerEvent | null) => {
@@ -232,9 +259,9 @@ export function mountStack(cv: HTMLElement, opts: StackOptions): Stack {
     const delta = state.p - from;
     // a flick or a short pull is enough to move one card; a long pull lands where it was let go
     const fling = -d.vx * 1000 / perCard(); // cards per second
-    let target = Math.round(state.p + clamp(fling * 0.12, -1, 1));
-    if (Math.abs(delta) > 0.12 && Math.abs(delta) < 1) target = from + Math.sign(delta);
-    go(target);
+    let dest = Math.round(state.p + clamp(fling * 0.12, -1, 1));
+    if (Math.abs(delta) > 0.12 && Math.abs(delta) < 1) dest = from + Math.sign(delta);
+    go(dest);
   };
   on(window, "pointerup", end);
   on(window, "pointercancel", end);
@@ -270,7 +297,7 @@ export function mountStack(cv: HTMLElement, opts: StackOptions): Stack {
       const dir = Math.sign(wheelAcc);
       wheelAcc = 0;
       wheelLock = now + 380;
-      go(active + dir);
+      go(target + dir);
     }
   }, { passive: false });
 
@@ -283,7 +310,7 @@ export function mountStack(cv: HTMLElement, opts: StackOptions): Stack {
   if (ctrl) {
     on(ctrl, "click", (e) => {
       const b = (e.target as Element).closest<HTMLButtonElement>(".cv-btn");
-      if (b) go(active + Number(b.dataset.dir));
+      if (b) go(target + Number(b.dataset.dir));
     });
   }
   on(window, "keydown", (e) => {
@@ -296,9 +323,9 @@ export function mountStack(cv: HTMLElement, opts: StackOptions): Stack {
     const pageLevel = !!opts.pageKeys && onScreen && (tg === document.body || tg === document.documentElement) && dir !== 0;
     if (!inScope && !pageLevel) return;
     if (jump >= 0 && !cv.contains(tg)) return; // Home / End only inside the stack itself
-    const ni = jump >= 0 ? jump : clamp(active + dir, 0, N - 1);
+    const ni = jump >= 0 ? jump : clamp(target + dir, 0, N - 1);
     e.preventDefault();
-    if (ni !== active) go(ni);
+    if (ni !== target) go(ni);
   });
 
   // ---------- hover tilt of the front cover ----------
@@ -330,13 +357,14 @@ export function mountStack(cv: HTMLElement, opts: StackOptions): Stack {
   offs.push(() => ro.disconnect());
 
   measure();
+  syncBtns();
   setActive(0, true);
   render();
   cv.dataset.ready = "";
   return {
     go,
-    next: () => go(active + 1),
-    prev: () => go(active - 1),
+    next: () => go(target + 1),
+    prev: () => go(target - 1),
     get index() { return active; },
     destroy() {
       dead = true;

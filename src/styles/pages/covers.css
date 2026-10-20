@@ -55,3 +55,16 @@
 .cv-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .cv-btn:disabled { opacity: .35; cursor: default; }
 .cv-btn:disabled:hover { border-color: var(--line); }
+
+/* ---- per-tool panels: stacked in one cell, so the block never changes height ---- */
+.cv-panels { display: grid; }
+.cv-panel {
+  grid-area: 1 / 1; min-width: 0;
+  opacity: 0; visibility: hidden;
+  transition: opacity .28s var(--ease-out), visibility 0s linear .28s;
+}
+.cv-panel.is-on { opacity: 1; visibility: visible; transition: opacity .28s var(--ease-out) .06s, visibility 0s; }
+
+/* taps on the controls should never trigger double-tap zoom */
+.cv-btn { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+@media (hover: none) { .cv-btn:hover { border-color: var(--line); } }

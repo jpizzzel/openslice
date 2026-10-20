@@ -1,6 +1,7 @@
 // THE DUO: the two founders, and a counter of years cooking together.
 import { gsap } from "../../core/motion";
 import { scene, glyph } from "../../art";
+import { flattenSvgs } from "../../art/flatten";
 import { PEOPLE, SITE } from "../../data/site";
 import { esc, type Kit } from "./kit";
 
@@ -41,6 +42,8 @@ export function duoHTML() {
 export function initDuo(kit: Kit) {
   const sec = kit.root.querySelector<HTMLElement>(".h-duo")!;
   if (kit.reduced) return;
+  // the art rocks on a scrubbed transform: as an image its lettering is not re-laid out per frame
+  kit.onCleanup(flattenSvgs(sec.querySelectorAll<SVGSVGElement>(".h-duo__art-in > svg"), "width:100%;height:auto"));
   const val = sec.querySelector<HTMLElement>(".h-duo__val")!;
   const to = Number(val.dataset.to);
   kit.add(() => {

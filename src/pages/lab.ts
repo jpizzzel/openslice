@@ -434,7 +434,8 @@ const page: Page = {
     if (!reducedMotion) {
       // hide now so nothing flashes while the preloader leaves
       // (no tilt in the single column layout: a rotated full width tile would poke past the viewport)
-      tiles.forEach((t, i) => gsap.set(t.el, { opacity: 0, y: 70, rotation: cols === 1 ? 0 : i % 2 ? 2.2 : -2.2, transformOrigin: "50% 100%" }));
+      // force3D: the rise runs on the compositor; a 2D transform would repaint (and re-raster) the tile, demo and all, every frame
+      tiles.forEach((t, i) => gsap.set(t.el, { opacity: 0, y: 70, rotation: cols === 1 ? 0 : i % 2 ? 2.2 : -2.2, transformOrigin: "50% 100%", force3D: true }));
       const masks = pageEl.querySelectorAll(".p-lab__mask > *");
       const meta = pageEl.querySelectorAll(".p-lab__meta > div, .p-lab__index li, .p-lab__book-h, .p-lab__about, .p-lab__spec");
       gsap.set(masks, { yPercent: 110 });
@@ -460,7 +461,7 @@ const page: Page = {
           once: true,
           onEnter: (batch) => {
             tweens.push(gsap.to(batch, {
-              opacity: 1, y: 0, rotation: 0, duration: 1.2, ease: "expo.out", stagger: 0.09,
+              opacity: 1, y: 0, rotation: 0, duration: 1.2, ease: "expo.out", stagger: 0.09, force3D: true,
               onComplete() { gsap.set(batch, { clearProps: "transform,opacity" }); },
             }));
           },

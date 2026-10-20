@@ -50,18 +50,22 @@ const asDataUrl = (url: string) => {
 };
 
 /**
- * Replace each svg with an equivalent <img> once it has decoded. Returns a cleanup
- * that cancels pending swaps and releases the image urls. If anything fails the
- * inline svg simply stays.
+ * Replace each svg that has text with an equivalent <img> once it has decoded. `size`
+ * is the css that sizes the svg in its host. Returns a cleanup that cancels pending
+ * swaps and releases the image urls. If anything fails the inline svg simply stays.
  */
-export function flattenSvgs(svgs: Iterable<SVGSVGElement>): () => void {
+export function flattenSvgs(svgs: Iterable<SVGSVGElement>, size = "width:100%;height:100%"): () => void {
   let dead = false;
   const urls: string[] = [];
   for (const svg of svgs) {
+    // only text is re-laid out per frame; text-free art already rasters once as a layer
+    if (!svg.querySelector("text")) continue;
+    const cs = getComputedStyle(svg);
+    const display = cs.display;
+    if (display === "none") continue;
     const xml = new XMLSerializer().serializeToString(svg);
     const texts = xml.match(/<text\b[^>]*>/g) ?? [];
     const faces = FACES.filter((f) => texts.some(f.use));
-    const cs = getComputedStyle(svg);
     const pin = INHERITED.map((p) => `${p}:${cs.getPropertyValue(p)}`).join(";").replace(/"/g, "'");
     Promise.all(faces.map((f) => asDataUrl(f.url).then((d) => `@font-face{${f.face};src:url(${d}) format("woff2")}`)))
       .then(async (css) => {
@@ -78,8 +82,8 @@ export function flattenSvgs(svgs: Iterable<SVGSVGElement>): () => void {
         if (cls) img.setAttribute("class", cls);
         img.draggable = false;
         img.decoding = "sync";
-        // the svg rules on every poster host are width/height 100%
-        img.style.cssText = "width:100%;height:100%;pointer-events:none";
+        // the host's css sizes its svg; `size` repeats that for the image
+        img.style.cssText = `display:${display};${size};pointer-events:none`;
         img.src = url;
         await img.decode();
         if (dead || !svg.isConnected) return;

@@ -4,6 +4,7 @@
 import { gsap, ScrollTrigger } from "../../core/motion";
 import { bus } from "../../core/bus";
 import { glyph, type GlyphId } from "../../art";
+import { flattenSvgs } from "../../art/flatten";
 import { SITE } from "../../data/site";
 import { esc, type Kit } from "./kit";
 import { boxHTML, steamHTML } from "./box";
@@ -100,6 +101,9 @@ export function initHero(kit: Kit, introReady: Promise<void>) {
   const drop = kit.root.querySelector<HTMLElement>(".h-mb__drop");
 
   if (kit.reduced) return;
+
+  // the box faces fold, travel and flip on transforms: their lettered faces become images
+  kit.onCleanup(flattenSvgs(hero.querySelectorAll<SVGSVGElement>(".bx-f > svg")));
 
   // ---- geometry, read from untransformed layout boxes only
   const rect = (el: Element) => el.getBoundingClientRect();

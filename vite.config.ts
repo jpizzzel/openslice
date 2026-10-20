@@ -5,8 +5,8 @@ import { defineConfig, type Plugin } from "vite";
 const PRELOAD_FONTS = [
   /bricolage-grotesque-latin-wght-normal-[\w-]+\.woff2$/,
   /big-shoulders-display-latin-wght-normal-[\w-]+\.woff2$/,
-  // the preloader wordmark: it is the first big paint (and the LCP) on a cold load
-  /instrument-serif-latin-400-normal-[\w-]+\.woff2$/,
+  // the italic serif carries the hero headlines on most pages
+  /instrument-serif-latin-400-italic-[\w-]+\.woff2$/,
 ];
 
 function fontPreload(): Plugin {

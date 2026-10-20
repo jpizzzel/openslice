@@ -36,7 +36,7 @@ export class Kit {
   }
   /** unique id inside this svg */
   uid(name: string): string {
-    return `${this.id}-${name}`;
+    return `${this.id}-${name.replace(/[^\w-]/g, "_")}`;
   }
   /** register a def once (keyed) and return its url() reference */
   def(key: string, make: (id: string) => string): string {

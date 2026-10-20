@@ -127,8 +127,8 @@ function kitchen(k: Kit): string {
       P("M20 300H280V420H20Z", k.ht(2), 0) +
       G(placeGlyph(k, "oven", 0, 0, 300), `transform="translate(150 170)"`)) +
     // counter back edge, mascots behind it
-    placeMascot(k, "jonah", "point", 330, 116, 1.12) +
-    placeMascot(k, "peter", "carry", 560, 116, 1.12) +
+    placeMascot(k, "jonah", "point", 330, 150, 1.12) +
+    placeMascot(k, "peter", "carry", 562, 146, 1.12) +
     // counter
     part("counter", null,
       P(`M280 ${top}H800V500H280Z`, PAPER, 3.4) +

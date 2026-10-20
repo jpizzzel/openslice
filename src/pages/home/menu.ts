@@ -2,6 +2,7 @@
 // the tool's poster follow the cursor like a card tossed on the table.
 import { gsap } from "../../core/motion";
 import { poster } from "../../art";
+import { flattenSvgs } from "../../art/flatten";
 import { STATUS_LABEL, PEOPLE, type Tool } from "../../data/site";
 import { servedTools, secretTools, redacted } from "./ticket";
 import { esc, type Kit } from "./kit";
@@ -103,6 +104,8 @@ export function initMenu(kit: Kit) {
 
   const float = sec.querySelector<HTMLElement>(".mb-float")!;
   const cards = [...float.querySelectorAll<HTMLElement>(".mb-card")];
+  // the floating posters follow the pointer on transforms: as images they are rastered once
+  kit.onCleanup(flattenSvgs(float.querySelectorAll<SVGSVGElement>(".mb-card > svg")));
   let active = -1;
   let cx = 0, cy = 0, lastX = 0, inside = false;
 

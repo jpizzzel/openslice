@@ -89,10 +89,15 @@ html.is-saturday .ch-word i { color: var(--c-accent); }
    on the "Menu" button (body.nav-open, set in chrome.ts) unfolds it. */
 .ch-lw { transition: opacity 0.3s; }
 body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li { opacity: 0; pointer-events: none; }
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(1) { transform: translateY(-0.9em); transition-delay: 0.09s; }
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(2) { transform: translateY(-1.8em); transition-delay: 0.06s; }
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(3) { transform: translateY(-2.7em); transition-delay: 0.03s; }
-body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(4) { transform: translateY(-3.6em); transition-delay: 0s; }
+/* each row folds away in place (a small lift), so every link keeps its own spot:
+   the folded list area is a hover zone that unfolds it, and a click lands on the
+   row it was aimed at */
+body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li { transform: translateY(-5px); }
+body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(1) { transition-delay: 0.09s; }
+body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(2) { transition-delay: 0.06s; }
+body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(3) { transition-delay: 0.03s; }
+body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-list li:nth-child(4) { transition-delay: 0s; }
+.ch-lw { pointer-events: auto; }
 body.nav-tucked:not(.nav-open) .ch-nav:not(:focus-within) .ch-lw { opacity: 0; transition: opacity 0.3s 0.1s; }
 body.nav-tucked .ch-nav-lbl { color: var(--c-fg); }
 body.nav-tucked .ch-nav-lbl i { opacity: 1; transform: none; }

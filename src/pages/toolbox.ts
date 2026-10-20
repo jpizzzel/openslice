@@ -5,6 +5,7 @@ import { loaderGone } from "../core/ready";
 import { bus } from "../core/bus";
 import { SITE, STATUS_LABEL, TOOLS, type Tool } from "../data/site";
 import { poster } from "../art/index";
+import { flattenSvgs } from "../art/flatten";
 import {
   arrowSVG, esc, footerHTML, isClassified, makers, pad, replacesHTML, statusPill, STATUS_TONE,
 } from "./toolbox/shared";
@@ -188,6 +189,8 @@ const page: Page = {
     let suppressClick = false;
     let leaving = false;
     offs.push(bus.on("route:before", () => { leaving = true; }));
+    // the posters ride per-frame 3D transforms: as images they are rastered once, not every frame
+    offs.push(flattenSvgs(el.querySelectorAll<SVGSVGElement>(".tb-card__art > svg")));
 
     // ---------- "now serving" split-flap sign ----------
     type FlipState = { d: string; tl: gsap.core.Timeline | null };

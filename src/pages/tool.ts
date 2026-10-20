@@ -6,6 +6,7 @@ import { loaderGone } from "../core/ready";
 import { bus } from "../core/bus";
 import { SITE, STATUS_LABEL, TOOLS, type Tool } from "../data/site";
 import { glyph, mascot, poster, type Pose } from "../art/index";
+import { flattenSvgs } from "../art/flatten";
 import {
   arrowSVG, esc, footerHTML, isClassified, makers, pad, redact, replacesHTML, statusPill,
 } from "./toolbox/shared";
@@ -220,6 +221,8 @@ const page: Page = {
     const offs: (() => void)[] = [];
     let alive = true;
     let split: SplitText | null = null;
+    // both posters ride scroll and pointer driven transforms: as images they are rastered once
+    offs.push(flattenSvgs(el.querySelectorAll<SVGSVGElement>(".td-poster__art > svg, .td-next__tilt > svg")));
     const fig = el.querySelector<HTMLElement>(".td-poster")!;
     const title = el.querySelector<HTMLElement>(".td-title")!;
     const nameEl = el.querySelector<HTMLElement>(".td-name")!;

@@ -12,11 +12,23 @@ import serifUrl from "@fontsource/instrument-serif/files/instrument-serif-latin-
 import serifItalicUrl from "@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2?url";
 
 // Same family names and descriptors as src/styles/fonts.css.
+// `use` is tested against each <text> start tag.
+const italic = (t: string) => /font-style="italic"/.test(t);
 const FACES = [
-  { use: /JetBrains Mono/, url: monoUrl, face: `font-family:"JetBrains Mono Variable";font-style:normal;font-weight:100 800` },
-  { use: /Big Shoulders/, url: displayUrl, face: `font-family:"Big Shoulders Display Variable";font-style:normal;font-weight:100 900` },
-  { use: /Instrument Serif/, url: serifUrl, face: `font-family:"Instrument Serif";font-style:normal;font-weight:400` },
-  { use: /Instrument Serif[^>]*font-style="italic"|font-style="italic"[^>]*Instrument Serif/, url: serifItalicUrl, face: `font-family:"Instrument Serif";font-style:italic;font-weight:400` },
+  { use: (t: string) => /JetBrains Mono/.test(t), url: monoUrl, face: `font-family:"JetBrains Mono Variable";font-style:normal;font-weight:100 800` },
+  { use: (t: string) => /Big Shoulders/.test(t), url: displayUrl, face: `font-family:"Big Shoulders Display Variable";font-style:normal;font-weight:100 900` },
+  { use: (t: string) => /Instrument Serif/.test(t) && !italic(t), url: serifUrl, face: `font-family:"Instrument Serif";font-style:normal;font-weight:400` },
+  { use: (t: string) => /Instrument Serif/.test(t) && italic(t), url: serifItalicUrl, face: `font-family:"Instrument Serif";font-style:italic;font-weight:400` },
+];
+
+// Inherited text and paint properties an inline svg picks up from the page and an svg image
+// would not; they are pinned on the image's root as computed.
+const INHERITED = [
+  "color", "font-weight", "font-style", "font-stretch", "letter-spacing", "word-spacing", "text-transform",
+  "font-kerning", "font-variant-ligatures", "font-variant-numeric", "font-variant-caps", "font-feature-settings",
+  "font-variation-settings", "font-optical-sizing", "font-synthesis", "text-rendering",
+  "fill", "fill-opacity", "fill-rule", "stroke", "stroke-width", "stroke-opacity", "stroke-linecap", "stroke-linejoin",
+  "stroke-dasharray", "stroke-miterlimit", "paint-order", "shape-rendering", "clip-rule",
 ];
 
 const fontData = new Map<string, Promise<string>>();
@@ -47,11 +59,15 @@ export function flattenSvgs(svgs: Iterable<SVGSVGElement>): () => void {
   const urls: string[] = [];
   for (const svg of svgs) {
     const xml = new XMLSerializer().serializeToString(svg);
-    const faces = FACES.filter((f) => f.use.test(xml));
+    const texts = xml.match(/<text\b[^>]*>/g) ?? [];
+    const faces = FACES.filter((f) => texts.some(f.use));
+    const cs = getComputedStyle(svg);
+    const pin = INHERITED.map((p) => `${p}:${cs.getPropertyValue(p)}`).join(";").replace(/"/g, "'");
     Promise.all(faces.map((f) => asDataUrl(f.url).then((d) => `@font-face{${f.face};src:url(${d}) format("woff2")}`)))
       .then(async (css) => {
         if (dead || !svg.isConnected) return;
-        const src = css.length ? xml.replace(/^<svg\b[^>]*>/, (m) => `${m}<style>${css.join("")}</style>`) : xml;
+        // root rule, not a style attribute: the svg may already carry one
+        const src = xml.replace(/^<svg\b[^>]*>/, (m) => `${m}<style>${css.join("")}:root{${pin}}</style>`);
         const url = URL.createObjectURL(new Blob([src], { type: "image/svg+xml" }));
         urls.push(url);
         const img = new Image();

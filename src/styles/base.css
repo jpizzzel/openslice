@@ -56,11 +56,17 @@ ul, ol { list-style: none; }
 .serif { font-family: var(--f-serif); font-weight: 400; letter-spacing: -0.01em; }
 .mono { font-family: var(--f-mono); font-size: var(--t-xs); letter-spacing: 0.02em; text-transform: uppercase; }
 
-/* grain overlay, pure CSS + inline svg noise, cheap */
+/* grain overlay, pure CSS + inline svg noise, cheap.
+   It used to be the color noise multiply-blended at 7%. A blend mode makes the browser
+   render a separate full-viewport surface and blend it every frame, so the tile now
+   carries what the multiply did as plain alpha: black at alpha A * (1 - mean(rgb)) of the
+   same turbulence (Cb * (1 - a(1 - Cs)) is exactly black over Cb at alpha a(1 - Cs)),
+   within a few levels of the old look and no blending. The box is the viewport, not
+   200% of it, and the tiles keep the old phase (old origin was -50%, -50%). */
 .grain::after {
-  content: ""; position: fixed; inset: -50%; pointer-events: none; z-index: 70; opacity: .07;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  mix-blend-mode: multiply;
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 70; opacity: .07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix color-interpolation-filters='sRGB' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .3333 .3333 .3334 0 0' result='m'/%3E%3CfeColorMatrix in='t' color-interpolation-filters='sRGB' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0' result='a'/%3E%3CfeComposite in='m' in2='a' operator='arithmetic' k1='-1' k3='1' color-interpolation-filters='sRGB'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-position: calc(-50% - 80px) calc(-50% - 80px);
 }
 
 @media (prefers-reduced-motion: reduce) {

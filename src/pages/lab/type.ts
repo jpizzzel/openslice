@@ -50,8 +50,8 @@ export const kinetic: Experiment = {
         if (p.amt > 0.001) {
           const dx = p.x - l.cx, dy = p.y - l.cy;
           const pull = Math.exp(-(dx * dx + dy * dy) / (2 * sig * sig)) * p.amt;
-          tx += dx * pull * 0.32; ty += dy * pull * 0.32;
-          ts += pull * 0.28;
+          tx += dx * pull * 0.18; ty += dy * pull * 0.22;
+          ts += pull * 0.16;
         }
         // springs: 1d each axis, plus scale
         l.vx += ((tx - l.x) * 170 - l.vx * 13) * dt;

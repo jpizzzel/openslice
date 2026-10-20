@@ -118,9 +118,10 @@
   transition: color .3s;
 }
 .p-lab__index button:hover .p-lab__ent { transform: translateX(4px); }
-.p-lab__index button.is-now .p-lab__ent { color: var(--tomato); }
-.p-lab__index button.is-now .mono { color: var(--tomato); }
-.p-lab__index button.is-now .p-lab__note { color: var(--tomato-deep); }
+/* darker tomato so the small active entry text keeps AA contrast */
+.p-lab__index button.is-now .p-lab__ent,
+.p-lab__index button.is-now .mono,
+.p-lab__index button.is-now .p-lab__note { color: #b3241b; }
 /* a hand drawn circle around the experiment on screen */
 .p-lab__index button::after {
   content: ""; position: absolute; left: -30px; top: 50%; width: 22px; height: 22px; translate: 0 -50%;

@@ -301,7 +301,8 @@ const page: Page = {
       // Hidden until the intro runs.
       gsap.set(".ab-li", { yPercent: 110 });
       gsap.set(".ab-hero__art", { autoAlpha: 0, scale: 0.92, y: 40 });
-      gsap.set(".ab-hero__num", { autoAlpha: 0, y: 80 });
+      // visible from mount (it is the LCP element); only its position animates
+      gsap.set(".ab-hero__num", { y: 80 });
       gsap.set(".ab-hero__meta > div, .ab-hero__lede, .ab-hero__scroll", { autoAlpha: 0, y: 16 });
     });
 
@@ -310,7 +311,7 @@ const page: Page = {
         // non-first visits: start as the transition cover peels away
         const tl = gsap.timeline({ defaults: { ease: "expo.out" }, delay: first ? 0 : 0.2 });
         tl.to(".ab-li", { yPercent: 0, duration: 0.9, stagger: 0.06 })
-          .to(".ab-hero__num", { autoAlpha: 1, y: 0, duration: 1.6, stagger: 0.08 }, 0.1)
+          .to(".ab-hero__num", { y: 0, duration: 1.6, stagger: 0.08 }, 0.1)
           .to(".ab-hero__art", { autoAlpha: 1, scale: 1, y: 0, duration: 1.6 }, 0.25)
           .to(".ab-hero__meta > div, .ab-hero__lede, .ab-hero__scroll", { autoAlpha: 1, y: 0, duration: 1, stagger: 0.05 }, 0.5);
       }),

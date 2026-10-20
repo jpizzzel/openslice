@@ -33,10 +33,10 @@ try {
     await page.waitForTimeout(wait);
     const name = (r === "/" ? "home" : r.replace(/\//g, "_").replace(/^_/, "")) + (mobile ? "-m" : "");
     await page.screenshot({ path: `${out}/${name}.png` });
-    for (const y of scroll) {
+    for (const [i, y] of scroll.entries()) {
       await page.mouse.wheel(0, y);
       await page.waitForTimeout(1600);
-      await page.screenshot({ path: `${out}/${name}-s${y}.png` });
+      await page.screenshot({ path: `${out}/${name}-s${i + 1}.png` });
     }
     console.log("shot", r);
   }
